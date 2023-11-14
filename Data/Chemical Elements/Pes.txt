@@ -1,0 +1,111 @@
+Actinium    Ac  89  227.03  10070   1047    3197        e
+Aluminium   Al  13  26.98   2700    660.5   2467        e
+Americium   Am  95  243.06  13670   994     2607        e
+Antimon     Sb  51  121.75  6690    630.7   1750        e
+Argon       Ar  18  39.94   1.66    -189.4  -185.9      e
+Arsen       As  33  74.92   5720    613     613         e
+Astat       At  85  209.99  302     337                 e
+Barium      Ba  56  137.33  3650    725     1640        e
+Berkelium   Bk  97  247.07  13250   986                 e
+Beryllium   Be  4   9.01    1850    1278    2970        e
+Bismut      Bi  83  208.98  9800    271.4   1560        e
+Blei        Pb  82  207.2   11340   327.5   1740        e
+Bohrium     Bh  107 262.12                              e
+Bor         B   5   10.81   2460    2300    2550        e
+Brom        Br  35  79.90   3140    -7.3    58.8        e
+Cadmium     Cd  48  112.41  8640    321     765         e
+Caesium     Cs  55  132.91  1900    28.4    690         e
+Calcium     Ca  20  40.078  1540    839     1487        e
+Californium Cf  98  251.08  15100   900                 e
+Cer         Ce  58  140.11  6770    798     3257        e
+Chlor       Cl  17  35.45   2.95    -101    -34.6       e
+Chrom       Cr  24  52.00   7140    1857    2482        e
+Cobalt      Co  27  58.933  8890    1495    2870        e
+Copernicium Cn  112 277                                 e
+Curium      Cm  96  247.07  13510   1340    3110        e
+DarmstadtiumDs  110 269                                 e
+Dubnium     Db  105 262.11                              e
+Dysprosium  Dy  66  162.5   8560    1409    2335        e
+Einsteinium Es  99  252.08          860                 e
+Eisen       Fe  26  55.85   7870    1535    2750        e
+Erbium      Er  68  167.26  9050    1522    2510        e
+Europium    Eu  63  151.96  5250    822     1597        e
+Fermium     Fm  100 257.10                              e
+Fluor       F   9   19.00   1.58    -219.6  -188.1      e
+Francium    Fr  87  223.02          27      677         e
+Gadolinium  Gd  64  157.25  7890    1311    3233        e
+Gallium     Ga  31  69.72   5910    29.8    2403        e
+Germanium   Ge  32  72.61   5320    937.4   2830        e
+Gold        Au  79  196.97  19320   1064.4  2940        e
+Hafnium     Hf  72  178.49  13310   2150    5400        e
+Hassium     Hs  108 265.00                              e
+Helium      He  2   4.00    0.170   -272.2  -268.9      e
+Holmium     Ho  67  164.93  8780    1470    2720        e
+Indium      In  49  114.82  7310    156.2   2080        e
+Iod         I   53  126.90  4940    113.5   184.4       e
+Iridium     Ir  77  192.22  22560   2410    4130        e
+Kalium      K   19  39.098  860     63.7    774         e
+Kohlenstoff C   6   12.011  3510    3550    3550        e
+Krypton     Kr  36  83.80   3.48    -156.6  -152.3      e
+Kupfer      Cu  29  63.55   8920    1083.5  2595        e
+Lanthan     La  57  138.90  6160    920     3454        e
+Lawrencium  Lr  103 260.10          1627                e
+Lithium     Li  3   6.94    530     180.5   1317        e
+Lutetium    Lu  71  175.00  9840    1656    3315        e
+Magnesium   Mg  12  24.30   1740    648.8   1107        e
+Mangan      Mn  25  54.90   7440    1244    2097        e
+Meitnerium  Mt  109 266                                 e
+Mendelevium Md  101 258.1                               e
+Molybdän    Mo  42  95.94   10280   2617    5560        e
+Natrium     Na  11  22.99   970     97.8    892         e
+Neodym      Nd  60  144.24  7000    1010    3127        e
+Neon        Ne  10  20.18   0.84    -248.7  -246.1      e
+Neptunium   Np  93  237.05  20480   640     3902        e
+Nickel      Ni  28  58.69   8910    1453    2732        e
+Niob        Nb  41  92.91   8580    2468    4927        e
+Nobelium    No  102 259.10                              e
+Osmium      Os  76  190.2   22590   3045    5027        e
+Palladium   Pd  46  106.42  12020   1552    3140        e
+Phosphor    P   15  30.97   1820    44      280         e
+Platin      Pt  78  195.08  21450   1772    3827        e
+Plutonium   Pu  94  244.06  19740   641     3327        e
+Polonium    Po  84  208.98  9200    254     962         e
+Praseodym   Pr  59  140.91  6480    931     3212        e
+Promethium  Pm  61  146.92  7220    1080    2730        e
+ProtactiniumPa  91  231.04  15370   1554    4030        e
+Quecksilber Hg  80  200.59  13550   -38.9   356.6       e
+Radium      Ra  88  226.03  5500    700     1140        e
+Radon       Rn  86  222.02  9.23    -71     -61.8       e
+Rhenium     Re  75  186.21  21030   3180    5627        e
+Rhodium     Rh  45  102.91  12410   1966    3727        e
+Roentgenium Rg  111 272                                 e
+Rubidium    Rb  37  85.45   1530    39      688         e
+Ruthenium   Ru  44  101.07  12450   2310    3900        e
+Samarium    Sm  62  150.36  7540    1072    1778        e
+Sauerstoff  O   8   16.00   1.33    -218.4  -182.9      e
+Scandium    Sc  21  44.96   2990    1539    2832        e
+Schwefel    S   16  32.07   2060    113     444.7       e
+Seaborgium  Sg  106 263.12                              e
+Selen       Se  34  78.96   4820    217     685         e
+Silber      Ag  47  107.87  10490   961.9   2212        e
+Silicium    Si  14  28.09   2330    1410    2355        e
+Stickstoff  N   7   14.01   1.170   -209.9  -195.8      e
+Strontium   Sr  38  87.62   2630    769     1384        e
+Tantal      Ta  73  180.95  16680   2996    5425        e
+Technetium  Tc  43  98.91   11490   2172    5030        e
+Tellur      Te  52  127.6   6250    449.6   990         e
+Terbium     Tb  65  158.93  8250    1360    3041        e
+Thallium    Tl  81  204.38  11850   303.6   1457        e
+Thorium     Th  90  232.04  11720   1750    4787        e
+Thulium     Tm  69  168.93  9320    1545    1727        e
+Titan       Ti  22  47.88   4510    1660    3260        e
+Uran        U   92  238.03  18970   1132.4  3818        e
+Vanadium    V   23  50.94   6090    1890    3380        e
+Wasserstoff H   1   1.01    0.084   -259.1  -252.9      e
+Wolfram     W   74  183.85  19260   3407    5927        e
+Xenon       Xe  54  131.29  4.49    -111.9  -107.0      e
+Ytterbium   Yb  70  173.04  6970    824     1193        e
+Yttrium     Y   39  88.91   4470    1523    3337        e
+Zink        Zn  30  65.39   7140    419.6   907         e
+Zinn        Sn  50  118.71  7290    232     2270        e
+Zirconium   Zr  40  91.22   6510    1852    4377        e
