@@ -1,0 +1,41 @@
+for i = 1:phaseCnt
+    for j = 1:specSize
+        H_kG{i,j} = sqrt(P_Size(i)+U_Strain(i).*(ep{i,j}.^2));
+        H_kL{i,j} = X_Size(i)+Y_Strain(i).*ep{i,j};
+        H_k{i,j} = (H_kG{i,j}.^5+2.69269.*H_kG{i,j}.^4.*H_kL{i,j}+2.42843.*H_kG{i,j}.^3.*H_kL{i,j}.^2+4.47163.*H_kG{i,j}.^2.*H_kL{i,j}.^3+0.07842.*H_kG{i,j}.*H_kL{i,j}.^4+H_kL{i,j}.^5).^(0.2);
+        GL{i,j} = 1.36603.*(H_kL{i,j}./H_k{i,j})-0.47719.*(H_kL{i,j}./H_k{i,j}).^2+0.11116.*(H_kL{i,j}./H_k{i,j}).^3;
+        fun = @(X_DataEnergy)Int{i,j}*(GL{i,j}*(2/(pi*H_k{i,j}))./(1+4*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2)+(1-GL{i,j})*(2*sqrt(log(2)/pi)/H_k{i,j})*exp(-4*log(2)*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2));
+        IntegratedInt = integral(fun,ep{i,j}-3,ep{i,j}+3);
+    end
+end
+
+
+C = cell(1, 3);
+for k = 1:3
+    C{k} = @(x) x.^k;
+end
+y = cellfun(@(f) quadgk(f, 0, 1), C)
+
+Int{i,j} = @(X_DataEnergy)Int{i,j}*(GL{i,j}*(2/(pi*H_k{i,j}))./(1+4*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2)+(1-GL{i,j})*(2*sqrt(log(2)/pi)/H_k{i,j})*exp(-4*log(2)*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2));
+
+for i = 1:phaseCnt
+    for j = 1:specSize
+        H_kG{i,j} = sqrt(P_Size(i)+U_Strain(i).*(ep{i,j}.^2));
+        H_kL{i,j} = X_Size(i)+Y_Strain(i).*ep{i,j};
+        H_k{i,j} = (H_kG{i,j}.^5+2.69269.*H_kG{i,j}.^4.*H_kL{i,j}+2.42843.*H_kG{i,j}.^3.*H_kL{i,j}.^2+4.47163.*H_kG{i,j}.^2.*H_kL{i,j}.^3+0.07842.*H_kG{i,j}.*H_kL{i,j}.^4+H_kL{i,j}.^5).^(0.2);
+        GL{i,j} = 1.36603.*(H_kL{i,j}./H_k{i,j})-0.47719.*(H_kL{i,j}./H_k{i,j}).^2+0.11116.*(H_kL{i,j}./H_k{i,j}).^3;
+        Int{i,j} = @(X_DataEnergy)Int{i,j}*(GL{i,j}*(2/(pi*H_k{i,j}))./(1+4*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2)+(1-GL{i,j})*(2*sqrt(log(2)/pi)/H_k{i,j})*exp(-4*log(2)*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2));
+        IntegratedInt = cellfun(@(X_DataEnergy) integral(fun,ep{i,j}-3,ep{i,j}+3));
+    end
+end
+
+for i = 1:phaseCnt
+    for j = 1:specSize
+        H_kG{i,j} = sqrt(P_Size(i)+U_Strain(i).*(ep{i,j}.^2));
+        H_kL{i,j} = X_Size(i)+Y_Strain(i).*ep{i,j};
+        H_k{i,j} = (H_kG{i,j}.^5+2.69269.*H_kG{i,j}.^4.*H_kL{i,j}+2.42843.*H_kG{i,j}.^3.*H_kL{i,j}.^2+4.47163.*H_kG{i,j}.^2.*H_kL{i,j}.^3+0.07842.*H_kG{i,j}.*H_kL{i,j}.^4+H_kL{i,j}.^5).^(0.2);
+        GL{i,j} = 1.36603.*(H_kL{i,j}./H_k{i,j})-0.47719.*(H_kL{i,j}./H_k{i,j}).^2+0.11116.*(H_kL{i,j}./H_k{i,j}).^3;
+        fun = @(X_DataEnergy)Int{i,j}*(GL{i,j}*(2/(pi*H_k{i,j}))./(1+4*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2)+(1-GL{i,j})*(2*sqrt(log(2)/pi)/H_k{i,j})*exp(-4*log(2)*((X_DataEnergy-ep{i,j})/H_k{i,j}).^2));
+        IntegratedInt = cellfun(fun,ep{i,j}-3,ep{i,j}+3);
+    end
+end

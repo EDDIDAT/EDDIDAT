@@ -1,0 +1,35 @@
+
+AP1 = [0 0 1; 0 0 -1; 0 0 -1; 0 0 1]; % Die 1 steht für die Atomkoordinate, die variabel ist
+AP1Const = [0 0 1; 0 0 -1; 0 0 -1; 0 0 1];
+APosAP1 = [0 0 0; 0 0 1; 0 0 0; 0 0 1]; % Welche Koordinate muss noch korrigiert werden
+AP2 = [2 0 3; -2 2 3; -2 -2 3; 0 -2 3; -2 0 3; 2 2 3]; % Die 2 und 3 steht für die Atomkoordinate, die variabel ist
+AP2Const =[2 0 1/4; 0 2 1/4; -2 -2 1/4; -2 0 3/4; 0 -2 3/4; 2 2 3/4];
+APosAP2 = [0 0 0; 0 0 0; 0 0 0; 0 0 0; 0 0 0; 0 0 0]; % Welche Koordinate muss noch korrigiert werden
+
+SO = [0 0 0; 2/3 1/3 1/3; 1/3 2/3 2/3];
+
+APConst = [repmat(AP1Const,size(SO,1),1);repmat(AP2Const,size(SO,1),1)];
+
+APFitParams = [0.3522; 0.3066];
+
+APFitPattern1 = [0 0 1; 0 0 -1; 0 0 -1; 0 0 1];
+APFitPattern2 = [2 0 0; 0 2 0; -2 -2 0; -2 0 0; 0 -2 0; 2 2 0];
+
+APFitPattern = [repmat(APFitPattern1,size(SO,1),1);repmat(APFitPattern2,size(SO,1),1)];
+
+APosParam = [1/2; 0]; % es müssen zwar nur die z Positionen korrigiert werden, da man aber 3 FitParameter hat, muss die Schleife 3 mal durchlaufen werden
+					  % die erste "1/2" ist für die z Position der Al-Atome, die zweite "1/2" für die z Position der O-Atome, die "0" ist für den Leerlauf
+
+APosPattern = [repmat(APosAP1,size(SO,1),1);repmat(APosAP2,size(SO,1),1)]; % Legt fest, welche Parameter
+
+AtomCoordinates = [repmat(SO(1,:),size(APosAP1,1),1);repmat(SO(2,:),size(APosAP1,1),1);repmat(SO(3,:),size(APosAP1,1),1);repmat(SO(1,:),size(APosAP2,1),1);repmat(SO(2,:),size(APosAP2,1),1);repmat(SO(3,:),size(APosAP2,1),1)];
+
+ap = APConst;
+ap(APFitPattern ~= 0) = 0;
+			
+for i = 1:length(APFitParams)
+	
+	ap = ap + APFitParams(i) * ((abs(APFitPattern) == i) .* sign(APFitPattern)) + APosParam(i) * ((abs(APosPattern) == i) .* sign(APosPattern));
+end
+
+ap = ap + AtomCoordinates;

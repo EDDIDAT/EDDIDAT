@@ -1,0 +1,43 @@
+Hk:
+0.7374
+0.7965
+0.8491
+0.8974
+0.9424
+0.9848
+
+GL:
+0.5018
+0.4968
+0.4898
+0.4827
+0.4759
+0.4696
+
+ep:
+20.9390
+29.6122
+36.2674
+41.8780
+46.8211
+51.2899
+
+intensity:
+176.5100
+125.4164
+45.1427
+8.5282
+18.2061
+5.4232
+
+TCHPV Funktion:
+Y = Int(1) * (GL(1) * (2 / (pi * Hk(1))) ./ (1 + 4 * ((xrange - ep(1)) / Hk(1)).^2) + (1 - GL(1)) * (2 * sqrt(log(2)/pi) / Hk(1)) * exp(-4 * log(2) * ((xrange - ep(1)) / Hk(1)).^2));
+
+Berechnung der Integralintensität:
+% for-Schleife mit Function Handle. Das Function Handle berechnet die TCHPV Funktion.
+% Dafür müssen die 
+% I_int speichert die Integralintensitaeten der verschiedenen Peaks.
+for i = 1:length(Int)
+fun = @(xrange_loop)Int(i) * (GL(i) * (2 / (pi * Hk(i))) ./ (1 + 4 * ((xrange_loop - ep(i)) / Hk(i)).^2) + (1 - GL(i)) * (2 * sqrt(log(2)/pi) / Hk(i)) * exp(-4 * log(2) * ((xrange_loop - ep(i)) / Hk(i)).^2));
+I_int(i,:) = quad(fun,ep(i)-3,ep(i)+3);
+end

@@ -1,0 +1,7 @@
+Änderung der unteren (oberen) Grenze:
+
+rc.getParam('general', 'P_Size').setLowerConstraint(0)
+
+Anzeige des Fitfehlers:
+
+rc.getParam('general', 'P_Size').getFitError

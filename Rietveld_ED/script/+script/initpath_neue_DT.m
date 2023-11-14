@@ -1,0 +1,1 @@
+rvpath = fullfile('D:\Profile\hrp\Eigene Dateien\MATLAB\Matlab - Auswertesoftware\Rietveld_ED');

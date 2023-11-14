@@ -1,0 +1,2 @@
+Psi P_measured P_sample X_measured X_sample U_measured U_sample Y_measured Y_sample beta_L_size beta_G_size beta_L_strain beta_G_strain beta_Size beta_Strain Size_[A] Strain_[%] 
+0 0.05874 0.0035802 2.3373e-14 2.3373e-14 3.1455e-05 5.484e-06 0.00071343 0.0006713 3.6714e-14 0.063692 0.0010545 0.0024928 0.063692 0.0032066 1089.538 0.0016033 

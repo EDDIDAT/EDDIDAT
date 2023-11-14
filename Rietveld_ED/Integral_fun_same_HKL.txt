@@ -1,0 +1,10 @@
+for j = 1:size(ep,1)
+for i = 1:length(Intensity)
+H_kG(j,i) = sqrt(P_Size(i)+U_Strain(i).*(ep(j,i).^2));
+H_kL(j,i) = X_Size(i)+Y_Strain(i).*ep(j,i);
+H_k(j,i) = (H_kG(j,i).^5+2.69269.*H_kG(j,i).^4.*H_kL(j,i)+2.42843.*H_kG(j,i).^3.*H_kL(j,i).^2+4.47163.*H_kG(j,i).^2.*H_kL(j,i).^3+0.07842.*H_kG(j,i).*H_kL(j,i).^4+H_kL(j,i).^5).^(0.2);
+GL(j,i) = 1.36603.*(H_kL(j,i)./H_k(j,i))-0.47719.*(H_kL(j,i)./H_k(j,i)).^2+0.11116.*(H_kL(j,i)./H_k(j,i)).^3;
+fun = @(X_DataEnergy)Intensity(i)*(GL(j,i)*(2/(pi*H_k(j,i)))./(1+4*((X_DataEnergy-ep(j,i))/H_k(j,i)).^2)+(1-GL(j,i))*(2*sqrt(log(2)/pi)/H_k(j,i))*exp(-4*log(2)*((X_DataEnergy-ep(j,i))/H_k(j,i)).^2));
+I_Intensity(j,i) = quad(fun,ep(j,i)-3,ep(j,i)+3);
+end
+end

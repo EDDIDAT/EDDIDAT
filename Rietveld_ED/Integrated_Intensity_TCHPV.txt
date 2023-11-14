@@ -1,0 +1,33 @@
+H_k = [0.7358;0.8143;0.8804;0.9918];
+GL = [0.8824;0.8394;0.8068;0.7589];
+ep = [20.9202;29.5856;36.2348;46.7790];
+Int = [226.2324;145.1908;42.8142;25.8525];
+xrange = linspace(18,60,10000)';
+
+for i = 1:length(Int)
+H_kG(:,i) = sqrt(P_Size+U_Strain.*(ep(i).^2)+V_Detector.*ep(i));
+H_kL(:,i) = X_Size+Y_Strain.*ep(i)+Z_Detector.*(ep(i).^2);
+H_k(:,i) = (H_kG(i).^5+2.69269.*H_kG(i).^4.*H_kL(i)+2.42843.*H_kG(i).^3.*H_kL(i).^2+4.47163.*H_kG(i).^2.*H_kL(i).^3+0.07842.*H_kG(i).*H_kL(i).^4+H_kL(i).^5).^(0.2);
+GL(:,i) = 1.36603.*(H_kL(i)./H_k(i))-0.47719.*(H_kL(i)./H_k(i)).^2+0.11116.*(H_kL(i)./H_k(i)).^3;
+fun = @(xrange)Int(i)*(GL(i)*(2/(pi*H_k(i)))./(1+4*((xrange-ep(i))/H_k(i)).^2)+(1-GL(i))*(2*sqrt(log(2)/pi)/H_k(i))*exp(-4*log(2)*((xrange-ep(i))/H_k(i)).^2));
+I_int(i,:) = quad(fun,ep(i)-3,ep(i)+3);
+end
+
+for i = 1:length(Int)
+fun = @(xrange)Int(i)*(GL(i)*(2/(pi*H_k(i)))./(1+4*((xrange-ep(i))/H_k(i)).^2)+(1-GL(i))*(2*sqrt(log(2)/pi)/H_k(i))*exp(-4*log(2)*((xrange-ep(i))/H_k(i)).^2));
+I_int(i,:) = quad(fun,ep(i)-3,ep(i)+3);
+end
+
+Neue Berechnung für die Integralintensität
+- die Intensitätswerte lassen sich nicht als Variable im Workspace speichern, weg finden diese zu Berechnen und zu speichern
+
+for j = 1:size(Intensity,1)
+for i = 1:length(Intensity)
+H_kG(j,i) = sqrt(p(i)+u(i).*(EPos(j,i).^2));
+H_kL(j,i) = x(i)+y(i).*EPos(j,i);
+H_k(j,i) = (H_kG(j,i).^5+2.69269.*H_kG(j,i).^4.*H_kL(j,i)+2.42843.*H_kG(j,i).^3.*H_kL(j,i).^2+4.47163.*H_kG(j,i).^2.*H_kL(j,i).^3+0.07842.*H_kG(j,i).*H_kL(j,i).^4+H_kL(j,i).^5).^(0.2);
+GL(j,i) = 1.36603.*(H_kL(j,i)./H_k(j,i))-0.47719.*(H_kL(j,i)./H_k(j,i)).^2+0.11116.*(H_kL(j,i)./H_k(j,i)).^3;
+fun = @(xrange)Intensity(i)*(GL(j,i)*(2/(pi*H_k(j,i)))./(1+4*((xrange-EPos(j,i))/H_k(j,i)).^2)+(1-GL(j,i))*(2*sqrt(log(2)/pi)/H_k(j,i))*exp(-4*log(2)*((xrange-EPos(j,i))/H_k(j,i)).^2));
+I_Intensity(j,i) = quad(fun,EPos(j,i)-3,EPos(j,i)+3);
+end
+end

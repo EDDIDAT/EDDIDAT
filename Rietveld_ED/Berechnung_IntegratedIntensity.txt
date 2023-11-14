@@ -1,0 +1,46 @@
+function IntegratedInt = computeIntegratedIntensity(obj)
+% Berechnet die Integralintensität der einzelnen Beugungslinien.
+% Sowohl die Rueckgabe "tau", als auch "ep" haben eine
+% Cell-Array-Struktur (siehe "computeEnergyPosCalc").
+	
+	specSize = obj.getRVContainer().getSpecSize();
+	
+	params = obj.getRVContainer().getParamStruct();
+	PeakCnt = size([params.general.H],1);
+	
+	modACM = obj.getSubFunction('AttenuationCoeffMat');
+	modACAir = obj.getSubFunction('AttenuationCoeffAir');
+	modEP = obj.getSubFunction('EnergyPos');
+	modFHKL = obj.getSubFunction('FHKL');
+	modWiggler = obj.getSubFunction('Wiggler');
+	
+	IntegratedInt = cell([phaseCnt, specSize]);
+	
+	for p = 1:PeakCnt
+		
+		for s = 1:prod(specSize)
+			
+			acm = modACM.execute(ep{p,s}, params.general(p,s), params.meas, params.phase(p), params.spec(s));
+			aca = modACAir.execute(ep{p,s}, params.general(p,s), params.meas, params.phase(p), params.spec(s));
+			
+			INorm = 300;
+			corr = (INorm / params.spec.RingCurrent) * (100 / (100 - params.spec.DeadTime));
+			
+			IntegratedInt = general.ScaleFactor * (1/corr) * (...
+							modFHKL.FHKL.execute([], general, meas, phase, spec) .* ...
+							general.Multiplicity .* ...
+							modWiggler.execute(ep{p,s}) .* ...	
+							1 ./ (2 * params.phase.Density * acm) .* ...
+							exp(- params.meas.DensityAir * params.meas.DetectorDistance * modACAir.execute(ep{p,s}, general, meas, phase, spec)) .* ...
+							(12.398 ./ ep{p,s}).^3);
+		end
+	end
+end
+
+Intensität:
+for i = 1:PhaseCnt
+for j = 1:specSize
+Int{i,j} = ScaleFactor{i,j} .* (FHKL{i,j} .* Multiplicity{i,j} .* Wiggler{i,j} .* ...
+1 ./ (2 * Density * acm{i,j}) .* exp(- DensityAir * DetectorDistance * aca{i,j}) .* (12.398 ./ ep{i,j}).^3);
+end
+end
