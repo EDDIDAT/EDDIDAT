@@ -1,0 +1,11 @@
+sigmatau = phase.StressCoef1./(phase.StressCoef4.*tau + 1) + ...
+		   phase.StressCoef2.*tau./(phase.StressCoef4.*tau + 1).^2 + ...
+		   2.* phase.StressCoef3.*tau.^2./(phase.StressCoef4.*tau + 1).^3;
+		   
+sigma_33 = phase.StressCoefa .* exp(-phase.StressCoefb./tau)
+% StressCoefa = Spannungswert von sigma33
+% StressCoefb = Wert für die Tiefe bei der sigma33 beginnt
+
+eps_hkl = ((sind(spec.Psi)^2) * general.DEK_S2 + 2 * general.DEK_S1) .* sigmatau;
+
+eps_hkl = ((sind(spec.Psi)^2) * general.DEK_S2 .* (sigmatau - sigma_33)) + general.DEK_S2 .* sigma_33 + general.DEK_S1 .* (sigmatau./2 + sigma_33)

@@ -1,0 +1,33 @@
+classdef AttenuationCoeffAir < rietveld.base.RVFunction
+	
+	methods (Access = public)
+		
+		function Y = execute(obj, E_Position, ~, meas, ~, ~)
+			
+			Y = exp(interp1(log(meas.X_airabsorption),log(meas.Y_airabsorption),log(E_Position),'linear'));
+		end
+		
+		function obj = addFunctionParameters(obj, pc)
+			
+			obj.addParameter(pc, 'X_airabsorption',...
+				'Category', 'Absorption',...
+				'ParamSize', [NaN, 1],...
+				'Constant', true,...
+				'PhaseDep', false,...
+				'SpecDep', false);
+			obj.addParameter(pc, 'Y_airabsorption',...
+				'Category', 'Absorption',...
+				'ParamSize', [NaN, 1],...
+				'Constant', true,...
+				'PhaseDep', false,...
+				'SpecDep', false);
+		end		
+	end
+	
+	methods (Access = protected)
+		
+		function obj = initSubFunctions(obj)
+		end
+	end	
+end
+
