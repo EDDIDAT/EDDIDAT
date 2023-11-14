@@ -18,6 +18,9 @@
 *.slxc binary
 *.slx binary merge=mlAutoMerge
 *.slxp binary
+*.mf binary
+*.xml binary
+*.properties binary
 
 ## Other common binary file types
 *.docx binary
@@ -25,5 +28,8 @@
 *.jpg binary
 *.pdf binary
 *.png binary
+*.gif binary
 *.xlsx binary
 *.java binary
+*.jar binary
+*.db binary
