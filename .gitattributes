@@ -21,6 +21,8 @@
 *.mf binary
 *.xml binary
 *.properties binary
+*.m binary
+*.asv binary
 
 ## Other common binary file types
 *.docx binary
@@ -33,3 +35,4 @@
 *.java binary
 *.jar binary
 *.db binary
+*.txt binary
