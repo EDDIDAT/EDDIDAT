@@ -20,7 +20,7 @@ classdef ProgramInfo
         
     %% (* Pfade *)
         %Absoluter Pfad des Programms, string
-        Path = 'D:\Matlab Programm 05062023/';
+        Path = 'D:/EDDIDAT_github/';
         %Klassen-Pfad, relativ zum absoluten Pfad, string
         Path_Classes = ['Classes' filesep];
         %Daten-Pfad, relativ zum absoluten Pfad, string
