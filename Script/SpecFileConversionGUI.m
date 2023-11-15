@@ -106,65 +106,65 @@ if strcmp(Diffractometer.Name,'ETA3000')
     assignin('base','twothetatmp',twothetatmp)
     assignin('base','Intensity',Intensity)
 
-%     % Run python script that does the fuzzy binning
-%     if size(unique(TwoTheta,'stable'),2) == 1
-%         for k = 1:size(Intensity,1)
-%             intensity = py.numpy.array(Intensity(k,:));
-%             angles = py.numpy.array(twothetatmp(k,:));
-%             result = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
-%             % Convert python array to matlab arry
-%             X{k} = double(result{1});
-%             Y{k} = double(result{2});
-%         end
-% 
-%         DataTmp = cell(1, length(meas));
-%         for c = 1:length(meas)
-%             meas(c).EDSpectrum = [X{c};Y{c}]';
-%             DataTmp{c} = meas(c).EDSpectrum;
-%         end
+    % Run python script that does the fuzzy binning
+    if size(unique(TwoTheta,'stable'),2) == 1
+        for k = 1:size(Intensity,1)
+            intensity = py.numpy.array(Intensity(k,:));
+            angles = py.numpy.array(twothetatmp(k,:));
+            result = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
+            % Convert python array to matlab arry
+            X{k} = double(result{1});
+            Y{k} = double(result{2});
+        end
+
+        DataTmp = cell(1, length(meas));
+        for c = 1:length(meas)
+            meas(c).EDSpectrum = [X{c};Y{c}]';
+            DataTmp{c} = meas(c).EDSpectrum;
+        end
+    
+    else
+        intensity = py.numpy.array(Intensity);
+        angles = py.numpy.array(twothetatmp);
+        [result] = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
+        % Convert python array to matlab arry
+        X = double(result{1});
+        Y = double(result{2});
+    %     assignin('base','result',result)
+        % Only keep one meas with corrected data
+        meas(2:end) = [];
+        DataTmp{1} = [X;Y]';
+        meas(1).EDSpectrum = [X;Y]';
+        meas(1).twotheta = TwoTheta;
+    end
+
+%     TwoThetaReal = unique(TwoTheta);
+%     indTwoThetaRealStart = find(TwoTheta==TwoThetaReal(1));
+%     indTwoThetaRealEnd = find(TwoTheta==TwoThetaReal(end));
+% %     assignin('base','indTwoThetaRealStart',indTwoThetaRealStart)
+% %     assignin('base','indTwoThetaRealEnd',indTwoThetaRealEnd)
+%     IndTwoThetaReal = [indTwoThetaRealStart; indTwoThetaRealEnd]';
+%     Counts = sum(Intensity,2);
 %     
-%     else
-%         intensity = py.numpy.array(Intensity);
-%         angles = py.numpy.array(twothetatmp);
-%         [result] = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
-%         % Convert python array to matlab arry
-%         X = double(result{1});
-%         Y = double(result{2});
-%     %     assignin('base','result',result)
-%         % Only keep one meas with corrected data
-%         meas(2:end) = [];
-%         DataTmp{1} = [X;Y]';
-%         meas(1).EDSpectrum = [X;Y]';
-%         meas(1).twotheta = TwoTheta;
+%     for k = 1:size(IndTwoThetaReal,1)
+%         ScanCounts{k} = Counts((IndTwoThetaReal(k,1):IndTwoThetaReal(k,2)));
 %     end
-
-    TwoThetaReal = unique(TwoTheta);
-    indTwoThetaRealStart = find(TwoTheta==TwoThetaReal(1));
-    indTwoThetaRealEnd = find(TwoTheta==TwoThetaReal(end));
-%     assignin('base','indTwoThetaRealStart',indTwoThetaRealStart)
-%     assignin('base','indTwoThetaRealEnd',indTwoThetaRealEnd)
-    IndTwoThetaReal = [indTwoThetaRealStart; indTwoThetaRealEnd]';
-    Counts = sum(Intensity,2);
-    
-    for k = 1:size(IndTwoThetaReal,1)
-        ScanCounts{k} = Counts((IndTwoThetaReal(k,1):IndTwoThetaReal(k,2)));
-    end
-    
-    MeasScanCounts = Measurement.Measurement();
-    for k = 1:size(IndTwoThetaReal,1)
-        MeasScanCounts(k) = meas(IndTwoThetaReal(k,1));
-    end
-    
-    for k = 1:size(IndTwoThetaReal,1)
-        MeasScanCounts(k).EDSpectrum = [TwoThetaReal' ScanCounts{k}./MeasScanCounts(k).CountingTime];
-        MeasScanCounts(k).twotheta = TwoThetaReal;
-        MeasScanCounts(k).Name = ['Scan', num2str(k), ', Chi = ', num2str(MeasScanCounts(k).SCSAngles.psi), '°'];
-    end
-    for k = 1:size(IndTwoThetaReal,1)
-        DataTmp{k} = MeasScanCounts(k).EDSpectrum;
-    end
-
-    meas = MeasScanCounts;
+%     
+%     MeasScanCounts = Measurement.Measurement();
+%     for k = 1:size(IndTwoThetaReal,1)
+%         MeasScanCounts(k) = meas(IndTwoThetaReal(k,1));
+%     end
+%     
+%     for k = 1:size(IndTwoThetaReal,1)
+%         MeasScanCounts(k).EDSpectrum = [TwoThetaReal' ScanCounts{k}./MeasScanCounts(k).CountingTime];
+%         MeasScanCounts(k).twotheta = TwoThetaReal;
+%         MeasScanCounts(k).Name = ['Scan', num2str(k), ', Chi = ', num2str(MeasScanCounts(k).SCSAngles.psi), '°'];
+%     end
+%     for k = 1:size(IndTwoThetaReal,1)
+%         DataTmp{k} = MeasScanCounts(k).EDSpectrum;
+%     end
+% 
+%     meas = MeasScanCounts;
 %     assignin('base','result',result)
 %     assignin('base','X',X)
 %     assignin('base','Y',Y)
