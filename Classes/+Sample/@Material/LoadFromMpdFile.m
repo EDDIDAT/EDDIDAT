@@ -60,7 +60,11 @@ function obj = LoadFromMpdFile(Filename)
         % h- k- und l-Werte speichern
         h = str2num(M1(:,1));
         k = str2num(M1(:,2));
-        l = str2num(M1(:,3));
+        if length(str2num(M1)) > 1
+            l = str2num(M1(:,3:end));
+        else
+            l = str2num(M1(:,3));
+        end
         % h-, k-, l- und d-Werte sortieren und zusammenfügen und für den Plot vorbereiten
         obj.HKLdspacing = [h k l d_spacing'];
         % Der Plot setzt nun bei der Berechnung der theoretischen Energielagen ein (für den Fall Gittertyp = 'none') 

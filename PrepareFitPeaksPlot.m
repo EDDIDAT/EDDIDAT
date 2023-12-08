@@ -5,6 +5,11 @@ YFit = DataTmpCalc{valueSlider}(:, 2);
 % Fit-Data
 XPlot = XFit(1):0.001:XFit(end);
 YPlot = zeros(size(XPlot));
+YPlot_tmp = zeros(size(XPlot));
+% YPlotETA = zeros(size(XPlot));
+Ka1Plot = zeros(size(XPlot));
+Ka2Plot = zeros(size(XPlot));
+% assignin('base','FittedPeaksCalc',FittedPeaksCalc)
 % Calculate fitted profile using Fitted PeakData
 for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
     if PopupValueFitFunc == 2 %PV-Func
@@ -34,16 +39,30 @@ for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
         SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
             FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3));  
     end
-
+    
     if strcmp(Diffractometer,'ETA3000')
-        YPlot_tmp = YPlot + SinglePlot;
-        YPlot = [YPlot_tmp' Plotka1' Plotka2'];
-        assignin('base','YPlot',YPlot)
+%         assignin('base','SinglePlot',SinglePlot)
+%         assignin('base','YPlot',YPlot)
+        
+%         YPlotETA_tmp = YPlotETA + SinglePlot;
+%         assignin('base','YPlot_tmp',YPlot_tmp)
+%         YPlot = [YPlot_tmp' Plotka1' Plotka2'];
+%         YPlot = [YPlot_tmp' Ka1Plot_tmp' Ka2Plot_tmp'];
+%         assignin('base','YPlot1',YPlot)
+        YPlot_tmp = YPlot_tmp + SinglePlot;
+        Ka1Plot = Ka1Plot + Plotka1;
+        Ka2Plot = Ka2Plot + Plotka2;
+        YPlot = [YPlot_tmp' Ka1Plot' Ka2Plot'];
+%     assignin('base','Ka1Plot',Ka1Plot)
+%     assignin('base','Ka2Plot',Ka2Plot)
+%     assignin('base','YPlot',YPlot)
     else
         YPlot = YPlot + SinglePlot;
     end
 end
-
+% if strcmp(Diffractometer,'ETA3000')
+%     YPlot = [YPlotETA_tmp' Ka1Plot_tmp' Ka2Plot_tmp'];
+% end
 % Set fit results as data in table
 if PopupValueFitFunc == 2 %PV-Func
     for c = 1:size(FittedPeaksCalc,2)

@@ -9,7 +9,7 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
 % assignin('base','Filename',Filename)
 % assignin('base','Diffractometer',Diffractometer)
 % assignin('base','ScanMode',ScanMode)
-assignin('base','Calibration',Calibration)
+% assignin('base','Calibration',Calibration)
 
 %% (* Stringenzprüfung *)
 %     validateattributes(Filename,{'char'},{'row'});
@@ -52,7 +52,11 @@ assignin('base','Calibration',Calibration)
 % Index_tmp wird in der Folge für das Auslesen sämtlicher Eigenschaften
 % benutzt
 % + Messserie bzw. Dateiname (#F)
-    Index_tmp = Tools.StringOperations.SearchString(M(1:Index_FileHeader(2,1),:),Diffractometer.ImportLiterals.FileName);
+%     if size(Index_FileHeader,1) ~= 1
+        Index_tmp = Tools.StringOperations.SearchString(M(1:Index_Scan(1,1)-2,:),Diffractometer.ImportLiterals.FileName);
+%     else
+%         Index_tmp = Tools.StringOperations.SearchString(M(1:Index_FileHeader(1,1),:),Diffractometer.ImportLiterals.FileName);
+%     end
     if ~isempty(Index_tmp)
         MeasurementSeries = sscanf(M(Index_tmp(1),:),Diffractometer.ImportLiterals.FormatFileName);
     else
@@ -85,7 +89,8 @@ assignin('base','Calibration',Calibration)
     
     if Diffractometer.CheckSPECformat == 1
         % + Einlesen alle eingetragenen Motornamen (#O)
-        Index_tmp = Tools.StringOperations.SearchString(M(1:Index_FileHeader(2,1),:),Diffractometer.ImportLiterals.MotorNames);
+        Index_tmp = Tools.StringOperations.SearchString(M(1:Index_Scan(1,1)-2,:),Diffractometer.ImportLiterals.MotorNames);
+%         Index_tmp = Tools.StringOperations.SearchString(M(1:Index_FileHeader(2,1),:),Diffractometer.ImportLiterals.MotorNames);
         %Prealloc, jede Zeile enthält die Motornamen
         MotorNames = cell(size(Index_tmp,1),1);
         %--> Scannen aller Zeilen
@@ -654,10 +659,12 @@ assignin('base','Scans1',Scans)
                     obj.Temperatures = sscanf(Scan(Index_tmp(1),:),...
                         [Diffractometer.ImportLiterals.Temp '%f %f %*f'])';
                 end
-             % + Anode (#@HV_ANODE)
+             % + Anode (#@HV_ANODE) + Scan Mode of Mythen Detector
                 if strcmp(Diffractometer.Name,'ETA3000')
-                    Index_tmp = Tools.StringOperations.SearchString(Scan,'#@HV_ANODE');
-                    obj.Anode = sscanf(Scan(Index_tmp(1),:),'#@HV_ANODE %s');
+                    Index_tmp = Tools.StringOperations.SearchString(Scan,'#HV_ANODE');
+                    obj.Anode = sscanf(Scan(Index_tmp(1),:),'#HV_ANODE %s');
+                    Index_tmp = Tools.StringOperations.SearchString(Scan,'#@MYTHEN2_MEASMODE');
+                    obj.MythenScanMode = sscanf(Scan(Index_tmp(1),:),'#@MYTHEN2_MEASMODE %d');
                 end
 
             %% (* Einlesen der Winkel und Positionen *)
@@ -882,8 +889,10 @@ assignin('base','Scans1',Scans)
             
             % + Anode (#@HV_ANODE)
             if strcmp(Diffractometer.Name,'ETA3000')
-                Index_tmp = Tools.StringOperations.SearchString(Scan(Index_ScanHeaderStart:Index_ScanHeaderEnd,:),'#@HV_ANODE');
-                obj(j_c).Anode = sscanf(Scan(Index_tmp(1),:),'#@HV_ANODE %s');
+                Index_tmp = Tools.StringOperations.SearchString(Scan(Index_ScanHeaderStart:Index_ScanHeaderEnd,:),'#HV_ANODE');
+                obj(j_c).Anode = sscanf(Scan(Index_tmp(1),:),'#HV_ANODE %s');
+                Index_tmp = Tools.StringOperations.SearchString(Scan(Index_ScanHeaderStart:Index_ScanHeaderEnd,:),'#@MYTHEN2_MEASMODE');
+                obj(j_c).MythenScanMode = sscanf(Scan(Index_tmp(1),:),'#@MYTHEN2_MEASMODE %d');
             end  
             
         %% (* Einlesen der Scan-Veränderlichen *)
@@ -1363,7 +1372,7 @@ end
                 if ~all(etaneu==90) && ~all(etaneu==0)
                     obj(i_c).twotheta = str2double(twothetauser{1});
                 else
-                    obj(i_c).twotheta = abs(obj(i_c).Motors_all.(Diffractometer.VirtualMotors.tth));
+                    obj(i_c).twotheta = obj(i_c).Motors_all.(Diffractometer.VirtualMotors.tth);
                 end
     %             if strcmp(Diffractometer.Name,'EDDI_5axis_tth')
     %                 if isempty(Index_tmpPhi) % Check if psi and phi values are written separately to file

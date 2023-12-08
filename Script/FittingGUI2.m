@@ -13,6 +13,7 @@ R.PeakRegions = PeakRegions;
 % Read peak data from 'Peaks' variable in workspace or from ULD file.
 R.Index_Peaks = Peaks;
 % assignin('base','Peaks',Peaks)
+% assignin('base','PeakRegions',PeakRegions)
 if strcmp(Diffractometer,'ETA3000')
     % Wellenlängen bestimmen
     Anode = Measurement(1).Anode;
@@ -38,12 +39,15 @@ if strcmp(Diffractometer,'ETA3000')
     end
     % Berechne zweitheta für ka2-Komponente
     for m = 1:size(Peaks,2)
-        for k = 1:size(Peaks,1)
+        for k = 1:size(Peaks{m},2)
             R.Index_Peakska2{m}(:,k) = 2.*asind(lambdaka2./(2.*lambdaka1./sind(Peaks{m}(k)/2)./2));
         end
     end
 end
-% assignin('base','RIndex_Peaks',R.Index_Peaks)
+% assignin('base','PeakRegionsFitGUI',PeakRegions)
+% assignin('base','PeaksFitGUI',Peaks)
+% assignin('base','DataTmpFitGUI',DataTmp)
+% assignin('base','PeakRegions',PeakRegions)
 % assignin('base','RIndex_Peakska2',R.Index_Peakska2)
 % Options for fitting of multiple peaks. Parameter describe the
 % energy range of the peak maximum
@@ -70,7 +74,7 @@ for c = 1:length(Measurement)
     Index_Peaks = Tools.Data.DataSetOperations.FindNearestIndex(X,R.Index_Peaks{c});
     if strcmp(Diffractometer,'ETA3000')
         Index_Peakska2 = Tools.Data.DataSetOperations.FindNearestIndex(X,R.Index_Peakska2{c});
-        Index_Peaks = [Index_Peaks,Index_Peakska2];
+        Index_Peaks = sort([Index_Peaks,Index_Peakska2]);
     end
     
     
@@ -145,6 +149,7 @@ for c = 1:length(Measurement)
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Lorentz_DoublePeak(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
                 end
+                cnt = cnt+1;
             else
                 if FitFunc == 2 %(PV-Func)
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
@@ -167,8 +172,9 @@ for c = 1:length(Measurement)
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Lorentz_DoublePeak(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
                 end
+                cnt = cnt+2;
             end
-            cnt = cnt+2;
+            
         elseif length(Index_PeaksInRegion) == 3
         % For fitting with fixed peak position boundarys. lb and ub can be
         % changed according to the needs of the user.

@@ -42,6 +42,8 @@ classdef Measurement < General.MLRObject & General.ISaveLoad
         Anode = 0;
         % Counting Time ETA
         CountingTime = 0;
+        % Scan mode MYTHEN Detector ETA
+        MythenScanMode = 0;
         
     %% (* Motoren bzw. Positionen *)
         %Relevante Motor-Positionen, in einer Struktur gespeichert, 

@@ -1,5 +1,5 @@
 function [h] = buttonExportFitData(h, PlotWindow, XDataStr, YDataStr)
-
+assignin('base','hexportfit',h)
 dataforplotting = join(['dataforplotting',PlotWindow]);
 maxValLatticeSpacing = join(['maxValLatticeSpacing',PlotWindow]);
 minValLatticeSpacing = join(['minValLatticeSpacing',PlotWindow]);
