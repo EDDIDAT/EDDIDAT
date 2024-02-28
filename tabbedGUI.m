@@ -1930,7 +1930,7 @@ h.buttonloadDEK1 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.01 0.96 0.1 0.035], ...
 'String', 'Enter/Load DEC', ...
-'Tag', 'buttonmodifystressdata1', ...
+'Tag', 'buttonloadDEK1', ...
 'Callback', {@buttonloadDEK} ...
 );
 % Button to load data from previous data fitting
@@ -2030,7 +2030,7 @@ h.buttonSaveModPsiFile = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.42 0.96 0.11 0.035], ...
 'String', 'Save modified Psi file', ...
-'Tag', 'buttonmodifystressdata1', ...
+'Tag', 'buttonSaveModPsiFile', ...
 'Callback', {@buttonSaveModPsiFile} ...
 );
 % Button to load evaluation data
@@ -2055,16 +2055,16 @@ h.buttonexportplots2 = uicontrol( ...
 'Callback', {@buttonaveraging} ...
 );
 
-% % Button to switch plot mode for d-sin²psi plots
-% h.buttonswitchstressdata = uicontrol( ...
-% 'Parent', h.fitresultspanel, ...
-% 'Style', 'Pushbutton', ...
-% 'Units', 'Normalized', ...
-% 'Position', [0.887 0.34 0.09 0.03], ...
-% 'String', 'Switch plot mode', ...
-% 'Tag', 'buttonswitchstressdata', ...
-% 'Callback', {@buttonswitchstressdata} ...
-% );  
+% Button to switch plot mode for d-sin²psi plots
+h.buttonswitchstressdata = uicontrol( ...
+'Parent', h.fitresultspanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.887 0.34 0.09 0.03], ...
+'String', 'Switch plot mode', ...
+'Tag', 'buttonswitchstressdata', ...
+'Callback', {@buttonswitchstressdata} ...
+);  
 
 % Create slider
 h.SliderStressData = uicontrol(...
@@ -2103,6 +2103,11 @@ h.plotdatadspacingphi180 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle','non
 h.plotreglinedspacingphi180 = line(h.axesplotdspacing, x,y,'LineWidth',2);
 h.plotdatadspacingphi270 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle','none','Color','k','Marker','p','MarkerSize',14,'Clipping','off');
 h.plotreglinedspacingphi270 = line(h.axesplotdspacing, x,y,'LineWidth',2);
+% Create plot for switched plot mode (for shear stresses)
+h.plotdatadspacingphi0phi180 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',14,'Clipping','off');
+h.plotreglinedspacingphi0phi180 = line(h.axesplotdspacing, x,y,'LineWidth',2);
+h.plotdatadspacingphi90phi270 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',14,'Clipping','off');
+h.plotreglinedspacingphi90phi270 = line(h.axesplotdspacing, x,y,'LineWidth',2);
 % Set plot properties
 set(h.plotdatadspacingphi0, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {h.Colors{valueslider},'k','off'});
 set(h.plotreglinedspacingphi0, {'Color','Visible'}, {'k','off'});
@@ -2112,6 +2117,11 @@ set(h.plotdatadspacingphi180, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {
 set(h.plotreglinedspacingphi180, {'Color','Visible'}, {'k','off'});
 set(h.plotdatadspacingphi270, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {h.Colors{valueslider},'k','off'});
 set(h.plotreglinedspacingphi270, {'Color','Visible'}, {'k','off'});
+% Set plot properties
+set(h.plotdatadspacingphi0phi180, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {h.Colors{valueslider},'k','off'});
+set(h.plotreglinedspacingphi0phi180, {'Color','Visible'}, {'k','off'});
+set(h.plotdatadspacingphi90phi270, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {h.Colors{valueslider},'k','off'});
+set(h.plotreglinedspacingphi90phi270, {'Color','Visible'}, {'k','off'});
 
 box(h.axesplotdspacing,'on')
 grid(h.axesplotdspacing,'on')
@@ -8485,7 +8495,12 @@ else
         h.EnergyRange = bkg.EnergyRange;% - (EnergyRange(1)-1);
 %         h.P.EnergyRange = [0,0];
         h.P.EnergyRange = [ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(1),1)) ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(2),1))];
-        h.FitPeaksLogicalErange = h.TPeaks.T.Etheo > h.P.EnergyRange(1) & h.TPeaks.T.Etheo < h.P.EnergyRange(2);
+        assignin('base','TPeaks',h.TPeaks)
+        if strcmp(h.Diffsel,'ETA3000')
+            h.FitPeaksLogicalErange = h.TPeaks.T.Etheoka1 > h.P.EnergyRange(1) & h.TPeaks.T.Etheoka1 < h.P.EnergyRange(2);
+        else
+            h.FitPeaksLogicalErange = h.TPeaks.T.Etheo > h.P.EnergyRange(1) & h.TPeaks.T.Etheo < h.P.EnergyRange(2);
+        end
         set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRange(1)))) 
         set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRange(2)))) 
         h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdata{valueSlider,:}],[h.PeakRegionsYdata{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
@@ -9976,9 +9991,17 @@ if strcmp(h.Diffsel,'LEDDI')
 elseif strcmp(h.Diffsel,'ETA3000')
     % Set peak data
     for l = 1:size(h.DataTmp,2)
-        h.Peaks{l} = HT.x';
-        h.Peakslb{l} = 0.15.*ones(1,size(HT.x,1));
-        h.Peaksub{l} = 0.15.*ones(1,size(HT.x,1));
+        PeakInd = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{valueSlider}(:,1),HT.x');
+        % 
+        for k = 1:size(PeakInd,2)
+            [Imax,indb] = max(h.DataTmp{valueSlider}((PeakInd(k)-50):(PeakInd(k)+50),2));
+            DataTmp = h.DataTmp{valueSlider}((PeakInd(k)-50):(PeakInd(k)+50));
+            XPeakInd(k) = DataTmp(indb);
+        end
+        h.Peaks{l} = XPeakInd;
+%         h.Peaks{l} = HT.x';
+        h.Peakslb{l} = 1.*ones(1,size(HT.x,1));
+        h.Peaksub{l} = 1.*ones(1,size(HT.x,1));
     end
 else
     % Set peak data
@@ -9988,7 +10011,7 @@ else
         h.Peaksub{l} = 0.3.*ones(1,size(HT.x,1));
     end
 end
-
+assignin('base','hPeaks',h.Peaks)
 % Set explanatory text visible off
 set(h.textbkg,'Visible','off')
 
@@ -12139,7 +12162,7 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
 %     assignin('base','hhkltablepsifile',h.hkltablepsifile)
 %     assignin('base','hKeepPeaksDEKLogical',h.KeepPeaksDEKLogical)
 %     assignin('base','PeaksTmp',PeaksTmp)
-    if size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1) ~= size(h.KeepPeaksDEKLogical(h.KeepPeaksDEKLogical==1),1)
+    if isfield(h,'idxSelectPeaktable') && size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1) ~= size(h.KeepPeaksDEKLogical(h.KeepPeaksDEKLogical==1),1)
         PeaksTmpNew = [h.hkltablepsifile(h.idxSelectPeaktable,:) DEKdatatmp(1:size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1),4:5)];
         PeaksTmpKeepPeaks = PeaksTmp(h.KeepPeaksDEKLogical(:,1),:);
         idx = ismember(PeaksTmpKeepPeaks, PeaksTmpNew(:,1:3), 'rows');
@@ -13224,7 +13247,7 @@ elseif length(ia{1}) ~= 1
         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
     end
 end
-% h.sin2psi.dzero(1) = 0.14475;
+% h.sin2psi.dzero = [0.262972618199912	0.237103587545019	0.154480224802823	0.142500376481118	0.131793508588701];
 % Calculate sigma11 and sigma22
 for k = 1:size(h.sin2psi.dphi0p180sinquadratpsi,2)
     h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
@@ -14537,7 +14560,7 @@ elseif length(ia{1}) == 1
             h.Params.LatticeSpacing_DeltaInterpol{k} = h.Params.LatticeSpacing_Delta{k};
     end
 end
-
+% assignin('base','PsiforInterpol',h.PsiforInterpol)
 % Find indices of phi angles.
 h.idxphi0 = find(PhiWinkel{1}==0);
 h.idxphi90 = find(PhiWinkel{1}==90);
@@ -15791,13 +15814,13 @@ elseif valueSliderStress == 4
         end
 end
 
-% assignin('base','sin2psimod',h.sin2psi)
+assignin('base','sin2psimod',h.sin2psi)
 % assignin('base','Measurement',h.Measurement)
 % assignin('base','Sample',h.Sample)
 % assignin('base','sin2psimod',h.sin2psi)
 % assignin('base','sinpsisquare',h.sinpsisquare)
 % assignin('base','StressesMW',h.StressesMW)
-% assignin('base','ParamsToFitMod',h.ParamsToFit)
+assignin('base','ParamsToFitMod',h.ParamsToFit)
 guidata(hObj, h);
 
 %% Export sin²psi plots button
@@ -15810,6 +15833,47 @@ col = get(hObj,'backg');  % Get the background color of the figure.
 set(hObj,'str','Exporting','backg',[1 .6 .6]) % Change color of button. 
 % The pause (or drawnow) is necessary to make button changes appear.
 pause(.01)
+
+% Check if hkl were excluded from analysis
+if isfield(h,'idxhklPeaktable')
+    sin2psi_tmp = h.sin2psi;
+    Params_tmp = h.Params;
+    ParamsToFit_tmp = h.ParamsToFit;
+    fieldnames1 = fieldnames(sin2psi_tmp);
+    fieldnames2 = fieldnames(ParamsToFit_tmp);
+    fieldnames3 = fieldnames(Params_tmp);
+    
+    for i = 1:size(fieldnames1,1)
+        if isa(sin2psi_tmp.(fieldnames1{i}),'cell')
+            sin2psi_tmp.(fieldnames1{i})(~h.idxhklPeaktable) = [];
+        elseif isa(sin2psi_tmp.(fieldnames1{i}),'double')
+            if strcmp(fieldnames1{i},'StressPlotDatatmpsorted') || strcmp(fieldnames1{i},'sigmataulist') || strcmp(fieldnames1{i},'tautmp') || strcmp(fieldnames1{i},'taupsizero') 
+                sin2psi_tmp.(fieldnames1{i})(~h.idxhklPeaktable,:) = [];
+            elseif strcmp(fieldnames1{i},'taumean') || strcmp(fieldnames1{i},'taupsizeromean') || strcmp(fieldnames1{i},'dzero') || strcmp(fieldnames1{i},'reglinephi0') || strcmp(fieldnames1{i},'reglinephi90') || strcmp(fieldnames1{i},'reglinephi180') || strcmp(fieldnames1{i},'reglinephi270')
+                sin2psi_tmp.(fieldnames1{i})(:,~h.idxhklPeaktable) = [];
+            end
+        end
+    end
+    
+    for j = 1:size(ParamsToFit_tmp,2)
+        for i = 1:size(fieldnames2,1)
+            ParamsToFit_tmp(j).(fieldnames2{i})(~h.idxhklPeaktable) = [];
+        end
+    end
+    
+    for i = 1:size(fieldnames3,1)
+        if isa(Params_tmp.(fieldnames3{i}),'cell')
+            Params_tmp.(fieldnames3{i})(~h.idxhklPeaktable) = [];
+        elseif isa(Params_tmp.(fieldnames3{i}),'double')
+            Params_tmp.(fieldnames3{i})(~h.idxhklPeaktable,:) = [];
+        end
+    end
+else
+    sin2psi_tmp = h.sin2psi;
+    Params_tmp = h.Params;
+    ParamsToFit_tmp = h.ParamsToFit;
+end
+assignin('base','sin2psi_tmp',sin2psi_tmp)
 
 % Create hkl label
 Peaks = h.PeaksforLabel;
@@ -15824,6 +15888,7 @@ if any(hkl_l_length > 1)
 else
     hkllabel = char(zeros(size(Peaks,1),5));
 end
+
 % Remove '[' and ']' from character array
 for ii = 1:size(Peaks,1)
 	hkllabeltmp = mat2str(Peaks(ii,(1:3)));
@@ -15837,13 +15902,18 @@ for ii = 1:size(Peaks,1)
     end
     hkllabel(ii,:) = hkllabeltmp;
 end
+
 label = hkllabel;
 
+if isfield(h,'idxhklPeaktable')
+    label(~h.idxhklPeaktable,:) = [];
+end
+
 % Get phi angles
-PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
-ia = cell(1,size(h.Params.Phi_Winkel,2));
-for k = 1:size(h.Params.Phi_Winkel,2)
-	[PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+PhiWinkel = cell(1,size(Params_tmp.Phi_Winkel,2));
+ia = cell(1,size(Params_tmp.Phi_Winkel,2));
+for k = 1:size(Params_tmp.Phi_Winkel,2)
+	[PhiWinkel{k},ia{k},~] = unique(sort(Params_tmp.Phi_Winkel{k}));
 end
 
 % If number of phi angles has been changed after already plotting stress
@@ -15859,44 +15929,44 @@ if isfield(h,'plotData') && size(h.plotData.Psi_Winkel,2) > length(ia{1})
 end
 
 for j = 1:length(ia{1})
-    h.plotData.Psi_Winkel{j} = h.ParamsToFit(j).Psi_Winkel;
-    h.plotData.dataEmax{j} = h.ParamsToFit(j).Energy_Max;
-    h.plotData.dataIB{j} = h.ParamsToFit(j).IntegralWidth;
-    h.plotData.dataIntensity_Int{j} = h.ParamsToFit(j).Intensity_Int;
-    h.plotData.dataLatticeSpacing{j} = h.ParamsToFit(j).LatticeSpacing;
-    h.plotData.dataLatticeSpacing_Delta{j} = h.ParamsToFit(j).LatticeSpacing_Delta;
+    h.plotData.Psi_Winkel{j} = ParamsToFit_tmp(j).Psi_Winkel;
+    h.plotData.dataEmax{j} = ParamsToFit_tmp(j).Energy_Max;
+    h.plotData.dataIB{j} = ParamsToFit_tmp(j).IntegralWidth;
+    h.plotData.dataIntensity_Int{j} = ParamsToFit_tmp(j).Intensity_Int;
+    h.plotData.dataLatticeSpacing{j} = ParamsToFit_tmp(j).LatticeSpacing;
+    h.plotData.dataLatticeSpacing_Delta{j} = ParamsToFit_tmp(j).LatticeSpacing_Delta;
 end
 
 if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
 elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi90;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi90;
 elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi180;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi180;
 elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi270;    
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi270;    
 elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi90;
 elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi180;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi180;
 elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
-    h.plotData.dataRegLine{3} = h.sin2psi.reglinephi180;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi90;
+    h.plotData.dataRegLine{3} = sin2psi_tmp.reglinephi180;
 elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi90;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi270;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi90;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi270;
 elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
-    h.plotData.dataRegLine{3} = h.sin2psi.reglinephi270;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi90;
+    h.plotData.dataRegLine{3} = sin2psi_tmp.reglinephi270;
 elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
-    h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
-    h.plotData.dataRegLine{3} = h.sin2psi.reglinephi180;
-    h.plotData.dataRegLine{4} = h.sin2psi.reglinephi270;
+    h.plotData.dataRegLine{1} = sin2psi_tmp.reglinephi0;
+    h.plotData.dataRegLine{2} = sin2psi_tmp.reglinephi90;
+    h.plotData.dataRegLine{3} = sin2psi_tmp.reglinephi180;
+    h.plotData.dataRegLine{4} = sin2psi_tmp.reglinephi270;
 end
 % assignin('base','hplotData',h.plotData)
 % Get min and max value of cell array of data for each phi angle
@@ -16019,7 +16089,8 @@ for k = 1:size(DatahklPsi,2)
     DatahkldataLatticeSpacing_Deltatmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataLatticeSpacing_Delta{k},'uni', 0);
     DatahkldataRegLinetmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataRegLine{k},'uni', 0);
 end
-
+% assignin('base','Datahkltmp',Datahkltmp)
+% assignin('base','plotData',h.plotData)
 % Add phi angles to file names
 phiangles = (PhiWinkel{1}(:));
 phianglesstr_tmp = arrayfun(@num2str, phiangles, 'UniformOutput', 0);
@@ -16174,7 +16245,7 @@ if size(DatahklPsitmp{1},2) == 1
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16194,8 +16265,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16217,9 +16288,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16243,10 +16314,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin2psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16379,7 +16450,7 @@ if size(DatahklPsitmp{1},2) == 1
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16399,8 +16470,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16422,9 +16493,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16448,10 +16519,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin2psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16484,25 +16555,25 @@ for k = 1:size(h.plotData.dataIntensity_Int{1,1},2)
     ax.TickDir = 'out';
     
     
-    if numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 7
+    if numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 7
         ax.YAxis.Exponent = 4;
         ax.YAxis.TickLabelFormat = '    %4.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 6
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 6
         ax.YAxis.Exponent = 3;
         ax.YAxis.TickLabelFormat = '    %4.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 5
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 5
         ax.YAxis.Exponent = 2;
         ax.YAxis.TickLabelFormat = '    %4.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 4
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 4
         ax.YAxis.Exponent = 1;
         ax.YAxis.TickLabelFormat = '    %4.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 3
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 3
         ax.YAxis.Exponent = 0;
         ax.YAxis.TickLabelFormat = '     %3.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 2
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 2
         ax.YAxis.Exponent = 0;
         ax.YAxis.TickLabelFormat = '      %2.f';
-    elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 1
+    elseif numel(num2str(ceil(max(Params_tmp.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 1
         ax.YAxis.Exponent = 0;
         ax.YAxis.TickLabelFormat = '       %1.f';
     end
@@ -16577,7 +16648,7 @@ if size(DatahklPsitmp{1},2) == 1
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16597,8 +16668,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16620,9 +16691,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16646,10 +16717,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin2psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16693,8 +16764,8 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 	dmin = zeros(1,length(ia{1}));
     dmax = zeros(1,length(ia{1}));					   
     for m = 1:length(ia{1})
-        dmin(:,m) = min(h.ParamsToFit(m).LatticeSpacing{k} - h.ParamsToFit(m).LatticeSpacing_Delta{k});
-        dmax(:,m) = max(h.ParamsToFit(m).LatticeSpacing{k} + h.ParamsToFit(m).LatticeSpacing_Delta{k});
+        dmin(:,m) = min(ParamsToFit_tmp(m).LatticeSpacing{k} - ParamsToFit_tmp(m).LatticeSpacing_Delta{k});
+        dmax(:,m) = max(ParamsToFit_tmp(m).LatticeSpacing{k} + ParamsToFit_tmp(m).LatticeSpacing_Delta{k});
     end
     % Calculate limits
     % Round dmin and dmax values
@@ -16740,6 +16811,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
     end
 
+%     ax.YTick = 10*YLimLow:0.005:10*YLimHigh;
     ax.YLim = [10*YLimLow, 10*YLimHigh]; 
     ax.YLabel.String = ['d [',char(197),']'];
     ax.YLabel.FontSize = 24;
@@ -16876,8 +16948,8 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
-% Reset the button color
-set(hObj,'str',['Export ',['sin',char(178)],char(968),' ','plots'],'backg',col)  % Now reset the button features.
+% % Reset the button color
+% set(hObj,'str',['Export ',['sin',char(178)],char(968),' ','plots'],'backg',col)  % Now reset the button features.
 
 % Export data d-spacing to txt file
 if size(DatahklPsitmp{1},2) == 1
@@ -16886,7 +16958,7 @@ if size(DatahklPsitmp{1},2) == 1
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16903,7 +16975,7 @@ if size(DatahklPsitmp{1},2) == 1
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_LR_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -16924,8 +16996,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16945,8 +17017,8 @@ elseif size(DatahklPsitmp{1},2) == 2
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -16969,9 +17041,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -16994,9 +17066,9 @@ elseif size(DatahklPsitmp{1},2) == 3
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -17021,10 +17093,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -17050,10 +17122,10 @@ elseif size(DatahklPsitmp{1},2) == 4
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin2psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -17075,6 +17147,1849 @@ elseif size(DatahklPsitmp{1},2) == 4
 
     end
 end
+
+%% d_avg_phi_vs_sin2psi
+for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
+    figure
+    fig = gcf;
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 18 12];
+    ax = gca;
+    ax.OuterPosition = [0 0 1.085 1.025];
+    ax.TickDir = 'out';
+    ax.YAxis.TickLabelFormat = '%.4f';
+    ax.Box = 'on';
+    ax.XGrid = 'on';
+    ax.YGrid = 'on';
+    ax.GridLineStyle = '-';
+    ax.GridColor = 'k';
+    ax.GridAlpha = 0.3;
+    ax.XLim = [0 1];
+    % Set axes limits for lattice spacings
+    % Find min/max value
+	dmin = zeros(1,length(ia{1}));
+    dmax = zeros(1,length(ia{1}));					   
+    for m = 1:length(ia{1})
+        dmin(:,m) = min(ParamsToFit_tmp(m).LatticeSpacing{k} - ParamsToFit_tmp(m).LatticeSpacing_Delta{k});
+        dmax(:,m) = max(ParamsToFit_tmp(m).LatticeSpacing{k} + ParamsToFit_tmp(m).LatticeSpacing_Delta{k});
+    end
+    % Calculate limits
+    % Round dmin and dmax values
+    dmintmp = round(min(dmin),4);
+    dmaxtmp = round(max(dmax),4);
+    % Create Y limits
+    YLimLow = dmintmp - 0.0001;
+    YLimHigh = dmaxtmp + 0.0001;
+    % Calculate difference
+    Ylimdiff = YLimHigh - YLimLow;
+    % Calculate Ytick marks
+    if Ylimdiff >= 8e-4
+        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+                YLimHigh = YLimHigh + 0.0001;
+                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+                    YLimHigh = YLimHigh + 0.0001;
+                end
+                ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+                YLimLow = YLimLow - 0.0001;
+                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+                    YLimLow = YLimLow - 0.0001;
+                end
+                ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+            end
+        else
+            ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+        end
+    elseif Ylimdiff < 8e-4 && Ylimdiff > 4e-4
+        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+                YLimHigh = YLimHigh + 0.0001;
+                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+                YLimLow = YLimLow - 0.0001;
+                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+            end
+        else
+            ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+        end
+    elseif Ylimdiff <= 4e-4
+        ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
+    end
+
+    ax.YLim = [10*YLimLow, 10*YLimHigh]; 
+    ax.YLabel.String = ['d [',char(197),']'];
+    ax.YLabel.FontSize = 24;
+    ax.XLabel.String = ['sin',char(178),'\psi'];
+    ax.XLabel.FontSize = 24;
+    ax.LabelFontSizeMultiplier = 1.3;
+    ax.LineWidth = 1.3;
+    set(gca,'FontSize',18)
+    hold on
+    set(fig, 'Visible', 'off');
+%     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
+    
+    % FaceColor of markers, order changes when measured under four azimuths
+    if length(ia{1}) == 4
+        FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+    else
+        FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+    end
+
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11 + sigma13
+        dphi0phi180 = (sin2psi_tmp.dphi0{k}+sin2psi_tmp.dphi180{k})./2;
+        dreglinephi0phi180 = (sin2psi_tmp.reglinephi0(:,k) + sin2psi_tmp.reglinephi180(:,k))./2;
+        xdataphi0phi180 = (sin2psi_tmp.dphi0p180sinquadratpsi{k}(:,1));
+        Deltaphi0phi180 = (sin2psi_tmp.dphi0delta{k} + sin2psi_tmp.dphi180delta{k})./2;
+
+        dplotphi0phi180 = errorbar(ax,xdataphi0phi180,10*dphi0phi180,10*Deltaphi0phi180,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+        reglineplotphi0phi180 = line(ax,linspace(0,1,51),10.*dreglinephi0phi180,'Color',h.Colors{k},'LineWidth',2);
+        
+        LegDatadspacing = dplotphi0phi180;
+        LegLabelData = {['\phi = 0/180',char(176)]};
+
+        % Export data to file
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
+
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(xdataphi0phi180,1)
+                    str = sprintf('%.4f  %.6f  %.6f\n',...
+                    xdataphi0phi180(m),...
+                    dphi0phi180(m).*10,...
+                    Deltaphi0phi180(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+        
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
+        
+        PsiPlottmp = linspace(0,1,51);
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(PsiPlottmp,2)
+                    str = sprintf('%.4f  %.6f\n',...
+                    PsiPlottmp(m),...
+                    dreglinephi0phi180(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22 + sigma23
+        dphi90phi270 = (sin2psi_tmp.dphi90{k}+sin2psi_tmp.dphi270{k})./2;
+        dreglinephi90phi270 = (sin2psi_tmp.reglinephi90(:,k) + sin2psi_tmp.reglinephi270(:,k))./2;
+        xdataphi90phi270 = (sin2psi_tmp.dphi90p270sinquadratpsi{k}(:,1));
+        Deltaphi90phi270 = (sin2psi_tmp.dphi90delta{k} + sin2psi_tmp.dphi270delta{k})./2;
+        
+        dplotphi90phi270 = errorbar(ax,xdataphi90phi270,10*dphi90phi270,10*Deltaphi90phi270,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+        reglineplotphi90phi270 = line(ax,linspace(0,1,51),10.*dreglinephi90phi270,'Color',h.Colors{k},'LineWidth',2);
+        
+        LegDatadspacing = dplotphi90phi270;
+        LegLabelData = {['\phi = 90/270',char(176)]};
+
+        % Export data to file
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(xdataphi90phi270,1)
+                    str = sprintf('%.4f  %.6f  %.6f\n',...
+                    xdataphi90phi270(m),...
+                    dphi90phi270(m).*10,...
+                    Deltaphi90phi270(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+        
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+        
+        PsiPlottmp = linspace(0,1,51);
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(PsiPlottmp,2)
+                    str = sprintf('%.4f  %.6f\n',...
+                    PsiPlottmp(m),...
+                    dreglinephi90phi270(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11 + sigma13
+        dphi0phi180 = (sin2psi_tmp.dphi0{k}+sin2psi_tmp.dphi180{k})./2;
+        dreglinephi0phi180 = (sin2psi_tmp.reglinephi0(:,k) + sin2psi_tmp.reglinephi180(:,k))./2;
+        xdataphi0phi180 = (sin2psi_tmp.dphi0p180sinquadratpsi{k}(:,1));
+        Deltaphi0phi180 = (sin2psi_tmp.dphi0delta{k} + sin2psi_tmp.dphi180delta{k})./2;
+        
+        % sigma22 + sigma23
+        dphi90phi270 = (sin2psi_tmp.dphi90{k}+sin2psi_tmp.dphi270{k})./2;
+        dreglinephi90phi270 = (sin2psi_tmp.reglinephi90(:,k) + sin2psi_tmp.reglinephi270(:,k))./2;
+        xdataphi90phi270 = (sin2psi_tmp.dphi90p270sinquadratpsi{k}(:,1));
+        Deltaphi90phi270 = (sin2psi_tmp.dphi90delta{k} + sin2psi_tmp.dphi270delta{k})./2;
+
+        dplotphi0phi180 = errorbar(ax,xdataphi0phi180,10*dphi0phi180,10*Deltaphi0phi180,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+        reglineplotphi0phi180 = line(ax,linspace(0,1,51),10.*dreglinephi0phi180,'Color',h.Colors{k},'LineWidth',2);
+
+        dplotphi90phi270 = errorbar(ax,xdataphi90phi270,10*dphi90phi270,10*Deltaphi90phi270,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+        reglineplotphi90phi270 = line(ax,linspace(0,1,51),10.*dreglinephi90phi270,'Color',h.Colors{k},'LineWidth',2);
+        
+        LegDatadspacing = [dplotphi0phi180 dplotphi90phi270];
+        LegLabelData = {['\phi = 0/180',char(176)],['\phi = 90/270',char(176)]};
+
+        % Export data to file
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(xdataphi0phi180,1)
+                    str = sprintf('%.4f  %.6f  %.6f  %.6f  %.6f\n',...
+                    xdataphi0phi180(m),...
+                    dphi0phi180(m).*10,...
+                    Deltaphi0phi180(m).*10,...
+                    dphi90phi270(m).*10,...
+                    Deltaphi90phi270(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+        
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+
+        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+        
+        PsiPlottmp = linspace(0,1,51);
+            % In case measurements where performed under four different phi angles
+            for m = 1:size(PsiPlottmp,2)
+                    str = sprintf('%.4f  %.6f\n  %.6f\n',...
+                    PsiPlottmp(m),...
+                    dreglinephi0phi180(m).*10,...
+                    dreglinephi90phi270(m).*10);
+                    str = regexprep(str, 'NaN', '  --  ');
+                    fprintf(fid, '%s', str);
+            end
+
+        fclose(fid);
+
+    end
+    
+    % Create legend
+    l = legend(ax,LegDatadspacing,LegLabelData);
+    % Find best legend position
+    legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+    % Loop through legend positions in order to get coordinates of all
+    % possible corner positions
+    for m = 1:4
+        l.Location = legposcell{m};
+        LegendPos(:,m) = l.Position;
+    end
+	
+	dataLatticeSpacing = cell(1,size(h.plotData.Psi_Winkel,2));
+    for m = 1:size(h.plotData.Psi_Winkel,2)
+        psiData{m} = h.plotData.Psi_Winkel{m}{k};
+        dataLatticeSpacing{m} = h.plotData.dataLatticeSpacing{m}{k};
+    end
+
+    % Check if data intersects with legend box
+    LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,10.*cell2mat(dataLatticeSpacing(:)),LegendPos);
+    % Find index of zeros
+    LegPosOptInd = find(LegPosOpt==0);
+    % Set legend location and properties
+    if isempty(LegPosOptInd)
+        l.Location = legposcell{1};
+    else
+        l.Location = legposcell{LegPosOptInd(1)};
+    end
+    l.FontSize = 10;
+    l.LineWidth = 0.5;
+    
+    title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+    set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+    print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+end
+
+
+
+% Create hkl label
+% Peaks = h.PeaksforLabel;
+% 
+% % Test if l from hkl is larger than 9
+% for i = 1:size(Peaks,1)
+%     hkl_l_length(i) = length(num2str(Peaks(i,3)));
+% end
+% 
+% if any(hkl_l_length > 1)
+%     hkllabel = char(zeros(size(Peaks,1),6));
+% else
+%     hkllabel = char(zeros(size(Peaks,1),5));
+% end
+% 
+% % Remove '[' and ']' from character array
+% for ii = 1:size(Peaks,1)
+% 	hkllabeltmp = mat2str(Peaks(ii,(1:3)));
+%     hkllabeltmp = regexprep(hkllabeltmp,'[','');
+%     hkllabeltmp = regexprep(hkllabeltmp,']','');
+%     % If l from hkl is two characters long
+%     if any(hkl_l_length > 1)
+%         if length(hkllabeltmp) == 5
+%             hkllabeltmp = [hkllabeltmp ' '];
+%         end
+%     end
+%     hkllabel(ii,:) = hkllabeltmp;
+% end
+% 
+% label = hkllabel;
+% 
+% % Get phi angles
+% PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
+% ia = cell(1,size(h.Params.Phi_Winkel,2));
+% for k = 1:size(h.Params.Phi_Winkel,2)
+% 	[PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+% end
+% 
+% % If number of phi angles has been changed after already plotting stress
+% % data, set back "h.plotdata" to only one entry, otherwise export of
+% % sin2psi plots fails
+% if isfield(h,'plotData') && size(h.plotData.Psi_Winkel,2) > length(ia{1})
+%     h.plotData.Psi_Winkel(2:end) = [];
+%     h.plotData.dataEmax(2:end) = [];
+%     h.plotData.dataIB(2:end) = [];
+%     h.plotData.dataIntensity_Int(2:end) = [];
+%     h.plotData.dataLatticeSpacing(2:end) = [];
+%     h.plotData.dataLatticeSpacing_Delta(2:end) = [];   
+% end
+% 
+% for j = 1:length(ia{1})
+%     h.plotData.Psi_Winkel{j} = h.ParamsToFit(j).Psi_Winkel;
+%     h.plotData.dataEmax{j} = h.ParamsToFit(j).Energy_Max;
+%     h.plotData.dataIB{j} = h.ParamsToFit(j).IntegralWidth;
+%     h.plotData.dataIntensity_Int{j} = h.ParamsToFit(j).Intensity_Int;
+%     h.plotData.dataLatticeSpacing{j} = h.ParamsToFit(j).LatticeSpacing;
+%     h.plotData.dataLatticeSpacing_Delta{j} = h.ParamsToFit(j).LatticeSpacing_Delta;
+% end
+% 
+% if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+% elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi90;
+% elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi180;
+% elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi270;    
+% elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
+% elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi180;
+% elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
+%     h.plotData.dataRegLine{3} = h.sin2psi.reglinephi180;
+% elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi90;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi270;
+% elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
+%     h.plotData.dataRegLine{3} = h.sin2psi.reglinephi270;
+% elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%     h.plotData.dataRegLine{1} = h.sin2psi.reglinephi0;
+%     h.plotData.dataRegLine{2} = h.sin2psi.reglinephi90;
+%     h.plotData.dataRegLine{3} = h.sin2psi.reglinephi180;
+%     h.plotData.dataRegLine{4} = h.sin2psi.reglinephi270;
+% end
+% % assignin('base','hplotData',h.plotData)
+% % Get min and max value of cell array of data for each phi angle
+% YlimdataEmaxtmp = h.plotData.dataEmax;
+% YlimdataEmaxtmp = [YlimdataEmaxtmp{:}];
+% YlimdataEmaxtmp = reshape(YlimdataEmaxtmp,size(YlimdataEmaxtmp,2)/length(ia{1}),length(ia{1}));
+% minYlimdataEmaxtmp = cellfun(@min, YlimdataEmaxtmp);
+% maxYlimdataEmaxtmp = cellfun(@max, YlimdataEmaxtmp);
+% % Preallocate
+% maxYlimdataEmax = zeros(1,size(h.plotData.dataEmax{1},2));
+% minYlimdataEmax = zeros(1,size(h.plotData.dataEmax{1},2));
+% for k = 1:size(h.plotData.dataEmax{1},2)
+%     maxYlimdataEmax(:,k) = max(maxYlimdataEmaxtmp(k,:));
+%     minYlimdataEmax(:,k) = min(minYlimdataEmaxtmp(k,:));
+% end
+% 
+% 													
+% YlimdataIBtmp = h.plotData.dataIB;
+% YlimdataIBtmp = [YlimdataIBtmp{:}];
+% YlimdataIBtmp = reshape(YlimdataIBtmp,size(YlimdataIBtmp,2)/length(ia{1}),length(ia{1}));
+% minYlimdataIBtmp = cellfun(@min, YlimdataIBtmp);
+% maxYlimdataIBtmp = cellfun(@max, YlimdataIBtmp);
+% % Preallocate
+% maxYlimdataIB = zeros(1,size(h.plotData.dataEmax{1},2));
+% minYlimdataIB = zeros(1,size(h.plotData.dataEmax{1},2));
+% for k = 1:size(h.plotData.dataIB{1},2)
+%     maxYlimdataIB(:,k) = max(maxYlimdataIBtmp(k,:));
+%     minYlimdataIB(:,k) = min(minYlimdataIBtmp(k,:));
+% end
+% 
+% YlimdataInttmp = h.plotData.dataIntensity_Int;
+% YlimdataInttmp = [YlimdataInttmp{:}];
+% YlimdataInttmp = reshape(YlimdataInttmp,size(YlimdataInttmp,2)/length(ia{1}),length(ia{1}));
+% minYlimdataInttmp = cellfun(@min, YlimdataInttmp);
+% maxYlimdataInttmp = cellfun(@max, YlimdataInttmp);
+% % Preallocate
+% maxYlimdataInt = zeros(1,size(h.plotData.dataEmax{1},2));
+% minYlimdataInt = zeros(1,size(h.plotData.dataEmax{1},2));
+% for k = 1:size(h.plotData.dataIntensity_Int{1},2)
+%     maxYlimdataInt(:,k) = max(maxYlimdataInttmp(k,:));
+%     minYlimdataInt(:,k) = min(minYlimdataInttmp(k,:));
+% end
+% ExpInt = zeros(1,length(maxYlimdataInt));
+% for k = 1:length(maxYlimdataInt)
+%     ExpInt(:,k) = numel(num2str(round(maxYlimdataInt(k))));
+% end
+% 
+% YlimdatadSpacingtmp = h.plotData.dataLatticeSpacing;
+% YlimdatadSpacingtmp = [YlimdatadSpacingtmp{:}];
+% YlimdatadSpacingtmp = reshape(YlimdatadSpacingtmp,size(YlimdatadSpacingtmp,2)/length(ia{1}),length(ia{1}));
+% minYlimdatadSpacingtmp = cellfun(@min, YlimdatadSpacingtmp);
+% maxYlimdatadSpacingtmp = cellfun(@max, YlimdatadSpacingtmp);
+% % Preallocate
+% maxYlimdatadSpacing = zeros(1,size(h.plotData.dataEmax{1},2));
+% minYlimdatadSpacing = zeros(1,size(h.plotData.dataEmax{1},2));
+% for k = 1:size(h.plotData.dataLatticeSpacing{1},2)
+%     maxYlimdatadSpacing(:,k) = max(maxYlimdatadSpacingtmp(k,:));
+%     minYlimdatadSpacing(:,k) = min(minYlimdatadSpacingtmp(k,:));
+% end
+% 
+% 										 
+% 
+% % Create data for export to txt file
+% for k = 1:size(h.plotData.Psi_Winkel,2)
+%     for l = 1:size(h.plotData.Psi_Winkel{k},2)
+%         Datahkl.(['Phi',num2str(k)]).Psi_Winkel{l} = [h.plotData.Psi_Winkel{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataEmax{l} = [h.plotData.dataEmax{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataIB{l} = [h.plotData.dataIB{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataIntensity_Int{l} = [h.plotData.dataIntensity_Int{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataLatticeSpacing{l} = [h.plotData.dataLatticeSpacing{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataLatticeSpacing_Delta{l} = [h.plotData.dataLatticeSpacing_Delta{k}{l}];
+%         Datahkl.(['Phi',num2str(k)]).dataRegLine{l} = h.plotData.dataRegLine{k}(:,l);
+%     end
+% end
+% 
+% Datahkltmp = struct2cell(Datahkl);
+% % Preallocate
+% DatahklPsi{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataEmax{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataIB{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataIntensity_Int{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataLatticeSpacing{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataLatticeSpacing_Delta{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataRegLine{l}{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% 
+% for k = 1:size(Datahkltmp,1)
+%     for l = 1:size(Datahkltmp{k}.Psi_Winkel,2)
+%         DatahklPsi{l}{k} = [Datahkltmp{k}.Psi_Winkel{l}];
+%         DatahkldataEmax{l}{k} = [Datahkltmp{k}.dataEmax{l}];
+%         DatahkldataIB{l}{k} = [Datahkltmp{k}.dataIB{l}];
+%         DatahkldataIntensity_Int{l}{k} = [Datahkltmp{k}.dataIntensity_Int{l}];
+%         DatahkldataLatticeSpacing{l}{k} = [Datahkltmp{k}.dataLatticeSpacing{l}];
+%         DatahkldataLatticeSpacing_Delta{l}{k} = [Datahkltmp{k}.dataLatticeSpacing_Delta{l}];
+%         DatahkldataRegLine{l}{k} = [Datahkltmp{k}.dataRegLine{l}];
+%     end
+% end
+% 
+% dims = zeros(1,size(DatahklPsi,2));
+% 
+% for k = 1:size(DatahklPsi,2)
+%     dims(k) = max(max(cell2mat(cellfun(@(x)size(x), DatahklPsi{k}, 'uni', 0)')));
+% end
+% 
+% % Preallocate
+% DatahklPsitmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataEmaxtmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataIBtmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataIntensity_Inttmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataLatticeSpacingtmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataLatticeSpacing_Deltatmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% DatahkldataRegLinetmp{k} = cell(1,size(Datahkltmp{1}.Psi_Winkel,2));
+% 
+% for k = 1:size(DatahklPsi,2)
+% %     dims = max(cell2mat(cellfun(@(x)size(x), DatahklPsi{k}, 'uni', 0)'));
+%     DatahklPsitmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahklPsi{k},'uni', 0);
+%     DatahkldataEmaxtmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataEmax{k},'uni', 0);
+%     DatahkldataIBtmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataIB{k},'uni', 0);
+%     DatahkldataIntensity_Inttmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataIntensity_Int{k},'uni', 0);
+%     DatahkldataLatticeSpacingtmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataLatticeSpacing{k},'uni', 0);
+%     DatahkldataLatticeSpacing_Deltatmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataLatticeSpacing_Delta{k},'uni', 0);
+%     DatahkldataRegLinetmp{k} = cellfun(@(x)[x,nan(size(x,1),1-size(x,2));nan(dims(k)-size(x,1),1)], DatahkldataRegLine{k},'uni', 0);
+% end
+% % assignin('base','Datahkltmp',Datahkltmp)
+% % assignin('base','plotData',h.plotData)
+% % Add phi angles to file names
+% phiangles = (PhiWinkel{1}(:));
+% phianglesstr_tmp = arrayfun(@num2str, phiangles, 'UniformOutput', 0);
+% 
+% if size(phianglesstr_tmp,1) > 1
+%     phianglesstr = strjoin(phianglesstr_tmp,'-');
+% else
+%     phianglesstr = phianglesstr_tmp{:};
+% end
+% 
+% % Create new folder in plot folder with name of measurement file
+% formatOut = 'ddmmyyyy';
+% d = datestr(now, formatOut);
+% % name = strtrim(h.Measurement(1).MeasurementSeries);
+% Folder = ['\Plots_phi',phianglesstr,'\'];
+% 
+% if ~isfield(h,'PathName')
+%     formatOut = 'ddmmyyyy';
+%     d = datestr(now, formatOut);
+%     name = strtrim(h.Measurement(1).MeasurementSeries);
+% %     material = h.P.PopupValueMpd1;
+%     h.PathName = [General.ProgramInfo.Path,'\Data\Results\' h.Diffsel, '\',[name,'_','added_plots','_',d]];
+% end
+% 
+% Path = fullfile(h.PathName,Folder);
+% 							
+% 
+% if exist(Path,'dir') ~= 7
+%     mkdir(Path);
+% end
+% 
+% %% Energy vs sin2psi
+% Marker = {'s','o','d','p'};
+% for k = 1:size(h.plotData.dataEmax{1,1},2)
+%     figure
+%     fig = gcf;
+%     fig.PaperUnits = 'centimeters';
+%     fig.PaperPositionMode = 'manual';
+%     fig.PaperPosition = [0 0 18 12];
+%     ax = gca;
+%     ax.OuterPosition = [0 0 1.085 1.025];
+%     ax.TickDir = 'out';
+%     ax.YAxis.TickLabelFormat = '%,.3f';
+%     ax.Box = 'on';
+%     ax.XGrid = 'on';
+%     ax.YGrid = 'on';
+%     ax.GridLineStyle = '-';
+%     ax.GridColor = 'k';
+%     ax.GridAlpha = 0.3;
+%     if strcmp(h.Diffsel,'ETA3000')
+%         ax.YLabel.String = ['2\theta [',char(181),']'];
+%         ax.YLabel.FontSize = 24;
+%         ax.XLabel.String = ['sin',char(178),'\psi'];
+%         ax.XLabel.FontSize = 24;
+%     else
+%         ax.YLabel.String = 'Energy [keV]';
+%         ax.YLabel.FontSize = 24;
+%         ax.XLabel.String = ['sin',char(178),'\psi'];
+%         ax.XLabel.FontSize = 24;
+%     end
+%     ax.LabelFontSizeMultiplier = 1.3;
+%     ax.LineWidth = 1.3;
+%     set(gca,'FontSize',18)
+%     hold on
+%     set(fig, 'Visible', 'off');
+%     % FaceColor of markers, order changes when measured under four azimuths
+%     if length(ia{1}) == 4
+%         FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+%     else
+%         FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+%     end
+%     
+%     for l = 1:length(ia{1})
+%         plot(sind(h.plotData.Psi_Winkel{1,l}{k}).^2,h.plotData.dataEmax{1,l}{k},'Linestyle','--','Color','k','Marker',Marker{l},'MarkerFaceColor',FaceColor{l},'MarkerEdgeColor','k','MarkerSize',12,'Clipping','off');
+%     end
+%     
+%     ax.XLim = [0 1];
+%     
+%     Ymin = floor(minYlimdataEmax(k)./0.05)*0.05;
+%     Ymax = ceil(maxYlimdataEmax(k)/0.05).*0.05;
+% 
+%     if abs(Ymin - minYlimdataEmax(k)) <= 0.0175
+%         Ymin = Ymin - 0.025;
+%     end
+% 
+%     if abs(Ymax - maxYlimdataEmax(k)) <= 0.0255
+%         Ymax = Ymax + 0.025;
+%     end
+%     
+%     if (Ymax - Ymin) <= 0.11
+%         ax.YLim = [floor(Ymin./0.01)*0.01 ceil(Ymax/0.01).*0.01];
+%         ax.YTick = ax.YLim(1):0.01:ax.YLim(2);
+%     elseif (Ymax - Ymin) > 0.11 && (Ymax - Ymin) <= 0.19
+%         ax.YLim = [floor(Ymin./0.025)*0.025 ceil(Ymax/0.025).*0.025];
+%         ax.YTick = ax.YLim(1):0.025:ax.YLim(2);
+%     elseif (Ymax - Ymin) > 0.19 && (Ymax - Ymin) <= 0.49
+%         ax.YLim = [floor(Ymin./0.05)*0.05 ceil(Ymax/0.05).*0.05];
+%         ax.YTick = ax.YLim(1):0.05:ax.YLim(2);
+%     elseif (Ymax - Ymin) > 0.5 && (Ymax - Ymin) <= 0.99
+%         ax.YLim = [floor(Ymin./0.1)*0.1 ceil(Ymax/0.1).*0.1];
+%         ax.YTick = ax.YLim(1):0.1:ax.YLim(2);
+%     elseif (Ymax - Ymin) >= 1
+%         ax.YLim = [floor(Ymin./0.25)*0.25 ceil(Ymax/0.25).*0.25];
+%         ax.YTick = ax.YLim(1):0.25:ax.YLim(2);    
+%     end
+%     
+%     % Create legend
+%     l = legend(h.LegLabelData);
+%     % Find best legend position
+%     legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+%     % Loop through legend positions in order to get coordinates of all
+%     % possible corner positions
+% 	LegendPos = zeros(4,4);
+%     for m = 1:4
+%         l.Location = legposcell{m};
+%         LegendPos(:,m) = l.Position;
+%     end
+%     % Preallocate
+%     psiData = cell(1,size(h.plotData.Psi_Winkel,2));
+%     dataEmax = cell(1,size(h.plotData.Psi_Winkel,2));
+%     for m = 1:size(h.plotData.Psi_Winkel,2)
+%         psiData{m} = h.plotData.Psi_Winkel{m}{k};
+%         dataEmax{m} = h.plotData.dataEmax{m}{k};
+%     end
+%     
+%     % Check if data intersects with legend box
+%     LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,cell2mat(dataEmax(:)),LegendPos);
+%     % Find index of zeros
+%     LegPosOptInd = find(LegPosOpt==0);
+%     
+%     if isempty(LegPosOptInd)
+%         l.Location = legposcell{1};
+%     else
+%         l.Location = legposcell{LegPosOptInd(1)};
+%     end
+%     
+%     % Set legend location and properties
+% %     l.Location = legposcell{LegPosOptInd(1)};
+%     l.FontSize = 10;
+%     l.LineWidth = 0.5;
+%     
+%     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+%     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+%     FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+%     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+% end
+% 
+% % Export data Emax to txt file
+% if size(DatahklPsitmp{1},2) == 1
+%     for k = 1:size(DatahklPsitmp,2)
+%     
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f\n',...
+%                     DatahklPsitmp{k}{1}(m),...
+%                     DatahkldataEmaxtmp{k}{1}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end   
+% elseif size(DatahklPsitmp{1},2) == 2
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{2}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 3
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{3}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 4
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f     %.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{3}(m),...
+%                     sind(DatahklPsitmp{k}{4}(m)).^2,...
+%                     DatahkldataEmaxtmp{k}{4}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% end
+% 
+% %% IB vs sin2psi
+% for k = 1:size(h.plotData.dataIB{1,1},2)
+%     figure
+%     fig = gcf;
+%     fig.PaperUnits = 'centimeters';
+%     fig.PaperPosition = [0 0 18 12];
+%     ax = gca;
+%     ax.OuterPosition = [0 0 1.085 1.025];
+%     ax.TickDir = 'out';
+%     ax.Box = 'on';
+%     ax.XGrid = 'on';
+%     ax.YGrid = 'on';
+%     ax.GridLineStyle = '-';
+%     ax.GridColor = 'k';
+%     ax.GridAlpha = 0.3;
+%     ax.XLim = [0 1];
+%     
+%     Ymin = floor((minYlimdataIB(k))./0.05).*0.05;
+%     Ymax = ceil((maxYlimdataIB(k))/0.05).*0.05;
+%     
+%     if abs(Ymin - minYlimdataIB(k)) <= 0.01
+%         Ymin = Ymin - 0.025;
+%     end
+% 
+%     if abs(Ymax - maxYlimdataIB(k)) <= 0.01
+%         Ymax = Ymax + 0.025;
+%     end
+%     
+%     Ymin = floor((Ymin)./0.05).*0.05;
+%     Ymax = ceil((Ymax)/0.05).*0.05;
+%     
+%     ax.YLim = [Ymin, Ymax];
+%     
+%     if (Ymax - Ymin) <= 0.1
+%         ax.YTick = ax.YLim(1):0.01:ax.YLim(2);
+%         ax.YAxis.TickLabelFormat = '   %.2f ';
+%     elseif (Ymax - Ymin) > 0.1 && (Ymax - Ymin) < 0.25
+%         ax.YTick = ax.YLim(1):0.025:ax.YLim(2);
+%         ax.YAxis.TickLabelFormat = '  %.3f';
+%     elseif (Ymax - Ymin) >= 0.25 && (Ymax - Ymin) < 0.79
+%         ax.YTick = ax.YLim(1):0.05:ax.YLim(2);
+%         ax.YAxis.TickLabelFormat = '   %.2f ';
+%     elseif (Ymax - Ymin) >= 0.8 && (Ymax - Ymin) < 1.5
+%         ax.YTick = ax.YLim(1):0.1:ax.YLim(2);
+%         ax.YAxis.TickLabelFormat = '   %.2f ';
+%     elseif (Ymax - Ymin) >= 1.5
+%         ax.YTick = ax.YLim(1):0.25:ax.YLim(2);
+%         ax.YAxis.TickLabelFormat = '   %.2f ';
+%     end
+%     
+%     ax.YLabel.String = 'IB [keV]';
+%     ax.YLabel.FontSize = 24;
+%     ax.XLabel.String = ['sin',char(178),'\psi'];
+%     ax.XLabel.FontSize = 24;
+%     ax.LabelFontSizeMultiplier = 1.3;
+%     ax.LineWidth = 1.3;
+% %     assignin('base','ax',ax)
+%     set(gca,'FontSize',18)
+%     hold on
+%     set(fig, 'Visible', 'off');
+%     % FaceColor of markers, order changes when measured under four azimuths
+%     if length(ia{1}) == 4
+%         FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+%     else
+%         FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+%     end
+%     % Plot data
+%     for l = 1:length(ia{1})
+%         plot(sind(h.plotData.Psi_Winkel{1,l}{k}).^2,h.plotData.dataIB{1,l}{k},'Linestyle','--','Color','k','Marker',Marker{l},'MarkerFaceColor',FaceColor{l},'MarkerEdgeColor','k','MarkerSize',12,'Clipping','off');
+%     end
+%     % Create legend
+%     l = legend(h.LegLabelData);
+%     % Find best legend position
+%     legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+%     % Loop through legend positions in order to get coordinates of all
+%     % possible corner positions
+%     for m = 1:4
+%         l.Location = legposcell{m};
+%         LegendPos(:,m) = l.Position;
+%     end
+%     
+%     for m = 1:size(h.plotData.Psi_Winkel,2)
+%         psiData{m} = h.plotData.Psi_Winkel{m}{k};
+%         dataIB{m} = h.plotData.dataIB{m}{k};
+%     end
+%     
+%     % Check if data intersects with legend box
+%     LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,cell2mat(dataIB(:)),LegendPos);
+%     % Find index of zeros
+%     LegPosOptInd = find(LegPosOpt==0);
+%     % Set legend location and properties
+%     if isempty(LegPosOptInd)
+%         l.Location = legposcell{1};
+%     else
+%         l.Location = legposcell{LegPosOptInd(1)};
+%     end
+%     l.FontSize = 10;
+%     l.LineWidth = 0.5;
+%     
+%     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+%     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+%     FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+%     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+% end
+% 
+% % Export data IB
+% if size(DatahklPsitmp{1},2) == 1
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIBtmp{k}{1}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end   
+% elseif size(DatahklPsitmp{1},2) == 2
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIBtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIBtmp{k}{2}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 3
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIBtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIBtmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataIBtmp{k}{3}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 4
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.4f     %.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIBtmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIBtmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataIBtmp{k}{3}(m),...
+%                     sind(DatahklPsitmp{k}{4}(m)).^2,...
+%                     DatahkldataIBtmp{k}{4}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% end
+% 
+% %% Int vs sin2psi
+% for k = 1:size(h.plotData.dataIntensity_Int{1,1},2)
+%     figure
+%     fig = gcf;
+%     fig.PaperUnits = 'centimeters';
+%     fig.PaperPosition = [0 0 18 12];
+%     ax = gca;
+%     ax.OuterPosition = [0 0 1.085 1.01];
+%     ax.TickDir = 'out';
+%     
+%     
+%     if numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 7
+%         ax.YAxis.Exponent = 4;
+%         ax.YAxis.TickLabelFormat = '    %4.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 6
+%         ax.YAxis.Exponent = 3;
+%         ax.YAxis.TickLabelFormat = '    %4.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 5
+%         ax.YAxis.Exponent = 2;
+%         ax.YAxis.TickLabelFormat = '    %4.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 4
+%         ax.YAxis.Exponent = 1;
+%         ax.YAxis.TickLabelFormat = '    %4.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 3
+%         ax.YAxis.Exponent = 0;
+%         ax.YAxis.TickLabelFormat = '     %3.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 2
+%         ax.YAxis.Exponent = 0;
+%         ax.YAxis.TickLabelFormat = '      %2.f';
+%     elseif numel(num2str(ceil(max(h.Params.Intensity_Int{k})/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1)))) == 1
+%         ax.YAxis.Exponent = 0;
+%         ax.YAxis.TickLabelFormat = '       %1.f';
+%     end
+%     
+%     ax.Box = 'on';
+%     ax.XGrid = 'on';
+%     ax.YGrid = 'on';
+%     ax.GridLineStyle = '-';
+%     ax.GridColor = 'k';
+%     ax.GridAlpha = 0.3;
+%     ax.XLim = [0 1];
+%     ax.YLim = [0 ceil(maxYlimdataInt(k)/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1))];
+%     ax.YLabel.String = 'Int.Intensity [cts]';
+%     ax.YLabel.FontSize = 24;
+%     ax.XLabel.String = ['sin',char(178),'\psi'];
+%     ax.XLabel.FontSize = 24;
+%     ax.LabelFontSizeMultiplier = 1.3;
+%     ax.LineWidth = 1.3;
+%     set(gca,'FontSize',18)
+%     hold on
+%     set(fig, 'Visible', 'off');
+%     % FaceColor of markers, order changes when measured under four azimuths
+%     if length(ia{1}) == 4
+%         FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+%     else
+%         FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+%     end
+%     
+%     for l = 1:length(ia{1})
+%         plot(sind(h.plotData.Psi_Winkel{1,l}{k}).^2,h.plotData.dataIntensity_Int{1,l}{k},'Linestyle','--','Color','k','Marker',Marker{l},'MarkerFaceColor',FaceColor{l},'MarkerEdgeColor','k','MarkerSize',12,'Clipping','off');
+%     end
+%     
+%     % Create legend
+%     l = legend(h.LegLabelData);
+%     % Find best legend position
+%     legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+%     % Loop through legend positions in order to get coordinates of all
+%     % possible corner positions
+%     for m = 1:4
+%         l.Location = legposcell{m};
+%         LegendPos(:,m) = l.Position;
+%     end
+%     dataIntensity_Int = cell(1,size(h.plotData.Psi_Winkel,2));
+%     for m = 1:size(h.plotData.Psi_Winkel,2)
+%         psiData{m} = h.plotData.Psi_Winkel{m}{k};
+%         dataIntensity_Int{m} = h.plotData.dataIntensity_Int{m}{k};
+%     end
+%     
+%     % Check if data intersects with legend box
+%     LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,cell2mat(dataIntensity_Int(:)),LegendPos);
+%     % Find index of zeros
+%     LegPosOptInd = find(LegPosOpt==0);
+%     % Set legend location and properties
+%     if isempty(LegPosOptInd)
+%         l.Location = legposcell{1};
+%     else
+%         l.Location = legposcell{LegPosOptInd(1)};
+%     end
+%     l.FontSize = 10;
+%     l.LineWidth = 0.5;
+%     
+%     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+%     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+%     FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+%     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+% end
+% 
+% % Export data Int. Intensity
+% if size(DatahklPsitmp{1},2) == 1
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %d\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{1}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end   
+% elseif size(DatahklPsitmp{1},2) == 2
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %d    %.4f    %d\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{2}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 3
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %d     %.4f    %d    %.4f    %d\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{3}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 4
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %d     %.4f    %d    %.4f    %d    %.4f    %d\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{1}(m),...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{2}(m),...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{3}(m),...
+%                     sind(DatahklPsitmp{k}{4}(m)).^2,...
+%                     DatahkldataIntensity_Inttmp{k}{4}(m));
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% end
+% 
+% %% d_vs_sin2psi
+% for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
+%     figure
+%     fig = gcf;
+%     fig.PaperUnits = 'centimeters';
+%     fig.PaperPosition = [0 0 18 12];
+%     ax = gca;
+%     ax.OuterPosition = [0 0 1.085 1.025];
+%     ax.TickDir = 'out';
+%     ax.YAxis.TickLabelFormat = '%.4f';
+%     ax.Box = 'on';
+%     ax.XGrid = 'on';
+%     ax.YGrid = 'on';
+%     ax.GridLineStyle = '-';
+%     ax.GridColor = 'k';
+%     ax.GridAlpha = 0.3;
+%     ax.XLim = [0 1];
+%     % Set axes limits for lattice spacings
+%     % Find min/max value
+% 	dmin = zeros(1,length(ia{1}));
+%     dmax = zeros(1,length(ia{1}));					   
+%     for m = 1:length(ia{1})
+%         dmin(:,m) = min(h.ParamsToFit(m).LatticeSpacing{k} - h.ParamsToFit(m).LatticeSpacing_Delta{k});
+%         dmax(:,m) = max(h.ParamsToFit(m).LatticeSpacing{k} + h.ParamsToFit(m).LatticeSpacing_Delta{k});
+%     end
+%     % Calculate limits
+%     % Round dmin and dmax values
+%     dmintmp = round(min(dmin),4);
+%     dmaxtmp = round(max(dmax),4);
+%     % Create Y limits
+%     YLimLow = dmintmp - 0.0001;
+%     YLimHigh = dmaxtmp + 0.0001;
+%     % Calculate difference
+%     Ylimdiff = YLimHigh - YLimLow;
+%     % Calculate Ytick marks
+%     if Ylimdiff >= 8e-4
+%         if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%             if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+%                 YLimHigh = YLimHigh + 0.0001;
+%                 if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%                     YLimHigh = YLimHigh + 0.0001;
+%                 end
+%                 ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%             elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+%                 YLimLow = YLimLow - 0.0001;
+%                 if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%                     YLimLow = YLimLow - 0.0001;
+%                 end
+%                 ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%             end
+%         else
+%             ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%         end
+%     elseif Ylimdiff < 8e-4 && Ylimdiff > 4e-4
+%         if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%             if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+%                 YLimHigh = YLimHigh + 0.0001;
+%                 ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%             elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+%                 YLimLow = YLimLow - 0.0001;
+%                 ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%             end
+%         else
+%             ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%         end
+%     elseif Ylimdiff <= 4e-4
+%         ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
+%     end
+% 
+%     ax.YLim = [10*YLimLow, 10*YLimHigh]; 
+%     ax.YLabel.String = ['d [',char(197),']'];
+%     ax.YLabel.FontSize = 24;
+%     ax.XLabel.String = ['sin',char(178),'\psi'];
+%     ax.XLabel.FontSize = 24;
+%     ax.LabelFontSizeMultiplier = 1.3;
+%     ax.LineWidth = 1.3;
+%     set(gca,'FontSize',18)
+%     hold on
+%     set(fig, 'Visible', 'off');
+% %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
+%     
+%     % FaceColor of markers, order changes when measured under four azimuths
+%     if length(ia{1}) == 4
+%         FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+%     else
+%         FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+%     end
+% 
+%     if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0];
+%         LegLabelData = {['\phi = 0',char(176)]};
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi90];
+%         LegLabelData = {['\phi = 90',char(176)]};
+%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         dplotphi180 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi180 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi180];
+%         LegLabelData = {['\phi = 180',char(176)]};
+%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         dplotphi270 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi270 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi270];
+%         LegLabelData = {['\phi = 270',char(176)]};    
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0 dplotphi90];
+%         LegLabelData = {['\phi = 0',char(176)],['\phi = 90',char(176)]};
+%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi180 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi180 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0 dplotphi180];
+%         LegLabelData = {['\phi = 0',char(176)],['\phi = 180',char(176)]};
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi270 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi270 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi90 dplotphi270];
+%         LegLabelData = {['\phi = 90',char(176)],['\phi = 270',char(176)]};	
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi180 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,3}{k}).^2,10*h.plotData.dataLatticeSpacing{1,3}{k},10*h.plotData.dataLatticeSpacing_Delta{1,3}{k},'Linestyle','none','Color','k','Marker',Marker{3},'MarkerFaceColor',FaceColor{3},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi180 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,3}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0 dplotphi90 dplotphi180];
+%         LegLabelData = {['\phi = 0',char(176)],['\phi = 90',char(176)],['\phi = 180',char(176)]};	
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)	|| ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi270 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,3}{k}).^2,10*h.plotData.dataLatticeSpacing{1,3}{k},10*h.plotData.dataLatticeSpacing_Delta{1,3}{k},'Linestyle','none','Color','k','Marker',Marker{3},'MarkerFaceColor',FaceColor{3},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi270 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,3}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0 dplotphi90 dplotphi270];
+%         LegLabelData = {['\phi = 0',char(176)],['\phi = 90',char(176)],['\phi = 270',char(176)]};
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi180 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi180 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi270 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,3}{k}).^2,10*h.plotData.dataLatticeSpacing{1,3}{k},10*h.plotData.dataLatticeSpacing_Delta{1,3}{k},'Linestyle','none','Color','k','Marker',Marker{3},'MarkerFaceColor',FaceColor{3},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi270 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,3}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi90 dplotphi180 dplotphi270];
+%         LegLabelData = {['\phi = 90',char(176)],['\phi = 180',char(176)],['\phi = 270',char(176)]};	
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         dplotphi0 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,1}{k}).^2,10*h.plotData.dataLatticeSpacing{1,1}{k},10*h.plotData.dataLatticeSpacing_Delta{1,1}{k},'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,1}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi90 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,2}{k}).^2,10*h.plotData.dataLatticeSpacing{1,2}{k},10*h.plotData.dataLatticeSpacing_Delta{1,2}{k},'Linestyle','none','Color','k','Marker',Marker{2},'MarkerFaceColor',FaceColor{2},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,2}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi180 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,3}{k}).^2,10*h.plotData.dataLatticeSpacing{1,3}{k},10*h.plotData.dataLatticeSpacing_Delta{1,3}{k},'Linestyle','none','Color','k','Marker',Marker{3},'MarkerFaceColor',FaceColor{3},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi180 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,3}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         dplotphi270 = errorbar(ax,sind(h.plotData.Psi_Winkel{1,4}{k}).^2,10*h.plotData.dataLatticeSpacing{1,4}{k},10*h.plotData.dataLatticeSpacing_Delta{1,4}{k},'Linestyle','none','Color','k','Marker',Marker{4},'MarkerFaceColor',FaceColor{4},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi270 = line(ax,linspace(0,1,51),10.*h.plotData.dataRegLine{1,4}(:,k),'Color',h.Colors{k},'LineWidth',2);
+%         LegDatadspacing = [dplotphi0 dplotphi90 dplotphi180 dplotphi270];
+%         LegLabelData = {['\phi = 0',char(176)],['\phi = 90',char(176)],['\phi = 180',char(176)],['\phi = 270',char(176)]};
+%     end
+%     
+%     % Create legend
+%     l = legend(ax,LegDatadspacing,LegLabelData);
+%     % Find best legend position
+%     legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+%     % Loop through legend positions in order to get coordinates of all
+%     % possible corner positions
+%     for m = 1:4
+%         l.Location = legposcell{m};
+%         LegendPos(:,m) = l.Position;
+%     end
+% 	
+% 	dataLatticeSpacing = cell(1,size(h.plotData.Psi_Winkel,2));
+%     for m = 1:size(h.plotData.Psi_Winkel,2)
+%         psiData{m} = h.plotData.Psi_Winkel{m}{k};
+%         dataLatticeSpacing{m} = h.plotData.dataLatticeSpacing{m}{k};
+%     end
+% 
+%     % Check if data intersects with legend box
+%     LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,10.*cell2mat(dataLatticeSpacing(:)),LegendPos);
+%     % Find index of zeros
+%     LegPosOptInd = find(LegPosOpt==0);
+%     % Set legend location and properties
+%     if isempty(LegPosOptInd)
+%         l.Location = legposcell{1};
+%     else
+%         l.Location = legposcell{LegPosOptInd(1)};
+%     end
+%     l.FontSize = 10;
+%     l.LineWidth = 0.5;
+%     
+%     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+%     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+%     FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+%     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+% end
+% 
+% % Reset the button color
+% set(hObj,'str',['Export ',['sin',char(178)],char(968),' ','plots'],'backg',col)  % Now reset the button features.
+% 
+% % Export data d-spacing to txt file
+% if size(DatahklPsitmp{1},2) == 1
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f  %.6f  %.6f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{1}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{1}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_LR_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahkldataRegLinetmp{k}{1},1)
+%                     str = sprintf('%.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{1}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end   
+% elseif size(DatahklPsitmp{1},2) == 2
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.6f    %.6f    %.4f    %.6f    %.6f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{1}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{1}(m).*10,...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{2}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{2}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahkldataRegLinetmp{k}{1},1)
+%                     str = sprintf('%.4f  %.6f  %.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{1}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{2}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 3
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.6f    %.6f    %.4f    %.6f    %.6f    %.4f    %.6f    %.6f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{1}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{1}(m).*10,...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{2}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{2}(m).*10,...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{3}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{3}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahkldataRegLinetmp{k}{1},1)
+%                     str = sprintf('%.4f  %.6f  %.4f  %.6f  %.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{1}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{2}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{3}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% elseif size(DatahklPsitmp{1},2) == 4
+%     for k = 1:size(DatahklPsitmp,2)
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahklPsitmp{k}{1},1)
+%                     str = sprintf('%.4f    %.6f    %.6f     %.4f    %.6f    %.6f    %.4f    %.6f    %.6f    %.4f    %.6f    %.6f\n',...
+%                     sind(DatahklPsitmp{k}{1}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{1}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{1}(m).*10,...
+%                     sind(DatahklPsitmp{k}{2}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{2}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{2}(m).*10,...
+%                     sind(DatahklPsitmp{k}{3}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{3}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{3}(m).*10,...
+%                     sind(DatahklPsitmp{k}{4}(m)).^2,...
+%                     DatahkldataLatticeSpacingtmp{k}{4}(m).*10,...
+%                     DatahkldataLatticeSpacing_Deltatmp{k}{4}(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(DatahkldataRegLinetmp{k}{1},1)
+%                     str = sprintf('%.4f  %.6f  %.4f  %.6f  %.4f  %.6f  %.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{1}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{2}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{3}(m).*10,...
+%                     PsiPlottmp(m),...
+%                     DatahkldataRegLinetmp{k}{4}(m).*10);
+% %                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+% end
+% 
+% %% d_avg_phi_vs_sin2psi
+% for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
+%     figure
+%     fig = gcf;
+%     fig.PaperUnits = 'centimeters';
+%     fig.PaperPosition = [0 0 18 12];
+%     ax = gca;
+%     ax.OuterPosition = [0 0 1.085 1.025];
+%     ax.TickDir = 'out';
+%     ax.YAxis.TickLabelFormat = '%.4f';
+%     ax.Box = 'on';
+%     ax.XGrid = 'on';
+%     ax.YGrid = 'on';
+%     ax.GridLineStyle = '-';
+%     ax.GridColor = 'k';
+%     ax.GridAlpha = 0.3;
+%     ax.XLim = [0 1];
+%     % Set axes limits for lattice spacings
+%     % Find min/max value
+% 	dmin = zeros(1,length(ia{1}));
+%     dmax = zeros(1,length(ia{1}));					   
+%     for m = 1:length(ia{1})
+%         dmin(:,m) = min(h.ParamsToFit(m).LatticeSpacing{k} - h.ParamsToFit(m).LatticeSpacing_Delta{k});
+%         dmax(:,m) = max(h.ParamsToFit(m).LatticeSpacing{k} + h.ParamsToFit(m).LatticeSpacing_Delta{k});
+%     end
+%     % Calculate limits
+%     % Round dmin and dmax values
+%     dmintmp = round(min(dmin),4);
+%     dmaxtmp = round(max(dmax),4);
+%     % Create Y limits
+%     YLimLow = dmintmp - 0.0001;
+%     YLimHigh = dmaxtmp + 0.0001;
+%     % Calculate difference
+%     Ylimdiff = YLimHigh - YLimLow;
+%     % Calculate Ytick marks
+%     if Ylimdiff >= 8e-4
+%         if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%             if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+%                 YLimHigh = YLimHigh + 0.0001;
+%                 if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%                     YLimHigh = YLimHigh + 0.0001;
+%                 end
+%                 ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%             elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+%                 YLimLow = YLimLow - 0.0001;
+%                 if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%                     YLimLow = YLimLow - 0.0001;
+%                 end
+%                 ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%             end
+%         else
+%             ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
+%         end
+%     elseif Ylimdiff < 8e-4 && Ylimdiff > 4e-4
+%         if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
+%             if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
+%                 YLimHigh = YLimHigh + 0.0001;
+%                 ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%             elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
+%                 YLimLow = YLimLow - 0.0001;
+%                 ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%             end
+%         else
+%             ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
+%         end
+%     elseif Ylimdiff <= 4e-4
+%         ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
+%     end
+% 
+%     ax.YLim = [10*YLimLow, 10*YLimHigh]; 
+%     ax.YLabel.String = ['d [',char(197),']'];
+%     ax.YLabel.FontSize = 24;
+%     ax.XLabel.String = ['sin',char(178),'\psi'];
+%     ax.XLabel.FontSize = 24;
+%     ax.LabelFontSizeMultiplier = 1.3;
+%     ax.LineWidth = 1.3;
+%     set(gca,'FontSize',18)
+%     hold on
+%     set(fig, 'Visible', 'off');
+% %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
+%     
+%     % FaceColor of markers, order changes when measured under four azimuths
+%     if length(ia{1}) == 4
+%         FaceColor = {h.Colors{k},h.Colors2{k},h.Colors{k},h.Colors2{k}};
+%     else
+%         FaceColor = {h.Colors{k},h.Colors{k},h.Colors2{k},h.Colors2{k}};
+%     end
+% 
+%     if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11 + sigma13
+%         dphi0phi180 = (h.sin2psi.dphi0{k}+h.sin2psi.dphi180{k})./2;
+%         dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,k) + h.sin2psi.reglinephi180(:,k))./2;
+%         xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{k}(:,1));
+%         Deltaphi0phi180 = (h.sin2psi.dphi0delta{k} + h.sin2psi.dphi180delta{k})./2;
+% 
+%         dplotphi0phi180 = errorbar(ax,xdataphi0phi180,10*dphi0phi180,10*Deltaphi0phi180,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0phi180 = line(ax,linspace(0,1,51),10.*dreglinephi0phi180,'Color',h.Colors{k},'LineWidth',2);
+%         
+%         LegDatadspacing = dplotphi0phi180;
+%         LegLabelData = {['\phi = 0/180',char(176)]};
+% 
+%         % Export data to file
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(xdataphi0phi180,1)
+%                     str = sprintf('%.4f  %.6f  %.6f\n',...
+%                     xdataphi0phi180(m),...
+%                     dphi0phi180(m).*10,...
+%                     Deltaphi0phi180(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(PsiPlottmp,2)
+%                     str = sprintf('%.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     dreglinephi0phi180(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma22 + sigma23
+%         dphi90phi270 = (h.sin2psi.dphi90{k}+h.sin2psi.dphi270{k})./2;
+%         dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,k) + h.sin2psi.reglinephi270(:,k))./2;
+%         xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{k}(:,1));
+%         Deltaphi90phi270 = (h.sin2psi.dphi90delta{k} + h.sin2psi.dphi270delta{k})./2;
+%         
+%         dplotphi90phi270 = errorbar(ax,xdataphi90phi270,10*dphi90phi270,10*Deltaphi90phi270,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90phi270 = line(ax,linspace(0,1,51),10.*dreglinephi90phi270,'Color',h.Colors{k},'LineWidth',2);
+%         
+%         LegDatadspacing = dplotphi90phi270;
+%         LegLabelData = {['\phi = 90/270',char(176)]};
+% 
+%         % Export data to file
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(xdataphi90phi270,1)
+%                     str = sprintf('%.4f  %.6f  %.6f\n',...
+%                     xdataphi90phi270(m),...
+%                     dphi90phi270(m).*10,...
+%                     Deltaphi90phi270(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(PsiPlottmp,2)
+%                     str = sprintf('%.4f  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     dreglinephi90phi270(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma11 + sigma13
+%         dphi0phi180 = (h.sin2psi.dphi0{k}+h.sin2psi.dphi180{k})./2;
+%         dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,k) + h.sin2psi.reglinephi180(:,k))./2;
+%         xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{k}(:,1));
+%         Deltaphi0phi180 = (h.sin2psi.dphi0delta{k} + h.sin2psi.dphi180delta{k})./2;
+%         
+%         % sigma22 + sigma23
+%         dphi90phi270 = (h.sin2psi.dphi90{k}+h.sin2psi.dphi270{k})./2;
+%         dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,k) + h.sin2psi.reglinephi270(:,k))./2;
+%         xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{k}(:,1));
+%         Deltaphi90phi270 = (h.sin2psi.dphi90delta{k} + h.sin2psi.dphi270delta{k})./2;
+% 
+%         dplotphi0phi180 = errorbar(ax,xdataphi0phi180,10*dphi0phi180,10*Deltaphi0phi180,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi0phi180 = line(ax,linspace(0,1,51),10.*dreglinephi0phi180,'Color',h.Colors{k},'LineWidth',2);
+% 
+%         dplotphi90phi270 = errorbar(ax,xdataphi90phi270,10*dphi90phi270,10*Deltaphi90phi270,'Linestyle','none','Color','k','Marker',Marker{1},'MarkerFaceColor',FaceColor{1},'MarkerEdgeColor','k','MarkerSize',12);
+%         reglineplotphi90phi270 = line(ax,linspace(0,1,51),10.*dreglinephi90phi270,'Color',h.Colors{k},'LineWidth',2);
+%         
+%         LegDatadspacing = [dplotphi0phi180 dplotphi90phi270];
+%         LegLabelData = {['\phi = 0/180',char(176)],['\phi = 90/270',char(176)]};
+% 
+%         % Export data to file
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+% 
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+% 
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(xdataphi0phi180,1)
+%                     str = sprintf('%.4f  %.6f  %.6f  %.6f  %.6f\n',...
+%                     xdataphi0phi180(m),...
+%                     dphi0phi180(m).*10,...
+%                     Deltaphi0phi180(m).*10,...
+%                     dphi90phi270(m).*10,...
+%                     Deltaphi90phi270(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+%         
+%         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+%         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
+% 
+%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         
+%         PsiPlottmp = linspace(0,1,51);
+%             % In case measurements where performed under four different phi angles
+%             for m = 1:size(PsiPlottmp,2)
+%                     str = sprintf('%.4f  %.6f\n  %.6f\n',...
+%                     PsiPlottmp(m),...
+%                     dreglinephi0phi180(m).*10,...
+%                     dreglinephi90phi270(m).*10);
+%                     str = regexprep(str, 'NaN', '  --  ');
+%                     fprintf(fid, '%s', str);
+%             end
+% 
+%         fclose(fid);
+% 
+%     end
+%     
+%     % Create legend
+%     l = legend(ax,LegDatadspacing,LegLabelData);
+%     % Find best legend position
+%     legposcell = {'NorthWest','NorthEast','SouthWest','SouthEast'};
+%     % Loop through legend positions in order to get coordinates of all
+%     % possible corner positions
+%     for m = 1:4
+%         l.Location = legposcell{m};
+%         LegendPos(:,m) = l.Position;
+%     end
+% 	
+% 	dataLatticeSpacing = cell(1,size(h.plotData.Psi_Winkel,2));
+%     for m = 1:size(h.plotData.Psi_Winkel,2)
+%         psiData{m} = h.plotData.Psi_Winkel{m}{k};
+%         dataLatticeSpacing{m} = h.plotData.dataLatticeSpacing{m}{k};
+%     end
+% 
+%     % Check if data intersects with legend box
+%     LegPosOpt = legendclash(ax,sind(cell2mat(psiData(:))).^2,10.*cell2mat(dataLatticeSpacing(:)),LegendPos);
+%     % Find index of zeros
+%     LegPosOptInd = find(LegPosOpt==0);
+%     % Set legend location and properties
+%     if isempty(LegPosOptInd)
+%         l.Location = legposcell{1};
+%     else
+%         l.Location = legposcell{LegPosOptInd(1)};
+%     end
+%     l.FontSize = 10;
+%     l.LineWidth = 0.5;
+%     
+%     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
+%     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+%     FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+%     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+% end
+
+% Reset the button color
+set(hObj,'str',['Export ',['sin',char(178)],char(968),' ','plots'],'backg',col)  % Now reset the button features.
 
 guidata(hObj, h);
 
@@ -18298,6 +20213,220 @@ s.DataTmpBackup = h.DataTmpBackup;
 msgbox('Fitting data saved.');
 
 save(fullfile(filepath, filename), 's');
+
+%% Button to switch plot mode for d-sin²psi
+function buttonswitchstressdata(hObj, ~)
+% Function to load data for the "Stress Analysis" tab.
+h = guidata(hObj);
+slidervalue = get(h.SliderStressData, 'Value');
+% Get slider value
+% get phi angles
+% check which phi angles are used
+% check visibility in order to recognize which plot is active
+if h.plotdatadspacingphi0.Visible == 1 || h.plotdatadspacingphi90.Visible == 1 
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11 + sigma13
+        dphi0phi180 = (h.sin2psi.dphi0{slidervalue}+h.sin2psi.dphi180{slidervalue})./2;
+        dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,slidervalue) + h.sin2psi.reglinephi180(:,slidervalue))./2;
+        xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{slidervalue}(:,1));
+        Deltaphi0phi180 = (h.sin2psi.dphi0delta{slidervalue} + h.sin2psi.dphi180delta{slidervalue})./2;
+
+        set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+        set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+        set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{slidervalue},h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+        set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+        set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+        set(h.plotreglinedspacingphi0phi180,'color',h.Colors{slidervalue})
+        
+        %
+        set(h.plotdatadspacingphi0,'Visible','off')
+        set(h.plotreglinedspacingphi0,'Visible','off')
+        set(h.plotdatadspacingphi180,'Visible','off')
+        set(h.plotreglinedspacingphi180,'Visible','off')
+        % set phi checkboxes inactive
+        set(h.checkboxphi0,'Enable','off')
+        set(h.checkboxphi180,'Enable','off')
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22 + sigma23
+        dphi90phi270 = (h.sin2psi.dphi90{slidervalue}+h.sin2psi.dphi270{slidervalue})./2;
+        dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,slidervalue) + h.sin2psi.reglinephi270(:,slidervalue))./2;
+        xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{slidervalue}(:,1));
+        Deltaphi90phi270 = (h.sin2psi.dphi90delta{slidervalue} + h.sin2psi.dphi270delta{slidervalue})./2;
+
+        set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+        set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+        set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{slidervalue},h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+        set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+        set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+        set(h.plotreglinedspacingphi90phi270,'color',h.Colors{slidervalue})
+    
+        %
+        set(h.plotdatadspacingphi90,'Visible','off')
+        set(h.plotreglinedspacingphi90,'Visible','off')
+        set(h.plotdatadspacingphi270,'Visible','off')
+        set(h.plotreglinedspacingphi270,'Visible','off')
+        % set phi checkboxes inactive
+        set(h.checkboxphi90,'Enable','off')
+        set(h.checkboxphi270,'Enable','off')
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11 + sigma13 + sigma22 + sigma23
+        dphi0phi180 = (h.sin2psi.dphi0{slidervalue}+h.sin2psi.dphi180{slidervalue})./2;
+        dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,slidervalue) + h.sin2psi.reglinephi180(:,slidervalue))./2;
+        xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{slidervalue}(:,1));
+        Deltaphi0phi180 = (h.sin2psi.dphi0delta{slidervalue} + h.sin2psi.dphi180delta{slidervalue})./2;
+
+        set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+        set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+        set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{slidervalue},h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+        set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+        set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+        set(h.plotreglinedspacingphi0phi180,'color',h.Colors{slidervalue})
+        %
+        set(h.plotdatadspacingphi0,'Visible','off')
+        set(h.plotreglinedspacingphi0,'Visible','off')
+        set(h.plotdatadspacingphi180,'Visible','off')
+        set(h.plotreglinedspacingphi180,'Visible','off')
+    
+        dphi90phi270 = (h.sin2psi.dphi90{slidervalue}+h.sin2psi.dphi270{slidervalue})./2;
+        dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,1) + h.sin2psi.reglinephi270(:,1))./2;
+        xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{slidervalue}(:,1));
+        Deltaphi90phi270 = (h.sin2psi.dphi90delta{slidervalue} + h.sin2psi.dphi270delta{slidervalue})./2;
+
+        set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+        set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+        set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{slidervalue},h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+        set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+        set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+        set(h.plotreglinedspacingphi90phi270,'color',h.Colors{slidervalue})
+        %
+        set(h.plotdatadspacingphi90,'Visible','off')
+        set(h.plotreglinedspacingphi90,'Visible','off')
+        set(h.plotdatadspacingphi270,'Visible','off')
+        set(h.plotreglinedspacingphi270,'Visible','off')
+    
+        % set phi checkboxes inactive
+        set(h.checkboxphi0,'Enable','off')
+        set(h.checkboxphi90,'Enable','off')
+        set(h.checkboxphi180,'Enable','off')
+        set(h.checkboxphi270,'Enable','off')
+    end
+elseif h.plotdatadspacingphi0.Visible == 0 || h.plotdatadspacingphi90.Visible == 0
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11 + sigma13
+        set(h.plotdatadspacingphi0phi180,'Visible','off')
+        set(h.plotreglinedspacingphi0phi180,'Visible','off')
+        % set phi checkboxes active
+        set(h.checkboxphi0,'Enable','on')
+        set(h.checkboxphi180,'Enable','on')
+
+        %
+        set(h.plotdatadspacingphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi0,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi0,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi0,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi0,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi0,'ydata',h.sin2psi.reglinephi0(:,slidervalue))
+        set(h.plotdatadspacingphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi180,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi180,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi180,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi180,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi180,'ydata',h.sin2psi.reglinephi180(:,slidervalue))
+        set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{slidervalue},'k'});
+        set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{slidervalue},'k'});
+        set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{slidervalue}});
+        set(h.plotdatadspacingphi0,'Visible','on')
+        set(h.plotreglinedspacingphi0,'Visible','on')
+        set(h.plotdatadspacingphi180,'Visible','on')
+        set(h.plotreglinedspacingphi180,'Visible','on')
+        % get d-sin²psi data and calculate average
+        % get regline data and calculate average
+        % set plot data and change visibility
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22 + sigma23
+        set(h.plotdatadspacingphi90phi270,'Visible','off')
+        set(h.plotreglinedspacingphi90phi270,'Visible','off')
+        % set phi checkboxes active
+        set(h.checkboxphi90,'Enable','on')
+        set(h.checkboxphi270,'Enable','on')
+        %
+        set(h.plotdatadspacingphi90,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi90,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi90,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi90,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi90,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi90,'ydata',h.sin2psi.reglinephi0(:,slidervalue))
+        set(h.plotdatadspacingphi270,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi270,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi270,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi270,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi270,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi270,'ydata',h.sin2psi.reglinephi180(:,slidervalue))
+        set(h.plotdatadspacingphi90,'Visible','on')
+        set(h.plotreglinedspacingphi90,'Visible','on')
+        set(h.plotdatadspacingphi270,'Visible','on')
+        set(h.plotreglinedspacingphi270,'Visible','on')
+        % get d-sin²psi data and calculate average
+        % get regline data and calculate average
+        % set plot data and change visibility
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11 + sigma13 + sigma22 + sigma23
+        % sigma11 + sigma13
+        set(h.plotdatadspacingphi0phi180,'Visible','off')
+        set(h.plotreglinedspacingphi0phi180,'Visible','off')
+        % set phi checkboxes active
+        set(h.checkboxphi0,'Enable','on')
+        set(h.checkboxphi180,'Enable','on')
+        %
+        set(h.plotdatadspacingphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi0,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi0,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi0,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi0,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi0,'ydata',h.sin2psi.reglinephi0(:,slidervalue))
+        set(h.plotdatadspacingphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi180,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi180,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi180,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi180,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi180,'ydata',h.sin2psi.reglinephi180(:,slidervalue))
+        set(h.plotdatadspacingphi0,'Visible','on')
+        set(h.plotreglinedspacingphi0,'Visible','on')
+        set(h.plotdatadspacingphi180,'Visible','on')
+        set(h.plotreglinedspacingphi180,'Visible','on')
+        
+        % sigma22 + sigma23
+        set(h.plotdatadspacingphi90phi270,'Visible','off')
+        set(h.plotreglinedspacingphi90phi270,'Visible','off')
+        % set phi checkboxes active
+        set(h.checkboxphi90,'Enable','on')
+        set(h.checkboxphi270,'Enable','on')
+        %
+        set(h.plotdatadspacingphi90,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi90,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi90,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi90,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi90,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi90,'ydata',h.sin2psi.reglinephi0(:,slidervalue))
+        set(h.plotdatadspacingphi270,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{slidervalue}).^2)
+        set(h.plotdatadspacingphi270,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{slidervalue})
+        set(h.plotdatadspacingphi270,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotdatadspacingphi270,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{slidervalue})
+        set(h.plotreglinedspacingphi270,'xdata',h.sinpsisquare)
+        set(h.plotreglinedspacingphi270,'ydata',h.sin2psi.reglinephi180(:,slidervalue))
+        set(h.plotdatadspacingphi90,'Visible','on')
+        set(h.plotreglinedspacingphi90,'Visible','on')
+        set(h.plotdatadspacingphi270,'Visible','on')
+        set(h.plotreglinedspacingphi270,'Visible','on')
+    end
+end
+
+guidata(hObj, h);
 
 %% Options panel
 function ClearGUIButton(hObj, ~)
@@ -20178,20 +22307,21 @@ h.axesplotRawData.XLim = [peakbkgdata(1,value)-2,peakbkgdata(2,value)+2];
 % Calculate Ymax in peak region
 Ymax = max(PlotYdata(IndRawData(1):IndRawData(2)));
 
-assignin('base','XPlot',h.XPlot)
-assignin('base','YPlot',h.YPlot)
-assignin('base','XFit',h.XFit)
-assignin('base','YFit',h.YFit)
-
-xdataplot = get(h.plotfitresidual,'Xdata');
-assignin('base','xdataplot',xdataplot);
+% assignin('base','XPlot',h.XPlot)
+% assignin('base','YPlot',h.YPlot)
+% assignin('base','XFit',h.XFit)
+% assignin('base','YFit',h.YFit)
+if isfield(h,'plotfitresidual')
+    xdataplot = get(h.plotfitresidual,'Xdata');
+end
+% assignin('base','xdataplot',xdataplot);
 % Calculate fit residual
 if isfield(h,'YFit')
     if strcmp(h.Diffsel,'ETA3000')
         ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot(:,1),h.XFit);
     else
         ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot,h.XFit);
-        assignin('base','ydataplotfitresidual',ydataplotfitresidual);
+%         assignin('base','ydataplotfitresidual',ydataplotfitresidual);
     end
     set(h.plotfitresidual,'Ydata',ydataplotfitresidual-Ymax/3)
     set(h.plotfitresidual,'Xdata',h.XFit)
@@ -20222,131 +22352,571 @@ valueSlider = get(hObj, 'Value');
 % Create label
 label = CreateHKLlabel(h);
 
-% DEKdatatmp = get(h.loadDEKtable,'data');
-% assignin('base','DEKdatatmp',DEKdatatmp)
-% assignin('base','sin2psi',h.sin2psi)
-% assignin('base','ParamsToFit',h.ParamsToFit)
-if isfield(h,'StressDatamodified') && ~isempty(h.StressDatamodified{valueSlider})
-    % Set plot data and properties
-    set(h.plotdatadspacing,'xdata',sind(h.plotdspacingXData{valueSlider}).^2)
-    set(h.plotdatadspacing,'ydata',h.plotdspacingYData{valueSlider})
-    set(h.plotdatadspacing,'YNegativeDelta',h.plotdspacingYdeltaData{valueSlider})
-    set(h.plotdatadspacing,'YPositiveDelta',h.plotdspacingYdeltaData{valueSlider})
-    %
-    YLimd1 = [floor(min(h.plotdspacingYData{valueSlider})*15000)/15000,ceil(max(h.plotdspacingYData{valueSlider})*15000)/15000];
+
+if isfield(h,'idxhklPeaktable')
+    % Create temporary data structures in case a peak should be deleted from
+    % the analysis during the evaluation procedure
+    sin2psi_tmp = h.sin2psi;
+    ParamsToFit_tmp = h.ParamsToFit;
+    % assignin('base','ParamsToFit_tmp',ParamsToFit_tmp)
+    Params_tmp = h.Params;
+    fieldnames1 = fieldnames(sin2psi_tmp);
+    fieldnames2 = fieldnames(ParamsToFit_tmp);
+    fieldnames3 = fieldnames(Params_tmp);
+    
+    % Change label
+    label(~h.idxhklPeaktable,:) = [];
+    
+    for i = 1:size(fieldnames1,1)
+        if isa(sin2psi_tmp.(fieldnames1{i}),'cell')
+            sin2psi_tmp.(fieldnames1{i})(~h.idxhklPeaktable) = [];
+        elseif isa(sin2psi_tmp.(fieldnames1{i}),'double')
+            if strcmp(fieldnames1{i},'StressPlotDatatmpsorted') || strcmp(fieldnames1{i},'sigmataulist') || strcmp(fieldnames1{i},'tautmp') || strcmp(fieldnames1{i},'taupsizero') 
+                sin2psi_tmp.(fieldnames1{i})(~h.idxhklPeaktable,:) = [];
+            elseif strcmp(fieldnames1{i},'taumean') || strcmp(fieldnames1{i},'taupsizeromean') || strcmp(fieldnames1{i},'dzero') || strcmp(fieldnames1{i},'reglinephi0') || strcmp(fieldnames1{i},'reglinephi90') || strcmp(fieldnames1{i},'reglinephi180') || strcmp(fieldnames1{i},'reglinephi270')
+                sin2psi_tmp.(fieldnames1{i})(:,~h.idxhklPeaktable) = [];
+            end
+        end
+    end
+    
+    for j = 1:size(ParamsToFit_tmp,2)
+        for i = 1:size(fieldnames2,1)
+            ParamsToFit_tmp(j).(fieldnames2{i})(~h.idxhklPeaktable) = [];
+        end
+    end
+    
+    for i = 1:size(fieldnames3,1)
+        if isa(Params_tmp.(fieldnames3{i}),'cell')
+            Params_tmp.(fieldnames3{i})(~h.idxhklPeaktable) = [];
+        elseif isa(Params_tmp.(fieldnames3{i}),'double')
+            Params_tmp.(fieldnames3{i})(~h.idxhklPeaktable,:) = [];
+        end
+    end
+
+    % Set plot data
+    if strcmp(h.plotdatadspacingphi0.Visible,'off') && strcmp(h.plotdatadspacingphi90.Visible,'off')
+        if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+            % sigma11 + sigma13
+            dphi0phi180 = (sin2psi_tmp.dphi0{valueSlider}+sin2psi_tmp.dphi180{valueSlider})./2;
+            dreglinephi0phi180 = (sin2psi_tmp.reglinephi0(:,valueSlider) + sin2psi_tmp.reglinephi180(:,valueSlider))./2;
+            xdataphi0phi180 = (sin2psi_tmp.dphi0p180sinquadratpsi{valueSlider}(:,1));
+            Deltaphi0phi180 = (sin2psi_tmp.dphi0delta{valueSlider} + sin2psi_tmp.dphi180delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+            set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            
+            set(h.plotdataIBphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',ParamsToFit_tmp(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',ParamsToFit_tmp(h.idxphi0).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',ParamsToFit_tmp(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',ParamsToFit_tmp(h.idxphi180).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            
+        elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+            % sigma22 + sigma23
+            dphi90phi270 = (sin2psi_tmp.dphi90{valueSlider}+sin2psi_tmp.dphi270{valueSlider})./2;
+            dreglinephi90phi270 = (sin2psi_tmp.reglinephi90(:,valueSlider) + sin2psi_tmp.reglinephi270(:,valueSlider))./2;
+            xdataphi90phi270 = (sin2psi_tmp.dphi90p270sinquadratpsi{valueSlider}(:,1));
+            Deltaphi90phi270 = (sin2psi_tmp.dphi90delta{valueSlider} + sin2psi_tmp.dphi270delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+            set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+
+            set(h.plotdataIBphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',ParamsToFit_tmp(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',ParamsToFit_tmp(h.idxphi90).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',ParamsToFit_tmp(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',ParamsToFit_tmp(h.idxphi270).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+        elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+            % sigma11 + sigma13 + sigma22 + sigma23
+            dphi0phi180 = (sin2psi_tmp.dphi0{valueSlider}+sin2psi_tmp.dphi180{valueSlider})./2;
+            dreglinephi0phi180 = (sin2psi_tmp.reglinephi0(:,valueSlider) + sin2psi_tmp.reglinephi180(:,valueSlider))./2;
+            xdataphi0phi180 = (sin2psi_tmp.dphi0p180sinquadratpsi{valueSlider}(:,1));
+            Deltaphi0phi180 = (sin2psi_tmp.dphi0delta{valueSlider} + sin2psi_tmp.dphi180delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+            set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+
+            dphi90phi270 = (sin2psi_tmp.dphi90{valueSlider}+sin2psi_tmp.dphi270{valueSlider})./2;
+            dreglinephi90phi270 = (sin2psi_tmp.reglinephi90(:,1) + sin2psi_tmp.reglinephi270(:,1))./2;
+            xdataphi90phi270 = (sin2psi_tmp.dphi90p270sinquadratpsi{valueSlider}(:,1));
+            Deltaphi90phi270 = (sin2psi_tmp.dphi90delta{valueSlider} + sin2psi_tmp.dphi270delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+            set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+
+            set(h.plotdataIBphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',ParamsToFit_tmp(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',ParamsToFit_tmp(h.idxphi0).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',ParamsToFit_tmp(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',ParamsToFit_tmp(h.idxphi180).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',ParamsToFit_tmp(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',ParamsToFit_tmp(h.idxphi90).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',ParamsToFit_tmp(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',ParamsToFit_tmp(h.idxphi270).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+
+    elseif strcmp(h.plotdatadspacingphi0.Visible,'on') || strcmp(h.plotdatadspacingphi90.Visible,'on') || strcmp(h.plotdatadspacingphi180.Visible,'on')
+        if ~isempty(h.idxphi0)
+            set(h.plotdatadspacingphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi0,'ydata',ParamsToFit_tmp(h.idxphi0).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi0,'YNegativeDelta',ParamsToFit_tmp(h.idxphi0).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi0,'YPositiveDelta',ParamsToFit_tmp(h.idxphi0).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi0,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi0,'ydata',sin2psi_tmp.reglinephi0(:,valueSlider))
+            set(h.plotdataIBphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',ParamsToFit_tmp(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',ParamsToFit_tmp(h.idxphi0).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi90)
+            set(h.plotdatadspacingphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi90,'ydata',ParamsToFit_tmp(h.idxphi90).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi90,'YNegativeDelta',ParamsToFit_tmp(h.idxphi90).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi90,'YPositiveDelta',ParamsToFit_tmp(h.idxphi90).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi90,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi90,'ydata',sin2psi_tmp.reglinephi90(:,valueSlider))
+            set(h.plotdataIBphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',ParamsToFit_tmp(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',ParamsToFit_tmp(h.idxphi90).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi180)
+            set(h.plotdatadspacingphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi180,'ydata',ParamsToFit_tmp(h.idxphi180).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi180,'YNegativeDelta',ParamsToFit_tmp(h.idxphi180).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi180,'YPositiveDelta',ParamsToFit_tmp(h.idxphi180).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi180,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi180,'ydata',sin2psi_tmp.reglinephi180(:,valueSlider))
+            set(h.plotdataIBphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',ParamsToFit_tmp(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',ParamsToFit_tmp(h.idxphi180).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi270)
+            set(h.plotdatadspacingphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi270,'ydata',ParamsToFit_tmp(h.idxphi270).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi270,'YNegativeDelta',ParamsToFit_tmp(h.idxphi270).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi270,'YPositiveDelta',ParamsToFit_tmp(h.idxphi270).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi270,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi270,'ydata',sin2psi_tmp.reglinephi270(:,valueSlider))
+            set(h.plotdataIBphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',ParamsToFit_tmp(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',ParamsToFit_tmp(h.idxphi270).Intensity_Int{valueSlider})
+        end
+        
+        % Set plot properties
+        if ~isempty(h.idxphi0)
+            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi90)
+            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi90, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi180)
+            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi270)
+            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi270, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    end
+    % Set plot limits
+    PhiWinkel = cell(1,size(Params_tmp.Phi_Winkel,2));
+    ia = cell(1,size(Params_tmp.Phi_Winkel,2));
+    for k = 1:size(Params_tmp.Phi_Winkel,2)
+        [PhiWinkel{k},ia{k},~] = unique(sort(Params_tmp.Phi_Winkel{k}));
+    end
+    % Find min/max value
+    dmin = zeros(1,length(ia{1}));
+    dmax = zeros(1,length(ia{1}));
+    for k = 1:length(ia{1})
+        dmin(:,k) = min(ParamsToFit_tmp(k).LatticeSpacing{valueSlider});
+        dmax(:,k) = max(ParamsToFit_tmp(k).LatticeSpacing{valueSlider});
+    end
+    % Calculate limits
+    YLimd1 = [floor(min(dmin)*15000)/15000,ceil(max(dmax)*15000)/15000];
     YLimd2 = [YLimd1(1) - abs(diff(YLimd1))/2,YLimd1(2) + abs(diff(YLimd1))/2];
     h.axesplotdspacing.YLim = [YLimd2(1) YLimd2(2)];
-    %
-    set(h.plotreglinedspacing,'xdata',linspace(0,1,11))
-    set(h.plotreglinedspacing,'ydata',h.plotregline{valueSlider})
-    %
-    set(h.plotdataIB,'xdata',sind(h.plotdspacingXData{valueSlider}).^2)
-    set(h.plotdataIB,'ydata',h.plotIBYData{valueSlider})
-    %
-    YLim1 = [floor(min(h.plotIBYData{valueSlider})*10)/10,ceil(max(h.plotIBYData{valueSlider})*10)/10];
-    YLim2 = (min(h.plotIBYData{valueSlider}) - YLim1(1) + max(h.plotIBYData{valueSlider}) - YLim1(2))/2;
-    YLim1 = YLim1+YLim2;
-    h.axesplotIB.YLim = YLim1;
-    %
-    set(h.plotdataInt,'xdata',sind(h.plotdspacingXData{valueSlider}).^2)
-    set(h.plotdataInt,'ydata',h.plotIntYData{valueSlider})
-    exponentIntLim = numel(num2str(ceil(max(h.plotIntYData{valueSlider}))));
-    h.axesplotInt.YLim = [0,round(ceil(max(h.plotIntYData{valueSlider})*(10*10^(-exponentIntLim)))/(10*10^(-exponentIntLim)),-2)];
 
-    %%
-    set(h.plotdatadspacing, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    set(h.plotreglinedspacing, {'Color'}, {'k'});
-    set(h.plotdataIB, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    set(h.plotdataInt, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+    % Set axes limits for IB
+    IBmin = zeros(1,length(ia{1}));
+    IBmax = zeros(1,length(ia{1}));
+    for k = 1:length(ia{1})
+        IBmin(:,k) = min(ParamsToFit_tmp(k).IntegralWidth{valueSlider});
+        IBmax(:,k) = max(ParamsToFit_tmp(k).IntegralWidth{valueSlider});
+    end
+    YLimIB1 = [floor(min(IBmin)*10)/10,ceil(max(IBmax)*10)/10];
+    YLimIB2 = round((min(IBmin) - YLimIB1(1) + max(IBmax) - YLimIB1(2))/2,2);
+    YLimIB1 = YLimIB1 + YLimIB2;
+    h.axesplotIB.YLim = YLimIB1;
 
-    title(h.axesplotdspacing,['Stress data for ',  strrep(h.Measurement(valueSlider).Name,'Scan','Peak')])
-    title(h.axesplotIB,['IB data for ', strrep(h.Measurement(valueSlider).Name,'Scan','Peak')])
-    title(h.axesplotInt,['Integrated Int. data for ',  strrep(h.Measurement(valueSlider).Name,'Scan','Peak')])
-    legdspacing = legend(h.axesplotdspacing,label(valueSlider,:));
-    legdspacing.FontSize = 15;
+    % Set axes limits for intensity
+    Intmin = zeros(1,length(ia{1}));
+    Intmax = zeros(1,length(ia{1}));																							   
+    for k = 1:length(ia{1})
+        Intmin(:,k) = min(ParamsToFit_tmp(k).Intensity_Int{valueSlider});
+        Intmax(:,k) = max(ParamsToFit_tmp(k).Intensity_Int{valueSlider});
+    end
+    
+    exponentIntLim = numel(num2str(ceil(max(Intmax))));
+    h.axesplotInt.YLim = [0,ceil(max(Intmax)*(10*10^(-exponentIntLim)))/(10*10^(-exponentIntLim))];
+    
+    % Set plot titles
+    title(h.axesplotdspacing,['Stress data for Peak', ' ', num2str(valueSlider)])
+    title(h.axesplotIB,['IB data for Peak', ' ', num2str(valueSlider)])
+    title(h.axesplotInt,['Integrated Int. data for Peak', ' ', num2str(valueSlider)])
+    
+    % Legend for plot of d-spacings
+    h.legdspacing = legend(h.axesplotdspacing,h.LegDatadspacing,h.LegLabelData);
+    title(h.legdspacing,label(valueSlider,:))
+    % Create legend for plot of IB and Int.Intensity, depending on phi
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270) ...
+            || isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270) ...
+            || isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270) ...
+            || isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        h.legIB = legend(h.axesplotIB,h.LegDataIB,h.LegLabelData);
+        h.legInt = legend(h.axesplotInt,h.LegDataInt,h.LegLabelData);
+    else
+        h.legIB = legend(h.axesplotIB,h.LegLabelData);
+        h.legInt = legend(h.axesplotInt,h.LegLabelData);
+    end
+    % Title for plot of IB and intensity
+    title(h.legIB,label(valueSlider,:))
+    title(h.legInt,label(valueSlider,:))
+    
+    % Set Xlim for plot
+    h.axesplotfitdata.XLim = [round(Params_tmp.Energy_Max{valueSlider}(1),2)-1.5,round(Params_tmp.Energy_Max{valueSlider}(1),2)+1.5];
+
+    % Set Ylim for plot of fitted data
+    % Find index of Emax in DataTmp
+    if strcmp(h.Diffsel,'LEDDI')
+        if strcmp(h.Detsel,'Detector 1')
+            Slidersteps = 2:2:length(h.Measurement);
+            % Find index of Emax in DataTmp
+            idxEmax = find(round(h.DataTmp{Slidersteps(1)}(:,1),1) == round(h.FittedPeaksDet1{1}(valueSlider,2),1));
+            % Find Ymax in the range +/- 25 channels of idxEmax 
+            YMax  = max(h.DataTmp{Slidersteps(1)}((idxEmax(5)-25:idxEmax(5)+25),2));
+        elseif strcmp(h.Detsel,'Detector 2')
+            Slidersteps = 1:2:length(h.Measurement);
+            % Find index of Emax in DataTmp
+            idxEmax = find(round(h.DataTmp{Slidersteps(1)}(:,1),1) == round(h.FittedPeaksDet2{1}(valueSlider,2),1));
+            % Find Ymax in the range +/- 25 channels of idxEmax 
+            YMax  = max(h.DataTmp{Slidersteps(1)}((idxEmax(5)-25:idxEmax(5)+25),2));
+        end
+    else
+        % Find index of Emax in DataTmp
+        idxEmax = find(round(h.DataTmp{1}(:,1),1) == round(h.FittedPeaks{1}(valueSlider,2),1));
+        YMax  = max(h.DataTmp{1}((idxEmax(5)-25:idxEmax(5)+25),2));
+    end
+    
+    if round(YMax,-1) == 0
+        h.axesplotfitdata.YLim = [0 ceil(YMax*10)/10];
+    else
+        ExpPlot = numel(num2str(round(YMax,-1)));
+        h.axesplotfitdata.YLim = [0 round(YMax/(1*10^(ExpPlot-2))).*1*10^(ExpPlot-2)];
+    end
+% end
+
+    % Reset slider from Fitdata window
+    set(h.SliderFitData,'Value',1);
+    
+    if isfield(h,'ptext')
+        delete(h.ptext)
+    end
+    
+    if numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 1
+        h.ptext = text(h.axesplotfitdata,0.903,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 2
+        h.ptext = text(h.axesplotfitdata,0.89,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 3
+        h.ptext = text(h.axesplotfitdata,0.879,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 4
+        h.ptext = text(h.axesplotfitdata,0.869,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');       
+    elseif numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 5
+        h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2))) == 6
+        h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(Params_tmp.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');    
+    end
+    
+    if round(YMax,-1) == 0
+        h.axesplotfitdata.YLim = [0 ceil(YMax*10)/10];
+    else
+        ExpPlot = numel(num2str(round(YMax,-1)));
+        h.axesplotfitdata.YLim = [0 round(YMax/(1*10^(ExpPlot-2))).*1*10^(ExpPlot-2)];
+    end
+
 else
     % Set plot data
-    if ~isempty(h.idxphi0)
-        set(h.plotdatadspacingphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdatadspacingphi0,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{valueSlider})
-        set(h.plotdatadspacingphi0,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{valueSlider})
-        set(h.plotdatadspacingphi0,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{valueSlider})
-        set(h.plotreglinedspacingphi0,'xdata',h.sinpsisquare)
-        set(h.plotreglinedspacingphi0,'ydata',h.sin2psi.reglinephi0(:,valueSlider))
-        set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
-        set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})     
-    end
-
-    if ~isempty(h.idxphi90)
-        set(h.plotdatadspacingphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdatadspacingphi90,'ydata',h.ParamsToFit(h.idxphi90).LatticeSpacing{valueSlider})
-        set(h.plotdatadspacingphi90,'YNegativeDelta',h.ParamsToFit(h.idxphi90).LatticeSpacing_Delta{valueSlider})
-        set(h.plotdatadspacingphi90,'YPositiveDelta',h.ParamsToFit(h.idxphi90).LatticeSpacing_Delta{valueSlider})
-        set(h.plotreglinedspacingphi90,'xdata',h.sinpsisquare)
-        set(h.plotreglinedspacingphi90,'ydata',h.sin2psi.reglinephi90(:,valueSlider))
-        set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
-        set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
-    end
-
-    if ~isempty(h.idxphi180)
-        set(h.plotdatadspacingphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdatadspacingphi180,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{valueSlider})
-        set(h.plotdatadspacingphi180,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{valueSlider})
-        set(h.plotdatadspacingphi180,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{valueSlider})
-        set(h.plotreglinedspacingphi180,'xdata',h.sinpsisquare)
-        set(h.plotreglinedspacingphi180,'ydata',h.sin2psi.reglinephi180(:,valueSlider))
-        set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
-        set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
-    end
-
-    if ~isempty(h.idxphi270)
-        set(h.plotdatadspacingphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdatadspacingphi270,'ydata',h.ParamsToFit(h.idxphi270).LatticeSpacing{valueSlider})
-        set(h.plotdatadspacingphi270,'YNegativeDelta',h.ParamsToFit(h.idxphi270).LatticeSpacing_Delta{valueSlider})
-        set(h.plotdatadspacingphi270,'YPositiveDelta',h.ParamsToFit(h.idxphi270).LatticeSpacing_Delta{valueSlider})
-        set(h.plotreglinedspacingphi270,'xdata',h.sinpsisquare)
-        set(h.plotreglinedspacingphi270,'ydata',h.sin2psi.reglinephi270(:,valueSlider))
-        set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
-        set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
-        set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
-    end
+    if strcmp(h.plotdatadspacingphi0.Visible,'off') && strcmp(h.plotdatadspacingphi90.Visible,'off') && strcmp(h.plotdatadspacingphi180.Visible,'off') && strcmp(h.plotdatadspacingphi270.Visible,'off')
+        if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+            % sigma11 + sigma13
+            dphi0phi180 = (h.sin2psi.dphi0{valueSlider}+h.sin2psi.dphi180{valueSlider})./2;
+            dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,valueSlider) + h.sin2psi.reglinephi180(:,valueSlider))./2;
+            xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{valueSlider}(:,1));
+            Deltaphi0phi180 = (h.sin2psi.dphi0delta{valueSlider} + h.sin2psi.dphi180delta{valueSlider})./2;
     
-    % Set plot properties
-    if ~isempty(h.idxphi0)
-        set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{valueSlider}});
-        set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    end
+            set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+            set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            
+            set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
 
-    if ~isempty(h.idxphi90)
-        set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotreglinedspacingphi90, {'Color'}, {h.Colors{valueSlider}});
-        set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    end
-
-    if ~isempty(h.idxphi180)
-        set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{valueSlider}});
-        set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    end
-
-    if ~isempty(h.idxphi270)
-        set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotreglinedspacingphi270, {'Color'}, {h.Colors{valueSlider}});
-        set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-        set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-    end
+            set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            
+        elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+            % sigma22 + sigma23
+            dphi90phi270 = (h.sin2psi.dphi90{valueSlider}+h.sin2psi.dphi270{valueSlider})./2;
+            dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,valueSlider) + h.sin2psi.reglinephi270(:,valueSlider))./2;
+            xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{valueSlider}(:,1));
+            Deltaphi90phi270 = (h.sin2psi.dphi90delta{valueSlider} + h.sin2psi.dphi270delta{valueSlider})./2;
     
+            set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+            set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+
+            set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+        elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+            % sigma11 + sigma13 + sigma22 + sigma23
+            dphi0phi180 = (h.sin2psi.dphi0{valueSlider}+h.sin2psi.dphi180{valueSlider})./2;
+            dreglinephi0phi180 = (h.sin2psi.reglinephi0(:,valueSlider) + h.sin2psi.reglinephi180(:,valueSlider))./2;
+            xdataphi0phi180 = (h.sin2psi.dphi0p180sinquadratpsi{valueSlider}(:,1));
+            Deltaphi0phi180 = (h.sin2psi.dphi0delta{valueSlider} + h.sin2psi.dphi180delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
+            set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
+            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+
+            dphi90phi270 = (h.sin2psi.dphi90{valueSlider}+h.sin2psi.dphi270{valueSlider})./2;
+            dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,1) + h.sin2psi.reglinephi270(:,1))./2;
+            xdataphi90phi270 = (h.sin2psi.dphi90p270sinquadratpsi{valueSlider}(:,1));
+            Deltaphi90phi270 = (h.sin2psi.dphi90delta{valueSlider} + h.sin2psi.dphi270delta{valueSlider})./2;
+    
+            set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
+            set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
+            set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
+            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+
+            set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+
+            set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+
+    elseif strcmp(h.plotdatadspacingphi0.Visible,'on') || strcmp(h.plotdatadspacingphi90.Visible,'on') || strcmp(h.plotdatadspacingphi180.Visible,'on') || strcmp(h.plotdatadspacingphi270.Visible,'on')
+        if ~isempty(h.idxphi0)
+            set(h.plotdatadspacingphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi0,'ydata',h.ParamsToFit(h.idxphi0).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi0,'YNegativeDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi0,'YPositiveDelta',h.ParamsToFit(h.idxphi0).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi0,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi0,'ydata',h.sin2psi.reglinephi0(:,valueSlider))
+            set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi90)
+            set(h.plotdatadspacingphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi90,'ydata',h.ParamsToFit(h.idxphi90).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi90,'YNegativeDelta',h.ParamsToFit(h.idxphi90).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi90,'YPositiveDelta',h.ParamsToFit(h.idxphi90).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi90,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi90,'ydata',h.sin2psi.reglinephi90(:,valueSlider))
+            set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi180)
+            set(h.plotdatadspacingphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi180,'ydata',h.ParamsToFit(h.idxphi180).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi180,'YNegativeDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi180,'YPositiveDelta',h.ParamsToFit(h.idxphi180).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi180,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi180,'ydata',h.sin2psi.reglinephi180(:,valueSlider))
+            set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
+        end
+    
+        if ~isempty(h.idxphi270)
+            set(h.plotdatadspacingphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdatadspacingphi270,'ydata',h.ParamsToFit(h.idxphi270).LatticeSpacing{valueSlider})
+            set(h.plotdatadspacingphi270,'YNegativeDelta',h.ParamsToFit(h.idxphi270).LatticeSpacing_Delta{valueSlider})
+            set(h.plotdatadspacingphi270,'YPositiveDelta',h.ParamsToFit(h.idxphi270).LatticeSpacing_Delta{valueSlider})
+            set(h.plotreglinedspacingphi270,'xdata',h.sinpsisquare)
+            set(h.plotreglinedspacingphi270,'ydata',h.sin2psi.reglinephi270(:,valueSlider))
+            set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
+            set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
+            set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
+        end
+        
+        % Set plot properties
+        if ~isempty(h.idxphi0)
+            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi90)
+            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi90, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi180)
+            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    
+        if ~isempty(h.idxphi270)
+            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotreglinedspacingphi270, {'Color'}, {h.Colors{valueSlider}});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+        end
+    end
     % Set plot limits
     PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
     ia = cell(1,size(h.Params.Phi_Winkel,2));
@@ -20442,36 +23012,37 @@ else
         ExpPlot = numel(num2str(round(YMax,-1)));
         h.axesplotfitdata.YLim = [0 round(YMax/(1*10^(ExpPlot-2))).*1*10^(ExpPlot-2)];
     end
+% end
+
+    % Reset slider from Fitdata window
+    set(h.SliderFitData,'Value',1);
+    
+    if isfield(h,'ptext')
+        delete(h.ptext)
+    end
+    
+    if numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 1
+        h.ptext = text(h.axesplotfitdata,0.903,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 2
+        h.ptext = text(h.axesplotfitdata,0.89,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 3
+        h.ptext = text(h.axesplotfitdata,0.879,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 4
+        h.ptext = text(h.axesplotfitdata,0.869,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');       
+    elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 5
+        h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
+    elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 6
+        h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');    
+    end
+    
+    if round(YMax,-1) == 0
+        h.axesplotfitdata.YLim = [0 ceil(YMax*10)/10];
+    else
+        ExpPlot = numel(num2str(round(YMax,-1)));
+        h.axesplotfitdata.YLim = [0 round(YMax/(1*10^(ExpPlot-2))).*1*10^(ExpPlot-2)];
+    end
+
 end
-
-% Reset slider from Fitdata window
-set(h.SliderFitData,'Value',1);
-
-if isfield(h,'ptext')
-    delete(h.ptext)
-end
-
-if numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 1
-    h.ptext = text(h.axesplotfitdata,0.903,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
-elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 2
-    h.ptext = text(h.axesplotfitdata,0.89,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
-elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 3
-    h.ptext = text(h.axesplotfitdata,0.879,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
-elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 4
-    h.ptext = text(h.axesplotfitdata,0.869,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');       
-elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 5
-    h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');
-elseif numel(num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2))) == 6
-    h.ptext = text(h.axesplotfitdata,0.859,0.92,['\psi =',' ', num2str(round(h.Params.Psi_Winkel{valueSlider}(1),2)), char(176)],'Units','normalized','FontSize', 12, 'EdgeColor', 'k', 'BackgroundColor','w');    
-end
-
-if round(YMax,-1) == 0
-    h.axesplotfitdata.YLim = [0 ceil(YMax*10)/10];
-else
-    ExpPlot = numel(num2str(round(YMax,-1)));
-    h.axesplotfitdata.YLim = [0 round(YMax/(1*10^(ExpPlot-2))).*1*10^(ExpPlot-2)];
-end
-
 
 guidata(hObj, h);
 
@@ -21096,7 +23667,7 @@ else
             MeasIndex = PhiIndexMeas{find(NumberPhiAngles==180)}(idxPsi);
         elseif CheckBoxesPhi(4) == 1
             idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==180)}(idxPsi);
+            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==270)}(idxPsi);
         end
     end
 
@@ -21390,19 +23961,41 @@ end
 h.P.twotheta = h.Measurement(1).twotheta;
 % a = h.P.twotheta;
 % Calculate theoretical peak positions
-h.PeaksTheoAdd = TheoreticalPeakPositionsAdd(h.P.Material,h.P.LengthMeas,h.P.twotheta,h.DataTmp,h.Diffractometer);
-a = h.PeaksTheoAdd.T.Etheo < h.PeaksTheoAdd.T.EMax;
-h.EtheoLimitPeaksAdd1 = h.PeaksTheoAdd.T.Etheo(a);
-X1Limit = h.PeaksTheoAdd.T.X1(a,:);
-X3Limit = h.PeaksTheoAdd.T.X3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
-Y3Limit = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
+h.PeaksTheoAdd = TheoreticalPeakPositionsAdd(h.P.Material,h.Measurement,h.P.LengthMeas,h.P.twotheta,h.DataTmp,h.Diffsel);
+if strcmp(h.Diffsel,'ETA3000')
+    aka1 = h.PeaksTheoAdd.T.Etheoka1 < h.PeaksTheoAdd.T.EMax;
+    aka2 = h.PeaksTheoAdd.T.Etheoka2 < h.PeaksTheoAdd.T.EMax;
 
-% assignin('base','plotEtheoAdd1',h.plotEtheoAdd1)
-% Set plot data for additional theoretical line positions
-set(h.plotEtheoAdd1,'xdata',X3Limit(:,1))
-% Check selected column for Y3Limit
-set(h.plotEtheoAdd1,'ydata',Y3Limit(:,1))
-set(h.plotEtheoAdd1,'visible','on')
+    EtheoLimit_aka1 = h.PeaksTheoAdd.T.Etheoka1(aka1);
+    EtheoLimit_aka2 = h.PeaksTheoAdd.T.Etheoka2(aka2);
+
+    X3Limitka1 = h.PeaksTheoAdd.T.X3((1:(3*length(EtheoLimit_aka1)-1)),:);
+    Y3Limitka1 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka1)-1)),:);
+
+    X3Limitka2 = h.PeaksTheoAdd.T.X3ka2((1:(3*length(EtheoLimit_aka2)-1)),:);
+    Y3Limitka2 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka2)-1)),:);
+else
+    a = h.PeaksTheoAdd.T.Etheo < h.PeaksTheoAdd.T.EMax;
+    assignin('base','PeaksTheoAdd',h.PeaksTheoAdd)
+    h.EtheoLimitPeaksAdd1 = h.PeaksTheoAdd.T.Etheo(a);
+    X1Limit = h.PeaksTheoAdd.T.X1(a,:);
+    X3Limit = h.PeaksTheoAdd.T.X3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
+    Y3Limit = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
+end
+
+if strcmp(h.Diffsel,'ETA3000')
+    % Set plot data for additional theoretical line positions
+    set(h.plotEtheoAdd1,'xdata',[X3Limitka1(:,1);NaN;X3Limitka2(:,1)])
+    % Check selected column for Y3Limit
+    set(h.plotEtheoAdd1,'ydata',[Y3Limitka1(:,1);NaN;Y3Limitka2(:,1)])
+    set(h.plotEtheoAdd1,'visible','on')
+else
+    % Set plot data for additional theoretical line positions
+    set(h.plotEtheoAdd1,'xdata',X3Limit(:,1))
+    % Check selected column for Y3Limit
+    set(h.plotEtheoAdd1,'ydata',Y3Limit(:,1))
+    set(h.plotEtheoAdd1,'visible','on')
+end
 
 guidata(hObj, h);
 
@@ -22075,7 +24668,6 @@ for ii = 1:size(Peaks,1)
 end
 hkllabel = hkllabel_tmp;
 
-
 % Callbacks for theoretical peak positions
 function ShowHidePeaksCallback(hObj, eventdata)
 h = guidata(hObj);
@@ -22644,7 +25236,7 @@ handles1 = guidata(hObj);
 if ~isfield(handles1, 'idxhklPeaktable')
     handles1.idxhklPeaktable = true(size(h1data.sin2psi.StressPlotDatatmpsorted,1),1);
 end
-
+assignin('base','idxhklPeaktable',handles1.idxhklPeaktable)
 StressPlotDatatmpsorted_tmp = h1data.sin2psi.StressPlotDatatmpsorted(handles1.idxhklPeaktable,:);
 
 % Save index variable of selected hkl peaks
@@ -22780,6 +25372,19 @@ yticks(h1data.axesplotstressdata,'auto')
 % Set title
 title(h1data.axesplotstressdata,['Residual stress data for ',strrep(h1data.Measurement(1).MeasurementSeries,' ','')], 'HorizontalAlignment', 'center', 'Interpreter', 'none')
 
+% Change slider value for d-IB-Int.Int-Plots
+% Change slider parameters according to number of FittedPeaks
+if length(find(handles1.idxhklPeaktable)) == 1
+    set(h1data.SliderStressData,'Min',0);
+    set(h1data.SliderStressData,'Max',length(find(handles1.idxhklPeaktable)));
+    set(h1data.SliderStressData,'SliderStep',[1 1]);
+    set(h1data.SliderStressData,'Value',1);
+else
+    set(h1data.SliderStressData,'Min',1);
+    set(h1data.SliderStressData,'Max',length(find(handles1.idxhklPeaktable)));
+    set(h1data.SliderStressData,'Value',1);
+    set(h1data.SliderStressData,'SliderStep',[1/(length(find(handles1.idxhklPeaktable))-1) 1/(length(find(handles1.idxhklPeaktable))-1)]);
+end
 
 % Set figure visible off
 set(h1data.fighklstressplottable, 'Visible', 'off')
@@ -23582,7 +26187,10 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
         h.sigma11tmp{k} = h.UPlot.sigma11{k}(sin2psirange{1,k});
         h.sigma11deltatmp{k} = h.UPlot.sigma11delta{k}(sin2psirange{1,k});
     end
-        
+    assignin('base','tausigma11tmp',h.tausigma11tmp)
+    assignin('base','sigma11tmp',h.sigma11tmp)   
+    assignin('base','sigma11deltatmp',h.sigma11deltatmp)
+    assignin('base','sin2psirange',h.sin2psirange)
     if get(h.uplotplotfitscheckbox,'value') == 1    
         % Prepare fit data
         FitDatasigma11tmp = [[h.tausigma11tmp{1,:}];cell2mat(h.sigma11tmp);cell2mat(h.sigma11deltatmp)]';
@@ -25934,7 +28542,7 @@ if strcmp(h.Diffsel,'LEDDI')
         h.Measurement = Measurement;
     end
 else
-    [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX);
+    [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX,h.P.Calibration);
     h.DataTmp = DataTmp;
     h.Measurement = Measurement;
 end

@@ -228,13 +228,13 @@ if strcmp(Diffractometer.Name,'ETA3000')
             DataTmp{k} = MeasScanCounts(k).EDSpectrum;
         end
 
-        data = load('D:\EDDIDAT_github\Data\Measurements\Schunk_Silver_TaC_sumData.mat');
-
-        for k = 1:size(IndTwoThetaReal,1)
-            MeasScanCounts(k).EDSpectrum = data.SilverCoUeScanSum15112023;
-            MeasScanCounts(k).twotheta = data.SilverCoUeScanSum15112023(:,1);
-            MeasScanCounts(k).Name = ['Scan', num2str(k), ', Chi = ', num2str(MeasScanCounts(k).SCSAngles.psi), '°'];
-        end
+%         data = load('D:\EDDIDAT_github\Data\Measurements\Schunk_Silver_TaC_sumData.mat');
+% 
+%         for k = 1:size(IndTwoThetaReal,1)
+%             MeasScanCounts(k).EDSpectrum = data.SilverCoUeScanSum15112023;
+%             MeasScanCounts(k).twotheta = data.SilverCoUeScanSum15112023(:,1);
+%             MeasScanCounts(k).Name = ['Scan', num2str(k), ', Chi = ', num2str(MeasScanCounts(k).SCSAngles.psi), '°'];
+%         end
 
         for k = 1:size(IndTwoThetaReal,1)
             DataTmp{k} = MeasScanCounts(k).EDSpectrum;
@@ -242,13 +242,16 @@ if strcmp(Diffractometer.Name,'ETA3000')
     
         meas = MeasScanCounts;
     elseif meas(1).MythenScanMode == 1
+        %Load data in line detector mode
         for c = 1:length(meas)
             TwoTheta(:,c) = meas(c).twotheta;
             Intensity(:,c) = meas(c).EDSpectrum(:,2);
         end
-    
+        assignin('base','TwoTheta',TwoTheta)
+        assignin('base','Intensity',Intensity)
         % Convert channel to degree
         CalibParams = load(fullfile('Data','Calibration',[Calibration,'.mat']));
+%         assignin('base','CalibParams',CalibParams)
         % Zero channel from scan of primary beam
         n0 = CalibParams.zerochannel;
         % Detector tilt
@@ -261,31 +264,105 @@ if strcmp(Diffractometer.Name,'ETA3000')
         n = 0:639;
         % Distance from each channel to detector center n0
         d = (n-n0)*w;
+
+        % Calculate blurring effect
+        theta = TwoTheta/2;
+        alpha = 0.496; %0.496;   % Divergence need to be calculated for ETA 2mm pinhole in front of polycap
+        S = deg2rad(alpha)*L./sind(theta);
+        B = 0.005; % allowed blurring
+        for k = 1:length(B)
+            dmin(k,:) = -L/2 .*(1+S./B(k).*sind(theta)).*cotd(theta) + sqrt((L./2.*(1+S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
+            dmax(k,:) = -L/2 .*(1-S./B(k).*sind(theta)).*cotd(theta) - sqrt((L./2.*(1-S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
+        end
         
+        dmax_inv = -1*dmax;
+        dmin_inv = -1*dmin;
+        
+        dminmeas = Tools.Data.DataSetOperations.FindNearestIndex(d,dmin_inv);
+        dmaxmeas = Tools.Data.DataSetOperations.FindNearestIndex(d,dmax_inv);
+        assignin('base','dminmeas',dminmeas)
+        assignin('base','dmaxmeas',dmaxmeas)
         % Calculate twotheta for each channel
         for l = 1:size(TwoTheta,2)
             for m = 1:size(d,2)
-                twothetatmp(l,m) = TwoTheta(l) + asind(d(m)/L*(cosd(beta)/(1+(d(m)/L)^2 - 2*(d(m)/L)*sind(beta))).^0.5);
+                twothetatmp(l,m) = TwoTheta(l) + asind(d(m)/L*(cosd(beta)/(1+(d(m)/L)^2 - 2*(d(m)/L)*sind(beta)).^0.5));
             end
         end
-        % Script for FuzzyBinning of 2D Mythen data 
-        NumBins = py.int(20480);
-        % Load meas data - "n x 640" format, with n = number of twotheta angles
+        assignin('base','twothetatmp',twothetatmp)
+
         if size(Intensity,2) ~= 640
             Intensity = Intensity';
         end
-        % Convert matrix to python array
-        
+
         if size(twothetatmp,2) ~= 640
             twothetatmp = twothetatmp';
         end
 
+        assignin('base','twothetatmp',twothetatmp)
+        assignin('base','Intensity',Intensity)
+
+        % Correct for blurring
+%         for k = 1:size(Intensity,1)
+%             if ~isnan(dminmeas(k)) && ~isnan(dmaxmeas(k))
+% 	            Intensity_corr{k} = Intensity(k,dminmeas(k):dmaxmeas(k));
+% 	            twothetatmp_corr{k} = twothetatmp(k,dminmeas(k):dmaxmeas(k));
+%             elseif isnan(dminmeas(k)) && ~isnan(dmaxmeas(k))
+% 	            Intensity_corr{k} = Intensity(k,1:dmaxmeas(k));
+% 	            twothetatmp_corr{k} = twothetatmp(k,1:dmaxmeas(k));
+%             elseif ~isnan(dminmeas(k)) && isnan(dmaxmeas(k))
+% 	            Intensity_corr{k} = Intensity(k,dminmeas(k):end);
+% 	            twothetatmp_corr{k} = twothetatmp(k,dminmeas(k):end);
+%             elseif isnan(dminmeas(k)) && isnan(dmaxmeas(k))
+% 	            Intensity_corr{k} = Intensity(k,:);
+% 	            twothetatmp_corr{k} = twothetatmp(k,:);
+%             end
+%         end
+
+        for k = 1:size(Intensity,1)
+            if ~isnan(dminmeas(k)) && ~isnan(dmaxmeas(k))
+                Intensity(k,1:dminmeas(k)) = NaN;
+                Intensity(k,dmaxmeas(k):640) = NaN;
+        
+%                 twothetatmp(k,1:dminmeas(k)) = NaN;
+%                 twothetatmp(k,dmaxmeas(k):end) = NaN;
+        
+            elseif isnan(dminmeas(k)) && ~isnan(dmaxmeas(k))
+                Intensity(k,dmaxmeas(k):640) = NaN;
+        
+%                 twothetatmp(k,dmaxmeas(k):end) = NaN;
+            elseif ~isnan(dminmeas(k)) && isnan(dmaxmeas(k))
+                Intensity(k,1:dminmeas(k)) = NaN;
+                
+%                 twothetatmp(k,1:dminmeas(k)) = NaN;
+            end
+        end
+        
+        assignin('base','twothetatmpcorr',twothetatmp)
+        assignin('base','Intensitycorr',Intensity)
+        % Load meas data - "n x 640" format, with n = number of twotheta angles
+%         if size(Intensity,2) ~= 640
+%             Intensity = Intensity';
+%         end
+        % Convert matrix to python array
+        
+%         if size(twothetatmp,2) ~= 640
+%             twothetatmp = twothetatmp';
+%         end
+        % Delete first and last channels
+        Intensity(:,1:4) = [];
+        twothetatmp(:,1:4) = [];
+        Intensity(:,633:636) = [];
+        twothetatmp(:,633:636) = [];
+
+        % Script for FuzzyBinning of 2D Mythen data 
+        NumBins = py.int(10240);
         % Run python script that does the fuzzy binning
         if size(unique(TwoTheta,'stable'),2) == 1
             for k = 1:size(Intensity,1)
                 intensity = py.numpy.array(Intensity(k,:));
                 angles = py.numpy.array(twothetatmp(k,:));
                 result = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
+                
                 % Convert python array to matlab arry
                 X{k} = double(result{1});
                 Y{k} = double(result{2});
@@ -295,10 +372,15 @@ if strcmp(Diffractometer.Name,'ETA3000')
                 meas(c).EDSpectrum = [X{c};Y{c}]';
                 DataTmp{c} = meas(c).EDSpectrum;
             end
-        assignin('base','measLoad',meas)
+        assignin('base','X_conv',X)
+        assignin('base','Y_conv',Y)
         else
+%             intensity = py.numpy.array(cell2mat(Intensity_corr));
+%             angles = py.numpy.array(cell2mat(twothetatmp_corr));
+
             intensity = py.numpy.array(Intensity);
             angles = py.numpy.array(twothetatmp);
+
             [result] = pyrunfile("ConvertMeasDataMythen.py","ReturnList",NumBins=NumBins,angles=angles,intensity=intensity);
             % Convert python array to matlab arry
             X = double(result{1});

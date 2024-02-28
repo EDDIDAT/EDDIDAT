@@ -1,7 +1,8 @@
-function Peakhandles1 = TheoreticalPeakPositionsAdd(Measurement,LengthMeas,twotheta,DataTmp,Diffractometer)
+function Peakhandles1 = TheoreticalPeakPositionsAdd(Material,Measurement,LengthMeas,twotheta,DataTmp,Diffsel)
+
 % Check if ETA3000 was used
-if strcmp(Diffractometer,'ETA3000')
-    T.twotheta = Measurement(1).twotheta;
+if strcmp(Diffsel,'ETA3000')
+    T.twotheta = twotheta;
     
 %     if strcmp(h.Measurement.Anode,'Cu')
 %         h.lambda = 0.154056;
@@ -42,9 +43,9 @@ if strcmp(Diffractometer,'ETA3000')
     % Maximum angle up to which peak positions are calculated
     T.EMax = 160;
     % Crystal structure of the material
-    T.cs = Measurement(1).Sample.Materials.CrystalStructure;
+    T.cs = Material.CrystalStructure;
     % Lattice parameter of the material
-    T.a0 = Measurement(1).Sample.Materials.LatticeParameter;
+    T.a0 = Material.LatticeParameter;
     
 %     % Calculate twotheta positions and only use real values
 %     twothetapos_tmp = 2.*asind(lambda./(20.*TPeaks.T.Peaks(:,4)));
@@ -65,33 +66,33 @@ if strcmp(Diffractometer,'ETA3000')
         T.hklquadratmax = [];
     end
     
-    % Info from substrate
-    if (PlotSubstratePeaks)
-        % Maximum Energy up to which peak positions are calculated
-        S.EMax = Measurement(1).Sample.Substrate.EnergyMax;
-        % Crystal structure of the material
-        S.cs = Measurement(1).Sample.Substrate.CrystalStructure;
-        % Lattice parameter of the material
-        S.a0 = Measurement(1).Sample.Substrate.LatticeParameter;
-        % Calculation of minimum d spacing
-        S.dmin = (0.6199/sind(T.twotheta/2))/S.EMax;
-        % Calculation of maximum hkl²
-        if ~isempty(S.a0)
-            S.hklquadratmax = (S.a0(1)/S.dmin)^2;
-        else
-            S.hklquadratmax = [];
-        end
-        
-    end
+%     % Info from substrate
+%     if (PlotSubstratePeaks)
+%         % Maximum Energy up to which peak positions are calculated
+%         S.EMax = Measurement.Sample.Substrate.EnergyMax;
+%         % Crystal structure of the material
+%         S.cs = Measurement.Sample.Substrate.CrystalStructure;
+%         % Lattice parameter of the material
+%         S.a0 = Measurement.Sample.Substrate.LatticeParameter;
+%         % Calculation of minimum d spacing
+%         S.dmin = (0.6199/sind(T.twotheta/2))/S.EMax;
+%         % Calculation of maximum hkl²
+%         if ~isempty(S.a0)
+%             S.hklquadratmax = (S.a0(1)/S.dmin)^2;
+%         else
+%             S.hklquadratmax = [];
+%         end
+%         
+%     end
     
     % Calculation of the maximum peak intensities of the respecive spectrum
-    T.Peaks_y = zeros(length(Measurement),1);
+    T.Peaks_y = zeros(length(Material),1);
     % Find intensity maximum
-    for i = 1:length(Measurement)
+    for i = 1:length(Material)
         T.Peaks_y(i,:) = max(DataTmp{i}(:, 2));
     end
     % Create matrix for the line plot of the peak positions (Y values)
-    for i = 1:length(Measurement)
+    for i = 1:length(Material)
         T.Y1(i,:) = [0 T.Peaks_y(i) nan];
     end
 
@@ -153,7 +154,7 @@ if strcmp(Diffractometer,'ETA3000')
 
 
         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
-        
+        assignin('base','TPeaks',T.Peaks)
     % Calculation of peak positions for bcc materials
     elseif strcmp(T.cs,'fcc')
         % Calculation of all possible hkl combinations
@@ -242,7 +243,7 @@ if strcmp(Diffractometer,'ETA3000')
 
     %--------------------------------------------------------------------------
     else
-        T.hkl = Measurement(1).Sample.Materials.HKLdspacing;
+        T.hkl = Material.HKLdspacing;
         [C,ia,ic] = unique(T.hkl(:,4),'rows','last');
         T.hkl = T.hkl(ia,1:4);
         T.hkl_sort = sortrows(T.hkl, -4);
@@ -287,13 +288,13 @@ if strcmp(Diffractometer,'ETA3000')
     % Adjust the size of matrix to the measurement
     T.X2 = reshape(T.X1',size(T.Peaks,1).*3,1);
     T.X2(size(T.Peaks,1).*3,:) = [];
-    T.X3 = repmat(T.X2,1,length(Measurement));
+    T.X3 = repmat(T.X2,1,length(Material));
     % kalpha2
     T.X2ka2 = reshape(T.X1ka2',size(T.Peaks,1).*3,1);
     T.X2ka2(size(T.Peaks,1).*3,:) = [];
-    T.X3ka2 = repmat(T.X2ka2,1,length(Measurement));
+    T.X3ka2 = repmat(T.X2ka2,1,length(Material));
     % Adjust the size of matrix to the measurement
-    T.Y2 = reshape(T.Y1',3,length(Measurement));
+    T.Y2 = reshape(T.Y1',3,length(Material));
     T.Y3 = repmat(T.Y2,size(T.Peaks,1),1);
     T.Y3(size(T.Peaks,1).*3,:)= [];
 %     assignin('base','TPeaksNeu',T)
@@ -306,16 +307,16 @@ else
     
     % Info from material
     % Maximum Energy up to which peak positions are calculated
-    T.EMax = Measurement.EnergyMax;
+    T.EMax = Material.EnergyMax;
     % Crystal structure of the material
-    T.cs = Measurement.CrystalStructure;
+    T.cs = Material.CrystalStructure;
     % Lattice parameter of the material
-    T.a0 = Measurement.LatticeParameter;
+    T.a0 = Material.LatticeParameter;
     % Calculation of minimum d spacing
-    T.dmin = (0.6199/sind(T.twotheta/2))/T.EMax;
+    T.dmin = (0.6199./sind(T.twotheta./2))./T.EMax;
     % Calculation of maximum hkl²
     if ~isempty(T.a0)
-        T.hklquadratmax = (T.a0(1)/T.dmin)^2;
+        T.hklquadratmax = (T.a0(1)./T.dmin).^2;
     else
         T.hklquadratmax = [];
     end
@@ -430,13 +431,14 @@ else
         T.Peaks = [T.hkl_sort T.Etheo];
     %--------------------------------------------------------------------------
     else
-        T.hkl = Measurement.HKLdspacing;
+        T.hkl = Material.HKLdspacing;
         
         for i = 1:size(T.hkl,1)
             T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl(i,4);
         end
         
         T.Peaks = [T.hkl T.Etheo];
+        T.Peaks(:,5) = [];
     end
     
     % Create matrix for the line plot of the peak positions (X values)

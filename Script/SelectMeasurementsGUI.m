@@ -37,6 +37,7 @@ Sample.Materials.EnergyMax = ShrinkEnergyRange(2);
 if (Substrate)
     Sample.Substrate.EnergyMax = ShrinkEnergyRange(2);
 end
+
 % assignin('base','ShrinkEnergyRange',ShrinkEnergyRange)
 % assignin('base','SpectrumBackup',SpectrumBackup)
 % assignin('base','MeasurementDetector',MeasurementDetector)
@@ -46,6 +47,7 @@ if (~isempty(ShrinkEnergyRange))
         % Reduce energy range
         if isempty(SpectrumBackup{c})
             T.EnergyRange = Tools.Data.DataSetOperations.FindNearestIndex(MeasurementDetector(c).EDSpectrum(:,1), ShrinkEnergyRange);
+%             T.EnergyRange
             T.EDSpectrum{c} = MeasurementDetector(c).EDSpectrum;
             MeasurementDetector(c).EDSpectrum = MeasurementDetector(c).EDSpectrum(T.EnergyRange(1):T.EnergyRange(2), :);
         else

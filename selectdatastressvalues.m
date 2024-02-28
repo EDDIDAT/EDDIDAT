@@ -311,8 +311,8 @@ oldpointer = get(fighandle,'Pointer');
 % get the children of the axes
 % hc = get(params.Axes,'children');
 hc = get(params.Handle,'children');
-% assignin('base','hc',hc)
-
+assignin('base','hc',hc)
+assignin('base','params',params)
 % if size(hc,1) == 2
 %     hcignore = params.Handle.Children(1);
 % else
@@ -473,6 +473,58 @@ elseif size(hc,1) == 8
         hcignore(6) = params.Handle.Children(7);
         hcignore(7) = params.Handle.Children(8);
     end
+elseif size(hc,1) == 12
+    % 
+    % Four phi angles
+    if params.CheckBoxesPhi(1) == 1
+        hcignore(1) = params.Handle.Children(1);
+        hcignore(2) = params.Handle.Children(2);
+        hcignore(3) = params.Handle.Children(3);
+        hcignore(4) = params.Handle.Children(4);
+        hcignore(5) = params.Handle.Children(5);
+        hcignore(6) = params.Handle.Children(6);
+        hcignore(7) = params.Handle.Children(7);
+		hcignore(8) = params.Handle.Children(8);
+        hcignore(9) = params.Handle.Children(9);
+        hcignore(10) = params.Handle.Children(10);
+        hcignore(11) = params.Handle.Children(11);
+	elseif params.CheckBoxesPhi(2) == 1
+        hcignore(1) = params.Handle.Children(1);
+        hcignore(2) = params.Handle.Children(2);
+        hcignore(3) = params.Handle.Children(3);
+        hcignore(4) = params.Handle.Children(4);
+        hcignore(5) = params.Handle.Children(5);
+        hcignore(6) = params.Handle.Children(6);
+        hcignore(7) = params.Handle.Children(7);
+		hcignore(8) = params.Handle.Children(8);
+        hcignore(9) = params.Handle.Children(9);
+        hcignore(10) = params.Handle.Children(11);
+        hcignore(11) = params.Handle.Children(12);
+	elseif params.CheckBoxesPhi(3) == 1
+        hcignore(1) = params.Handle.Children(1);
+        hcignore(2) = params.Handle.Children(2);
+        hcignore(3) = params.Handle.Children(3);
+        hcignore(4) = params.Handle.Children(4);
+        hcignore(5) = params.Handle.Children(5);
+        hcignore(6) = params.Handle.Children(6);
+        hcignore(7) = params.Handle.Children(7);
+		hcignore(8) = params.Handle.Children(9);
+        hcignore(9) = params.Handle.Children(10);
+        hcignore(10) = params.Handle.Children(11);
+        hcignore(11) = params.Handle.Children(12);
+	elseif params.CheckBoxesPhi(4) == 1
+        hcignore(1) = params.Handle.Children(1);
+        hcignore(2) = params.Handle.Children(2);
+        hcignore(3) = params.Handle.Children(3);
+        hcignore(4) = params.Handle.Children(4);
+        hcignore(5) = params.Handle.Children(5);
+        hcignore(6) = params.Handle.Children(7);
+        hcignore(7) = params.Handle.Children(8);
+		hcignore(8) = params.Handle.Children(9);
+        hcignore(9) = params.Handle.Children(10);
+        hcignore(10) = params.Handle.Children(11);
+        hcignore(11) = params.Handle.Children(12);
+    end	    
 end
 
 

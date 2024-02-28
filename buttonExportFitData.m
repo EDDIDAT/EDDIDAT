@@ -170,8 +170,8 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             % Define ticks, set ticks to 5
             ax.YTick = (dminYlim:(dmaxYlim - dminYlim)/5:dmaxYlim);
             
-%             ax.YLim = [4.06 4.09];
-%             ax.YTick = (4.06:0.005:4.09);
+%             ax.YLim = [2.855 2.875];
+%             ax.YTick = (2.855:0.0025:2.875);
             
             ax.YAxis.TickLabelFormat = ' %.4f ';
         elseif strcmp(YDataStr,'Energy')

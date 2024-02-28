@@ -163,7 +163,7 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
 % assignin('base','phiS',phiS)
 % assignin('base','phiP_ETA',phiP_ETA)
 % assignin('base','etaP',etaP)
-% assignin('base','Scans',Scans)
+% assignin('base','Scans',Scans)+
 
     % Read phi and psi angles and scans. Sort scans according to phi angle
     % and than according to psi angle 
@@ -197,17 +197,17 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
             if strcmp(Diffractometer.Name,'ETA3000')
                 if phimissingpsi == 180
 %                     assignin('base','Scans_tmp',Scans_tmp)
-                    ScanNew = strrep(Scans_tmp{end}(10,:),'#P1 0','#P1 -180');
-                    Pos = sscanf(Scans_tmp{end}(10,:),'%*s %*f %*f %f');
+                    ScanNew = strrep(Scans_tmp{end}(9,:),'#P1 0','#P1 -180');
+                    Pos = sscanf(Scans_tmp{end}(9,:),'%*s %*f %*f %f');
                     PosStr = num2str(Pos);
                     ScanNew = strrep(ScanNew,[PosStr,'   '],PosStr);
-                    Scans_tmp{end}(10,:) = ScanNew;
+                    Scans_tmp{end}(9,:) = ScanNew;
                 elseif phimissingpsi == 0
-                    ScanNew = strrep(Scans_tmp{end}(10,:),'#P1 -180','#P1 0');
-                    Pos = sscanf(Scans_tmp{end}(10,:),'%*s %*f %*f %f');
+                    ScanNew = strrep(Scans_tmp{end}(9,:),'#P1 -180','#P1 0');
+                    Pos = sscanf(Scans_tmp{end}(9,:),'%*s %*f %*f %f');
                     PosStr = num2str(Pos);
                     ScanNew = strrep(ScanNew,PosStr,[PosStr,'   ']);
-                    Scans_tmp{end}(10,:) = ScanNew;
+                    Scans_tmp{end}(9,:) = ScanNew;
                 end
             end
             Scans = Scans_tmp;
