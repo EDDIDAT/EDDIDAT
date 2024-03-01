@@ -440,7 +440,8 @@ else
         T.Peaks = [T.hkl T.Etheo];
         T.Peaks(:,5) = [];
     end
-    
+    a = T.Etheo;
+    a
     % Create matrix for the line plot of the peak positions (X values)
     for i = 1:size(T.Peaks,1)
         T.X1(i,:) = [T.Peaks(i,5) T.Peaks(i,5) nan];

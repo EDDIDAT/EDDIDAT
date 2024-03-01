@@ -269,7 +269,7 @@ if strcmp(Diffractometer.Name,'ETA3000')
         theta = TwoTheta/2;
         alpha = 0.496; %0.496;   % Divergence need to be calculated for ETA 2mm pinhole in front of polycap
         S = deg2rad(alpha)*L./sind(theta);
-        B = 0.005; % allowed blurring
+        B = 0.0005; % allowed blurring
         for k = 1:length(B)
             dmin(k,:) = -L/2 .*(1+S./B(k).*sind(theta)).*cotd(theta) + sqrt((L./2.*(1+S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
             dmax(k,:) = -L/2 .*(1-S./B(k).*sind(theta)).*cotd(theta) - sqrt((L./2.*(1-S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
@@ -355,7 +355,7 @@ if strcmp(Diffractometer.Name,'ETA3000')
         twothetatmp(:,633:636) = [];
 
         % Script for FuzzyBinning of 2D Mythen data 
-        NumBins = py.int(10240);
+        NumBins = py.int(16000);
         % Run python script that does the fuzzy binning
         if size(unique(TwoTheta,'stable'),2) == 1
             for k = 1:size(Intensity,1)
