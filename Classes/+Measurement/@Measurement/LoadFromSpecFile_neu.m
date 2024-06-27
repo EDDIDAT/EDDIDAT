@@ -10,7 +10,6 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
 % assignin('base','Diffractometer',Diffractometer)
 % assignin('base','ScanMode',ScanMode)
 % assignin('base','Calibration',Calibration)
-
 %% (* Stringenzprüfung *)
 %     validateattributes(Filename,{'char'},{'row'});
 %     validateattributes(Diffractometer,{'Measurement.Diffractometer'},...
@@ -31,7 +30,7 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
     assignin('base','Diffractometer',Diffractometer)
 %% (* File und Scan Header *)
     %Ermitteln der File und Scan Header
-    Index_FileHeader = Tools.StringOperations.SearchString(M,'#C'); % 2. Index Ende FileHeader
+%     Index_FileHeader = Tools.StringOperations.SearchString(M,'#C'); % 2. Index Ende FileHeader
     Index_ScanHeaderStart = Tools.StringOperations.SearchString(M,'#S');
     Index_ScanHeaderEnd = Tools.StringOperations.SearchString(M,'@A');
 %% (* Counts und Indizies *)
@@ -158,12 +157,12 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
     end
     
 % assignin('base','M',M)
-% assignin('base','psiP',psiP)
-% assignin('base','phiP',phiP)
+assignin('base','psiP',psiP)
+assignin('base','phiP',phiP)
 % assignin('base','phiS',phiS)
 % assignin('base','phiP_ETA',phiP_ETA)
 % assignin('base','etaP',etaP)
-% assignin('base','Scans',Scans)+
+% assignin('base','Scans',Scans)
 
     % Read phi and psi angles and scans. Sort scans according to phi angle
     % and than according to psi angle 
@@ -198,9 +197,10 @@ function obj = LoadFromSpecFile_neu(Filename,Diffractometer,ScanMode,Calibration
                 if phimissingpsi == 180
 %                     assignin('base','Scans_tmp',Scans_tmp)
                     ScanNew = strrep(Scans_tmp{end}(9,:),'#P1 0','#P1 -180');
-                    Pos = sscanf(Scans_tmp{end}(9,:),'%*s %*f %*f %f');
-                    PosStr = num2str(Pos);
-                    ScanNew = strrep(ScanNew,[PosStr,'   '],PosStr);
+%                     Pos = sscanf(Scans_tmp{end}(9,:),'%*s %*f %*f %f %*f');
+% %                     Pos = sscanf(Scans_tmp{end}(9,:),'%*s %*f %*f %f');
+%                     PosStr = num2str(Pos);
+%                     ScanNew = strrep(ScanNew,[PosStr,'   '],PosStr);
                     Scans_tmp{end}(9,:) = ScanNew;
                 elseif phimissingpsi == 0
                     ScanNew = strrep(Scans_tmp{end}(9,:),'#P1 -180','#P1 0');
@@ -637,8 +637,8 @@ assignin('base','Scans1',Scans)
                 if strcmp(Diffractometer.Name,'ETA3000')
                     obj.DeadTime = 1;
                 else
-                    obj.DeadTime = (1 - sscanf(Scan(Index_tmp(1),:),...
-                        [Diffractometer.ImportLiterals.Times '%*f %f %*f']) / obj.RealTime) * 100;
+                    obj.DeadTime = 0.3; %(1 - sscanf(Scan(Index_tmp(1),:),...
+                        %[Diffractometer.ImportLiterals.Times '%*f %f %*f']) / obj.RealTime) * 100;
                 end
 
             %% (* Einlesen der Rahmenbedingungen *)
@@ -898,13 +898,15 @@ assignin('base','Scans1',Scans)
         %% (* Einlesen der Scan-Veränderlichen *)
             %Einlesen aller relevanten Daten aus dem AScan
             %(2 Zeilen über dem @A)
-            
+
             if strcmp(Diffractometer.Name,'ETA3000')
                 AScanVariables = sscanf(Scan(Index_AScan(j_c)-3,:),'%f',inf)';
+            elseif strcmp(Diffractometer.Name,'LEDDI_KETEK')
+                AScanVariables = sscanf(Scan(Index_AScan(j_c)-2,:),'%f',inf)';
             else
                 AScanVariables = sscanf(Scan(Index_AScan(j_c)-1,:),'%f',inf)';
             end
-
+            
             %Veränderlicher Motor (Hier statisch, da sonst nirgenwo steht,
             %wie der variable Motor heißt)
             obj(j_c).Motors_all.(AScanVariablesNames{1}) = ...
@@ -919,10 +921,10 @@ assignin('base','Scans1',Scans)
                 obj(j_c).CountingTime = AScanVariables(7);
             else
                 obj(j_c).RealTime = AScanVariables(...
-                find(strcmp(AScanVariablesNames,'Real'),1,'first'));
+                find(strcmp(AScanVariablesNames,'Real_1'),1,'first'));
                 %DeadTime (Aus der LiveTime berechnen)
                 obj(j_c).DeadTime = (1 - AScanVariables(...
-                    find(strcmp(AScanVariablesNames,'Live'),1,'first'))...
+                    find(strcmp(AScanVariablesNames,'Live_1'),1,'first'))...
                     / obj(j_c).RealTime) * 100;
             end
             
@@ -1372,7 +1374,7 @@ end
                 if ~all(etaneu==90) && ~all(etaneu==0)
                     obj(i_c).twotheta = str2double(twothetauser{1});
                 else
-                    obj(i_c).twotheta = obj(i_c).Motors_all.(Diffractometer.VirtualMotors.tth);
+                    obj(i_c).twotheta = abs(obj(i_c).Motors_all.(Diffractometer.VirtualMotors.tth));
                 end
     %             if strcmp(Diffractometer.Name,'EDDI_5axis_tth')
     %                 if isempty(Index_tmpPhi) % Check if psi and phi values are written separately to file

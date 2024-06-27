@@ -9,7 +9,7 @@ YPlot_tmp = zeros(size(XPlot));
 % YPlotETA = zeros(size(XPlot));
 Ka1Plot = zeros(size(XPlot));
 Ka2Plot = zeros(size(XPlot));
-% assignin('base','FittedPeaksCalc',FittedPeaksCalc)
+
 % Calculate fitted profile using Fitted PeakData
 for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
     if PopupValueFitFunc == 2 %PV-Func
@@ -41,28 +41,15 @@ for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
     end
     
     if strcmp(Diffractometer,'ETA3000')
-%         assignin('base','SinglePlot',SinglePlot)
-%         assignin('base','YPlot',YPlot)
-        
-%         YPlotETA_tmp = YPlotETA + SinglePlot;
-%         assignin('base','YPlot_tmp',YPlot_tmp)
-%         YPlot = [YPlot_tmp' Plotka1' Plotka2'];
-%         YPlot = [YPlot_tmp' Ka1Plot_tmp' Ka2Plot_tmp'];
-%         assignin('base','YPlot1',YPlot)
         YPlot_tmp = YPlot_tmp + SinglePlot;
         Ka1Plot = Ka1Plot + Plotka1;
         Ka2Plot = Ka2Plot + Plotka2;
         YPlot = [YPlot_tmp' Ka1Plot' Ka2Plot'];
-%     assignin('base','Ka1Plot',Ka1Plot)
-%     assignin('base','Ka2Plot',Ka2Plot)
-%     assignin('base','YPlot',YPlot)
     else
         YPlot = YPlot + SinglePlot;
     end
 end
-% if strcmp(Diffractometer,'ETA3000')
-%     YPlot = [YPlotETA_tmp' Ka1Plot_tmp' Ka2Plot_tmp'];
-% end
+
 % Set fit results as data in table
 if PopupValueFitFunc == 2 %PV-Func
     for c = 1:size(FittedPeaksCalc,2)
@@ -181,6 +168,11 @@ else
             xDataTmpCalc(ii,:) = linspace(PeakRegionsXCalc{valueSlider}(1,ii),PeakRegionsXCalc{valueSlider}(2,ii));
     end
 end
+assignin('base','xDataTmpCalc',xDataTmpCalc)
+assignin('base','PeaksCalc',PeaksCalc)
+assignin('base','lambdaka1',lambdaka1)
+assignin('base','lambdaka2',lambdaka2)
+assignin('base','FittedPeaksCalcPP',FittedPeaksCalc)
 % Calculate integrated intensities
 if PopupValueFitFunc == 2 %PV-Func
     % Calculate integrated intensities

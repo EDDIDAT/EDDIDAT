@@ -420,6 +420,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         T.absorbcoeff = Sample.Materials.LAC(T.Etheo);
         % Calculate tau for Emax values
         T.tau = (sind(T.twotheta./2).*cosd(0))./(2.*T.absorbcoeff./10000);
+        assignin('base','T',T)
         T.Peaks(:,6) = T.tau;
         
         for i = 1:size(T.Peaks,1)

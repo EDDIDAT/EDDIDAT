@@ -42,11 +42,11 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
     % Index_Peaks beinhaltet die vom User vorgegebenen Peakpositionen. An
     % dieser Steller werden nun die Positionen der entsprechenden Reflexe
     % für den K-alpha-2-Anteil berechnet.
-%     L = length(Index_Peaks);
+    L = length(Index_Peaks);
     %Prealloc der Fitparameter
-    p(1:4) = 0;
+    p(1:4,1:L/2) = 0;
     %--> Wenn es nur einen Peak gibt, nimm genauere Startwerte
-%     if L == 1
+    if L == 2
 %         
 %     %% (* Startwerte suchen *)
 %         %Maximale Stelle und zugehöriger Funktionswert
@@ -78,18 +78,22 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
         
         fun = @(p,x)(Tools.Science.Math.FF_PseudoVoigt(x,p(1),p(2),p(3),p(4)) + Tools.Science.Math.FF_PseudoVoigt(x,p(1)/2,2.*asind(lambdaka2./(2.*lambdaka1./sind(p(2)/2)./2)),p(3),p(4)));
 
-        
+    else        
         %Anfang des Handles
 %         fun = '@(p,x)(0';
 %         %--> Erzeugen der Summanden
-% %         for i_c = 1:L
-% %             fun = [fun, '+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
-% %                 num2str(i_c*4-3),'),p(',num2str(i_c*4-2),'),p(',...
-% %                 num2str(i_c*4-1),'),p(',num2str(i_c*4),'))'];
-% %         end
-% %         %Zusammenfügen
-% %         fun = str2func([fun,')']);
+%         for i_c = 1:L/2
+%             fun = [fun, '+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
+%                 num2str(i_c*4-3),'),p(',num2str(i_c*4-2),'),p(',...
+%                 num2str(i_c*4-1),'),p(',num2str(i_c*4),'))', '+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
+%                 num2str(i_c*4-3),')/2,2.*asind(lambdaka2./(2.*lambdaka1./sind(p(',num2str(i_c*4-2),')/2)./2)),p(',...
+%                 num2str(i_c*4-1),'),p(',num2str(i_c*4),'))'];
+%         end
+        %Zusammenfügen
+%         fun = str2func([fun,')']);
 %         
+        fun = @(p,x)(Tools.Science.Math.FF_PseudoVoigt(x,p(1),p(2),p(3),p(4)) + Tools.Science.Math.FF_PseudoVoigt(x,p(1)/2,2.*asind(lambdaka2./(2.*lambdaka1./sind(p(2)/2)./2)),p(3),p(4)) + ...
+            Tools.Science.Math.FF_PseudoVoigt(x,p(5),p(6),p(7),p(8)) + Tools.Science.Math.FF_PseudoVoigt(x,p(5)/2,2.*asind(lambdaka2./(2.*lambdaka1./sind(p(6)/2)./2)),p(7),p(8)));
 %         fun = [fun, '+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
 %                 num2str(1),'),p(',num2str(2),'),p(',...
 %                 num2str(3),'),p(',num2str(4),'))','+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
@@ -98,7 +102,7 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
 % 
 %         fun = str2func([fun,')']);
         
-
+    end
 %         fun = [fun, '+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
 %                 num2str(1),'),p(',num2str(2),'),p(',...
 %                 num2str(3),'),p(',num2str(4),'))','+Tools.Science.Math.FF_PseudoVoigt(x,p(',...
@@ -110,9 +114,9 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
         %Maxima und ihre Stellen
 %         lambdaka1 = 1.78897;
 %         lambdaka2 = 1.79278;
-        p(1) = Y(Index_Peaks(1));
+        p(1,:) = Y(Index_Peaks(1:2:end,:));
 %         p(1,2) = p(1,1)/2;
-        p(2) = X(Index_Peaks(1));
+        p(2,:) = X(Index_Peaks(1:2:end,:));
         %Vorgabewerte (Höhe)
 %         p(1,~isnan(PeakProps(1,:))) = PeakProps(1,~isnan(PeakProps(1,:))); 
 %         p(2,~isnan(PeakProps(1,:))) = ...
@@ -122,11 +126,11 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
         %Damit kürzt sich die Abhänigkeit von der Intensität des Peaks
         %heraus.
 %         p(3,:) = sum(Y(1:end-1) .* diff(X)) ./ (sum(p(1,:)) * sqrt(2*pi));
-        p(3) = 0.15;
+        p(3,:) = 0.15;
         %Vorgabewerte (Breite)
 %         p(3,~isnan(PeakProps(2,:))) = PeakProps(2,~isnan(PeakProps(2,:)));
         %Anteil von Gauss und Lorentz
-        p(4) = RelationGaussLorentz;
+        p(4,:) = RelationGaussLorentz;
 %         p(5) = (2.*asind(lambdaka2./(2.*lambdaka1./sind(p(2,1)/2)./2)));
 
 
@@ -155,7 +159,11 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
 %         assignin('base','Index_PeaksFitParam',Index_Peaks)
 %% (* LSQ-Fit *)
     %p(4*k) ist zwischen 0 und 1
-    [FitParam,~,residual,~,~,~,jacobian] = lsqcurvefit(fun,p,X,Y,...
+%     [FitParam,~,residual,~,~,~,jacobian] = lsqcurvefit(fun,p,X,Y,...
+%         PeakPosBoundarys(1,:),... % lb
+%         PeakPosBoundarys(2,:),... % ub
+%         optimset('Display','off'));
+    [FitParam,~,residual,~,~,~,jacobian] = lsqcurvefit(fun,(p(:))',X,Y,...
         PeakPosBoundarys(1,:),... % lb
         PeakPosBoundarys(2,:),... % ub
         optimset('Display','off'));

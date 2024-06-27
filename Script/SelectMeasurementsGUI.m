@@ -1,4 +1,4 @@
-function [meas,Sample,EnergyRange,SpectrumBackup] = SelectMeasurementsGUI(Measurement,Substrate,Sample,P,SpectrumBackup)
+function [meas,Sample,EnergyRange,SpectrumBackup] = SelectMeasurementsGUI(Measurement,Sample,P,SpectrumBackup)
 %% (* Select measurements to be analysed *)
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % Vector of the measurement numbers which you want to select.
@@ -17,7 +17,7 @@ if strcmp(P.Diffsel,'LEDDI')
 else
     ShrinkEnergyRange = [P.EnergyRange];  % TiCN [24 73], Al2O4 [14 66], WC [];
 end
-
+% P.EnergyRange
 % assignin('base','measGUIbefore',Measurement)
 % assignin('base','SpectrumBackupGUIbefore',SpectrumBackup)
 % ShrinkEnergyRange
@@ -34,9 +34,9 @@ MeasurementDetector = Measurement(WhichMeasurementsDetector);
 % Substrate = T.Material.ShowSubstratePeaks;
 % Assign energy HighLimit to the material and substrate properties.
 Sample.Materials.EnergyMax = ShrinkEnergyRange(2);
-if (Substrate)
-    Sample.Substrate.EnergyMax = ShrinkEnergyRange(2);
-end
+% if (Substrate)
+%     Sample.Substrate.EnergyMax = ShrinkEnergyRange(2);
+% end
 
 % assignin('base','ShrinkEnergyRange',ShrinkEnergyRange)
 % assignin('base','SpectrumBackup',SpectrumBackup)

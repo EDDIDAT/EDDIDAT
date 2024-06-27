@@ -9,7 +9,7 @@ function [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(Measurement,DataT
 % Use PeakRegions from variable bkg (defined manually or loaded from the 
 % ULD file).
 R.PeakRegions = PeakRegions;
-
+% assignin('base','PeakRegions',PeakRegions)
 % Read peak data from 'Peaks' variable in workspace or from ULD file.
 R.Index_Peaks = Peaks;
 % assignin('base','Peaks',Peaks)
@@ -79,7 +79,7 @@ for c = 1:length(Measurement)
     
     
     % Regionen zusammenfassen
-    PeakRegions.Regions = PeakRegions.Regions;
+%     PeakRegions.Regions = PeakRegions.Regions;
     FittedPeaks{c} = cell(1,size(PeakRegions.Limits,2));
     % Counter for number of peaks, in order to count correctly if double
     % peaks are fitted.
@@ -203,28 +203,54 @@ for c = 1:length(Measurement)
         elseif length(Index_PeaksInRegion) == 4
         % For fitting with fixed peak position boundarys. lb and ub can be
         % changed according to the needs of the user.
-            if FitFunc == 2 %(PV-Func)
-                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0;...
-                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1];
-                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
-                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
-            elseif FitFunc == 3 %TCH
-                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0;...
-                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100];
-                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_TCH_DoublePeak(...
-                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.05, 0.05);
-            elseif FitFunc == 4 %Gauss
-                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0;...
-                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100];
-                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Gauss_DoublePeak(...
-                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
-            elseif FitFunc == 5 %Lorentz
-                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0;...
-                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100];
-                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Lorentz_DoublePeak(...
-                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
-            end
+        if strcmp(Diffractometer,'ETA3000')
+%                 Index_PeaksInRegionKa2 = (intersect(a:b, Index_Peakska2) - a + 1)';
+                if FitFunc == 2 %(PV-Func)
+                    PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeakETA(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, lambdaka1, lambdaka2);
+                elseif FitFunc == 3 %TCH
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_TCH_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.05, 0.05);
+                elseif FitFunc == 4 %Gauss
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Gauss_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
+                elseif FitFunc == 5 %Lorentz
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Lorentz_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
+                end
+                cnt = cnt+2;
+            else
+                if FitFunc == 2 %(PV-Func)
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 3 %TCH
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_TCH_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.05, 0.05);
+                elseif FitFunc == 4 %Gauss
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Gauss_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
+                elseif FitFunc == 5 %Lorentz
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_Lorentz_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys);
+                end
             cnt = cnt+4;
+        end
         elseif length(Index_PeaksInRegion) == 5
         % For fitting with fixed peak position boundarys. lb and ub can be
         % changed according to the needs of the user.
@@ -302,7 +328,7 @@ for c = 1:length(Measurement)
             cnt = cnt+7;     
         end
     end
-%     assignin('base','R',R)  
+    assignin('base','FittedPeaksGUI2',FittedPeaks)  
 %     Form anpassen
     if FitFunc == 2 || FitFunc == 3
 %         if strcmp(Diffractometer,'ETA3000')

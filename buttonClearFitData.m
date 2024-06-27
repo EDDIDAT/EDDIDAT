@@ -19,6 +19,18 @@ PopupmenuXData = join(['popupmenuXData',PlotWindow]);
 PopupmenuYData = join(['popupmenuYData',PlotWindow]);
 eta = join(['eta',PlotWindow]);
 phi = join(['phi',PlotWindow]);
+% assignin('base','hdata',h)
+% if ~isfield(h,'idxphi0')
+%     PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
+%     ia = cell(1,size(h.Params.Phi_Winkel,2));
+%     for k = 1:size(h.Params.Phi_Winkel,2)
+% 	    [PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+%     end
+%     h.idxphi0 = find(PhiWinkel{1}==0);
+%     h.idxphi90 = find(PhiWinkel{1}==90);
+%     h.idxphi180 = find(PhiWinkel{1}==180);
+%     h.idxphi270 = find(PhiWinkel{1}==270);
+% end
 
 % Set plot data
 if ~isempty(h.idxphi0)

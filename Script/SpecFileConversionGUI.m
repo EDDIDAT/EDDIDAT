@@ -1,4 +1,4 @@
-function [meas,MeasurementBackup,DataTmp,Substrate,Diffractometer,P,T] = SpecFileConversionGUI(P,SampleInput,T)
+function [meas,MeasurementBackup,DataTmp,Diffractometer,P,T] = SpecFileConversionGUI(P,SampleInput,T,h)
 %% (* Convert the measurement spec-file *)
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % This script converts and reads the measurement spec file.
@@ -49,7 +49,7 @@ Diffractometer = Measurement.Diffractometer.LoadFromFile(DiffractometerFileName,
 Sample = SampleInput;
 set(meas, 'Sample', Sample);
 MeasurementBackup = meas;
-Substrate = T.Material.ShowSubstratePeaks;
+% Substrate = T.Material.ShowSubstratePeaks;
 % toc
 % measnew = load('D:\Matlab - Auswertesoftware\Data\Results\MetalJet-LIMAX-160_new_format\Eberstein-Probe-unbeschichtet-tth19-y-scans_11052023_12052023\MeasData_new_Si_hex.mat');
 % Eberstein-Probe-unbeschichtet-tth19-y-scans_11052023_12052023\MeasData_new_SiC_hex
@@ -201,25 +201,31 @@ if strcmp(Diffractometer.Name,'ETA3000')
         if size(Intensity,2) ~= 640
             Intensity = Intensity';
         end
+        Intensity = Intensity(:,100:510);
+        assignin('base','TwoTheta',TwoTheta)
+        assignin('base','Intensity',Intensity)
         % Get unique twotheta values
         TwoThetaReal = unique(TwoTheta);
         indTwoThetaRealStart = find(TwoTheta==TwoThetaReal(1));
         indTwoThetaRealEnd = find(TwoTheta==TwoThetaReal(end));
         IndTwoThetaReal = [indTwoThetaRealStart; indTwoThetaRealEnd]';
-        % Sum counts from each channel for each twotheta
-        Counts = sum(Intensity,2);
         
-        for k = 1:size(IndTwoThetaReal,1)
-            ScanCounts{k} = Counts((IndTwoThetaReal(k,1):IndTwoThetaReal(k,2)));
-        end
-        
+        % Create measurement object
         MeasScanCounts = Measurement.Measurement();
         for k = 1:size(IndTwoThetaReal,1)
             MeasScanCounts(k) = meas(IndTwoThetaReal(k,1));
         end
         
+        % Sum counts from each channel for each twotheta
+        Counts = sum(Intensity,2);
+        
         for k = 1:size(IndTwoThetaReal,1)
-            MeasScanCounts(k).EDSpectrum = [TwoThetaReal' ScanCounts{k}./MeasScanCounts(k).CountingTime];
+            ScanCounts{k} = Counts((IndTwoThetaReal(k,1):IndTwoThetaReal(k,2)))./MeasScanCounts(k).CountingTime;
+        end
+        assignin('base','ScanCounts',ScanCounts)
+        for k = 1:size(IndTwoThetaReal,1)
+%             MeasScanCounts(k).EDSpectrum = [TwoThetaReal' ScanCounts{k}./MeasScanCounts(k).CountingTime];
+            MeasScanCounts(k).EDSpectrum = [TwoThetaReal' ScanCounts{k}];
             MeasScanCounts(k).twotheta = TwoThetaReal;
             MeasScanCounts(k).Name = ['Scan', num2str(k), ', Chi = ', num2str(MeasScanCounts(k).SCSAngles.psi), '°'];
         end
@@ -241,6 +247,50 @@ if strcmp(Diffractometer.Name,'ETA3000')
         end
     
         meas = MeasScanCounts;
+
+%         % Noise Correction of Mythen data
+%         ScanCountsNoiseCorr = ScanCounts;
+%         for i = 1:size(ScanCountsNoiseCorr,2)
+%             % Find difference of measured counts for each twotheta step
+%             % Calculate difference for increasing twotheta
+%             for k = 2:length(ScanCountsNoiseCorr{i})
+% 	            diffup(k) = ScanCountsNoiseCorr{i}(k)-ScanCountsNoiseCorr{i}(k-1);
+%             end
+%             
+%             % Calculate difference for decreasing twotheta. Flip Intensity vector
+%             tmp = flip(ScanCountsNoiseCorr{i});
+%             
+%             for k = 2:length(ScanCountsNoiseCorr{i})
+% 	            diffdown(k) = tmp(k)-tmp(k-1);
+%             end
+%             
+%             % Create matrix
+%             diffall = [diffup'  flip(diffdown)'];
+%             % Find indices of values for diffall > 1.15 (user selected limit)
+%             idx = [diffall(:,1)>1.15 diffall(:,2)>1.15];
+%             % Sum idx values in order to find entries which are 1 for both columns
+%             Sumidx = sum(idx,2);
+%             idxSumidx = find(Sumidx==2);
+%             % Create matrix with intensity values for corresponding indices
+%             NoiseCorr_tmp = [ScanCountsNoiseCorr{i}(idxSumidx-1) ScanCountsNoiseCorr{i}(idxSumidx) ScanCountsNoiseCorr{i}(idxSumidx+1) idxSumidx];
+%             % Filter intensity values smaller than three counts (user selected limit)
+%             idxNoiseCorr_tmp = [NoiseCorr_tmp(:,1)<=3 NoiseCorr_tmp(:,2) NoiseCorr_tmp(:,3)<=3 NoiseCorr_tmp(:,4)];
+%             % Find entries which are 1 for both columns
+%             NoiseCorr = find((idxNoiseCorr_tmp(:,1) + idxNoiseCorr_tmp(:,3))==2);
+%             % Get indices of NoiseCorr values
+%             idxNoiseCorr = NoiseCorr_tmp(NoiseCorr,4);
+%             % Calculate average of idx-2/idx+2 in order to replace initial count value
+%             for k = 1:length(idxNoiseCorr)
+% 	            replacedata(k) = sum(ScanCounts{i}(idxNoiseCorr(k)-2:idxNoiseCorr(k)+2))/5;
+%             end
+%             % Correct intensity data
+%             ScanCountsNoiseCorr{i}(idxNoiseCorr) = replacedata;
+%         end
+
+%         for k = 1:size(IndTwoThetaReal,1)
+%             MeasScanCounts(k).EDSpectrum(:,2) = [ScanCountsNoiseCorr{k}];
+%         end
+%         assignin('base','ScanCountsNoiseCorr',ScanCountsNoiseCorr)
     elseif meas(1).MythenScanMode == 1
         %Load data in line detector mode
         for c = 1:length(meas)
@@ -269,7 +319,9 @@ if strcmp(Diffractometer.Name,'ETA3000')
         theta = TwoTheta/2;
         alpha = 0.496; %0.496;   % Divergence need to be calculated for ETA 2mm pinhole in front of polycap
         S = deg2rad(alpha)*L./sind(theta);
-        B = 0.0005; % allowed blurring
+        blurring = get(h.selectblurring,'String');
+        B = str2double(blurring);
+%         B = 0.0005; % allowed blurring
         for k = 1:length(B)
             dmin(k,:) = -L/2 .*(1+S./B(k).*sind(theta)).*cotd(theta) + sqrt((L./2.*(1+S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
             dmax(k,:) = -L/2 .*(1-S./B(k).*sind(theta)).*cotd(theta) - sqrt((L./2.*(1-S./B(k).*sind(theta)).*cotd(theta)).^2 + L.^2);
@@ -280,15 +332,15 @@ if strcmp(Diffractometer.Name,'ETA3000')
         
         dminmeas = Tools.Data.DataSetOperations.FindNearestIndex(d,dmin_inv);
         dmaxmeas = Tools.Data.DataSetOperations.FindNearestIndex(d,dmax_inv);
-        assignin('base','dminmeas',dminmeas)
-        assignin('base','dmaxmeas',dmaxmeas)
+%         assignin('base','dminmeas',dminmeas)
+%         assignin('base','dmaxmeas',dmaxmeas)
         % Calculate twotheta for each channel
         for l = 1:size(TwoTheta,2)
             for m = 1:size(d,2)
                 twothetatmp(l,m) = TwoTheta(l) + asind(d(m)/L*(cosd(beta)/(1+(d(m)/L)^2 - 2*(d(m)/L)*sind(beta)).^0.5));
             end
         end
-        assignin('base','twothetatmp',twothetatmp)
+%         assignin('base','twothetatmp',twothetatmp)
 
         if size(Intensity,2) ~= 640
             Intensity = Intensity';
@@ -354,8 +406,9 @@ if strcmp(Diffractometer.Name,'ETA3000')
         Intensity(:,633:636) = [];
         twothetatmp(:,633:636) = [];
 
-        % Script for FuzzyBinning of 2D Mythen data 
-        NumBins = py.int(16000);
+        % Script for FuzzyBinning of 2D Mythen data
+        BinsUser = get(h.selectbins,'String');
+        NumBins = py.int(str2double(BinsUser));
         % Run python script that does the fuzzy binning
         if size(unique(TwoTheta,'stable'),2) == 1
             for k = 1:size(Intensity,1)

@@ -118,8 +118,8 @@ Scantmp = mat2cell(Scantmp',length(Scantmp),1);
 % Phitmp = mat2cell(Phitmp',length(Phitmp),1);
 % assignin('base','Scantmp',Scantmp)
 % assignin('base','DiffractionLinestmp',DiffractionLinestmp)
-assignin('base','indexPeakToKeep',indexPeakToKeep)
-assignin('base','idxkeepPeaks',idxkeepPeaks)
+% assignin('base','indexPeakToKeep',indexPeakToKeep)
+% assignin('base','idxkeepPeaks',idxkeepPeaks)
 h.(TemperatureForPlot) = Temperaturetmp;
 h.(TimesForPlot) = Time;
 h.(ScansForPlot) = Scantmp;
@@ -534,7 +534,7 @@ for j = 1:length(ParamsToFit)
 end
 assignin('base','tau',tau)
 for k = 1:size(tau,2)
-    h.TauMaxAxesLimits{k} = cellfun(@max, tau(k).temptau);
+    h.TauMaxAxesLimits{k} = cellfun(@max, tau(k).temptau,'UniformOutput',0);
 end
 
 % assignin('base','tau',tau)
