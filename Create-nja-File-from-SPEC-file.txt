@@ -1,0 +1,41 @@
+for k = 1:length(meas)
+filename = ['20241115-AWT-PointB-Xdirection_2mmSlit_211neu-0',num2str(k),'.dat'];
+Path = [General.ProgramInfo.Path,filename];
+fid = fopen(Path, 'w');
+fprintf(fid,'StammDatei: Probe_5-2_phi0_Peak1.nja \n')
+
+fprintf(fid,'sample = \n')
+fprintf(fid,'time= 14-9-2023 10:52:42 \n')
+fprintf(fid,'phi= 90.Degree \n')
+fprintf(fid,['chi= ',num2str(meas(k).Motors_all.Chi),'Degree \n'])
+fprintf(fid,['phistrich= ',num2str(meas(k).Motors_all.PhiS),'Degree \n'])
+fprintf(fid,'x= -17.mm \n')
+fprintf(fid,'y= -2.mm \n')
+fprintf(fid,'z= -9.826mm \n')
+
+fprintf(fid,['phiP= ',num2str(meas(k).Motors_all.PhiS),'Degree \n'])
+fprintf(fid,['psiP= ',num2str(meas(k).Motors_all.Chi),'Degree \n'])
+fprintf(fid,'etaP= 90.Degree \n')
+fprintf(fid,'lifetime= 15. s \n')
+fprintf(fid,'realtime= 15. s \n')
+
+fprintf(fid,'Anode= Co \n')
+fprintf(fid,'Filter= ---- \n')
+fprintf(fid,'Spannung= 32kV \n')
+fprintf(fid,'Strom= 50mA \n')
+
+fprintf(fid,'Detector= ScintCount \n')
+
+fprintf(fid,'messmodus= 1 \n')
+fprintf(fid,'\n')
+
+fprintf(fid,'Number	2Theta	Counts \n')
+
+Data = [TwoThetameas(:,k) Intensitymeas(:,k)]
+
+for i = 1:length(Data)
+	fprintf(fid, '%.2f\t%.2f\t%.2f\n',i-1,Data(i,:))
+end
+
+fclose(fid);
+end

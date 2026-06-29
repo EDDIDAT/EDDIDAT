@@ -1,0 +1,34 @@
+Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1]};
+t.sin2psi.dzero = [t.sin2psi.dzero(1:7) t2.sin2psi.dzero([1,2,4])];
+t.sin2psi.taumean = [t.sin2psi.taumean(1:7) t2.sin2psi.taumean([1,2,4])];
+t.sin2psi.taupsizero = [t.sin2psi.taupsizero(1:7,:);t2.sin2psi.taupsizero([1,2,4],:)];
+t.sin2psi.taupsizeromean = [t.sin2psi.taupsizeromean(1:7) t2.sin2psi.taupsizeromean([1,2,4])];
+t.sin2psi.tautmp = [t.sin2psi.tautmp(1:7,:);t2.sin2psi.tautmp([1,2,4],:)];
+t.sin2psi.sigmataulist = [t.sin2psi.sigmataulist(1:7,:);t2.sin2psi.sigmataulist([1,2,4],:)];
+t.sin2psi.StressPlotDatatmpsorted = [t.sin2psi.StressPlotDatatmpsorted(1:7,:);t2.sin2psi.StressPlotDatatmpsorted([1,2,4],:)];
+t.PeaksforLabel = [t.PeaksforLabel(1:7,:);t2.PeaksforLabel([1,2,4],:)];
+t.ColorsUsedSorted = Colors(1:length(t.PeaksforLabel));
+
+
+Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1]};
+t.sin2psi.dzero = [t.sin2psi.dzero(1:8) t2.sin2psi.dzero];
+t.sin2psi.taumean = [t.sin2psi.taumean(1:8) t2.sin2psi.taumean];
+t.sin2psi.taupsizero = [t.sin2psi.taupsizero(1:8,:);t2.sin2psi.taupsizero];
+t.sin2psi.taupsizeromean = [t.sin2psi.taupsizeromean(1:8) t2.sin2psi.taupsizeromean];
+t.sin2psi.tautmp = [t.sin2psi.tautmp(1:8,:);t2.sin2psi.tautmp];
+t.sin2psi.sigmataulist = [t.sin2psi.sigmataulist(1:8,:);t2.sin2psi.sigmataulist];
+t.sin2psi.StressPlotDatatmpsorted = [t.sin2psi.StressPlotDatatmpsorted(1:8,:);t2.sin2psi.StressPlotDatatmpsorted];
+t.PeaksforLabel = [t.PeaksforLabel(1:8,:);t2.PeaksforLabel];
+t.ColorsUsedSorted = Colors(1:length(t.PeaksforLabel));
+
+
+Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1]};
+t.sin2psi.dzero = [t.sin2psi.dzero t2.sin2psi.dzero];
+t.sin2psi.taumean = [t.sin2psi.taumean t2.sin2psi.taumean];
+t.sin2psi.taupsizero = [t.sin2psi.taupsizero;t2.sin2psi.taupsizero];
+t.sin2psi.taupsizeromean = [t.sin2psi.taupsizeromean t2.sin2psi.taupsizeromean];
+t.sin2psi.tautmp = [t.sin2psi.tautmp;t2.sin2psi.tautmp];
+t.sin2psi.sigmataulist = [t.sin2psi.sigmataulist;t2.sin2psi.sigmataulist];
+t.sin2psi.StressPlotDatatmpsorted = [t.sin2psi.StressPlotDatatmpsorted;t2.sin2psi.StressPlotDatatmpsorted];
+t.PeaksforLabel = [t.PeaksforLabel;t2.PeaksforLabel];
+t.ColorsUsedSorted = Colors(1:length(t.PeaksforLabel));

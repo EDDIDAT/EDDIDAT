@@ -1,0 +1,152 @@
+================================================================================
+  EVALXRD2D – Installationsanleitung
+  2D-XRD Stress Analysis Tool
+================================================================================
+
+Inhalt:
+  1. Voraussetzungen
+  2. MATLAB Runtime installieren
+  3. Python-Umgebung einrichten
+  4. EVALXRD2D installieren
+  5. Erster Start und Konfiguration
+  6. Fehlerbehebung
+
+================================================================================
+1. VORAUSSETZUNGEN
+================================================================================
+
+  - Windows 10 oder 11 (64-bit)
+  - Mindestens 4 GB freier Festplattenspeicher
+  - Internetzugang (fuer Downloads)
+
+================================================================================
+2. MATLAB RUNTIME INSTALLIEREN
+================================================================================
+
+  Die MATLAB Runtime ist kostenlos und wird benoetigt, um die Anwendung
+  auszufuehren. Eine MATLAB-Lizenz ist NICHT erforderlich.
+
+  a) Option A: Ueber den EVALXRD2D-Installer
+     - Der Installer bietet an, die Runtime automatisch herunterzuladen
+       und zu installieren (~2 GB Download).
+
+  b) Option B: Manuell herunterladen
+     - Webseite: https://www.mathworks.com/products/compiler/matlab-runtime.html
+     - Version: R2023b (muss exakt uebereinstimmen)
+     - Nach dem Download das Installationsprogramm ausfuehren.
+
+  Hinweis: Die Installation der Runtime kann 5-10 Minuten dauern.
+  Nach der Installation ist kein Neustart erforderlich.
+
+================================================================================
+3. PYTHON-UMGEBUNG EINRICHTEN
+================================================================================
+
+  Python wird fuer die pyFAI-Integration benoetigt (2D-Detektor-Integration,
+  Caking, Multigeometrie). Ohne Python koennen keine CBF-Bilder verarbeitet
+  werden.
+
+  Schritt 1: Python 3.11 installieren
+  ------------------------------------
+  - Download: https://www.python.org/downloads/release/python-3119/
+  - "Windows installer (64-bit)" waehlen
+  - WICHTIG: Bei der Installation "Add Python to PATH" ankreuzen
+  - Installationsverzeichnis merken (z.B. C:\Python311)
+
+  Schritt 2: Virtuelle Umgebung erstellen
+  ----------------------------------------
+  Eine Eingabeaufforderung (cmd) oeffnen und folgende Befehle ausfuehren:
+
+    python -m venv C:\pyFAI_env
+
+  Schritt 3: Pakete installieren
+  -------------------------------
+  In der gleichen Eingabeaufforderung:
+
+    C:\pyFAI_env\Scripts\activate
+    pip install pyFAI numpy scipy fabio
+
+  Die Installation dauert einige Minuten. Folgende Pakete werden installiert:
+    - pyFAI    : Azimuthale Integration fuer 2D-Detektoren
+    - numpy    : Numerische Berechnungen
+    - scipy    : Wissenschaftliche Algorithmen (Curve Fitting)
+    - fabio    : Lesen von Detektorbildern (CBF, TIF, etc.)
+
+  Schritt 4: Installation pruefen
+  ---------------------------------
+  In der gleichen Eingabeaufforderung:
+
+    C:\pyFAI_env\Scripts\python.exe -c "import pyFAI; print('pyFAI', pyFAI.version)"
+
+  Es sollte die pyFAI-Versionsnummer angezeigt werden.
+
+================================================================================
+4. EVALXRD2D INSTALLIEREN
+================================================================================
+
+  a) Den Installer "EVALXRD2D_Installer.exe" ausfuehren
+     (bzw. die Datei aus dem Ordner "for_redistribution")
+
+  b) Installationsverzeichnis waehlen
+     (Standard: C:\Program Files\HZB\EVALXRD2D)
+
+  c) Wenn gefragt, MATLAB Runtime mitinstallieren lassen
+     (falls nicht bereits installiert, siehe Punkt 2)
+
+  Alternativ (ohne Installer):
+  - Den Inhalt von "for_redistribution_files_only" in einen beliebigen
+    Ordner kopieren.
+  - MATLAB Runtime separat installieren (siehe Punkt 2b).
+
+================================================================================
+5. ERSTER START UND KONFIGURATION
+================================================================================
+
+  a) EVALXRD2D.exe starten
+     - Beim ersten Start dauert es 30-60 Sekunden, bis die Runtime
+       initialisiert ist. Das ist normal.
+
+  b) Python-Pfad einstellen
+     - Im Feld "Python Exe" den Pfad zur python.exe im venv eintragen:
+       C:\pyFAI_env\Scripts\python.exe
+     - Dieser Pfad muss bei jedem Start korrekt eingestellt sein.
+
+  c) Messdaten laden
+     - "Load 2D image(s)" fuer einzelne CBF/TIF-Dateien
+     - "Load Dataset Folder" fuer komplette Messreihen
+
+================================================================================
+6. FEHLERBEHEBUNG
+================================================================================
+
+  Problem: Popup-Menue leer / GUI startet nicht vollstaendig
+  ----------------------------------------------------------
+  - Ursache: Der Ordner Data\Materials fehlt oder ist leer.
+  - Loesung: Sicherstellen, dass im Installationsverzeichnis unter
+    "application\Data\Materials" die .mpd-Dateien vorhanden sind.
+
+  Problem: "pyFAI failed" Fehlermeldung
+  ---------------------------------------
+  - Ursache: Python-Pfad falsch oder Pakete nicht installiert.
+  - Loesung:
+    1. Python-Pfad in der GUI pruefen
+    2. In cmd testen:
+       C:\pyFAI_env\Scripts\python.exe -c "import pyFAI; print('OK')"
+    3. Falls Fehler: Pakete erneut installieren (siehe Punkt 3)
+
+  Problem: "Unable to allocate memory" bei vielen Bildern
+  --------------------------------------------------------
+  - Ursache: Zu viele Bilder auf einmal verarbeitet.
+  - Loesung: Die Batch-Verarbeitung teilt automatisch in Gruppen
+    von 50 Bildern auf. Falls das Problem weiterhin auftritt,
+    weniger Bilder gleichzeitig laden.
+
+  Problem: Anwendung startet sehr langsam
+  -----------------------------------------
+  - Normal beim ersten Start (Runtime wird initialisiert).
+  - Nachfolgende Starts sind schneller, solange der Runtime-Cache
+    nicht geloescht wird.
+
+================================================================================
+  Bei weiteren Fragen: [Kontakt-E-Mail hier einfuegen]
+================================================================================
