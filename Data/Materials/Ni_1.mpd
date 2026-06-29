@@ -1,22 +1,22 @@
-Dateiname:  CrN-C.mpd
+Dateiname:  Ni.mpd
  
 Elementliste:
-Cr  N   
+Ni   
  
 Stoechiometrieliste:
- 1.00   1.00   
+  1.00   
  
 Ordnungszahlliste:
-  24.     7.   
+  28.   
  
 Atomgewichtsliste (in g/mol):
-  52.00    14.00   
+  58.71   
  
 Materialdichte (in g/cm^3):
-  6.178
+  8.910
  
 Gittertyp:
 fcc
  
 Gitterparameter (in nm):
- 0.414100
+ 0.352300

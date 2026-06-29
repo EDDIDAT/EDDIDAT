@@ -1,22 +1,22 @@
-Dateiname:  CrN-C.mpd
+Dateiname:  NiFe2O4.mpd
  
 Elementliste:
-Cr  N   
+Ni  Fe  O   
  
 Stoechiometrieliste:
- 1.00   1.00   
+  1.00   2.00  4.00
  
 Ordnungszahlliste:
-  24.     7.   
+  28.  26.  16.   
  
 Atomgewichtsliste (in g/mol):
-  52.00    14.00   
+  58.69  55.85  16.00   
  
 Materialdichte (in g/cm^3):
-  6.178
+  5.547
  
 Gittertyp:
 fcc
  
 Gitterparameter (in nm):
- 0.414100
+ 0.8347

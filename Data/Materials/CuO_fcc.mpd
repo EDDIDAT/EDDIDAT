@@ -1,22 +1,22 @@
-Dateiname:  CrN-C.mpd
+Dateiname:  CuO_fcc.mpd
  
 Elementliste:
-Cr  N   
+Cu O  
  
 Stoechiometrieliste:
- 1.00   1.00   
+  1.00  1.00 
  
 Ordnungszahlliste:
-  24.     7.   
+  29.    8.   
  
 Atomgewichtsliste (in g/mol):
-  52.00    14.00   
+  63.55    16.00 
  
 Materialdichte (in g/cm^3):
-  6.178
+  6.9
  
 Gittertyp:
 fcc
  
 Gitterparameter (in nm):
- 0.414100
+ 0.4245

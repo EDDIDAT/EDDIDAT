@@ -1,22 +1,22 @@
-Dateiname:  CrN-C.mpd
+Dateiname:  Brass.mpd
  
 Elementliste:
-Cr  N   
+Cu  Zn   
  
 Stoechiometrieliste:
- 1.00   1.00   
+  0.70    0.30   
  
 Ordnungszahlliste:
-  24.     7.   
+  29.    30.   
  
 Atomgewichtsliste (in g/mol):
-  52.00    14.00   
+  63.50    65.30   
  
 Materialdichte (in g/cm^3):
-  6.178
+  8.430
  
 Gittertyp:
 fcc
  
 Gitterparameter (in nm):
- 0.414100
+ 0.369000

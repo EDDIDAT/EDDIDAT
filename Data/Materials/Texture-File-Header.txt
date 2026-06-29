@@ -1,0 +1,20 @@
+#MeasParameter
+&HWS=C:\RAYFLEX\Eta-xyz.HWS
+&Sample=NFM_Batterie
+&Material=
+&Operator=Manuela
+&Anode=Co	&Filter=----	&kV=32	&mA=50
+&Detector=ScintCount
+
+#TextureParameter
+&H=0	&K=0	&L=3
+&Mode=REFL
+&Raster=CIRCULAR
+&AlphaStart=0.000	&AlphaEnd=85.000	&AlphaStep=5.000
+&BetaStart=0.000	&BetaEnd=355.000	&BetaStep=5.000
+&2Theta=52.280	&Window=0.000	&Step=0.000
+&Time=5.0	&Counts=0
+&BGLeft=50.280	&BGRight=0.000	&BGTime=5.0	&BGCounts=0
+
+#Values
+&NoValues=1296
