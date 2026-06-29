@@ -1,0 +1,186 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="1694062430" file="D:\EDDIDAT_EVAL2DXRD\EVALXRD2D.prj" location="D:\EDDIDAT_EVAL2DXRD" name="EVALXRD2D" preferred-package-location="D:\EDDIDAT_EVAL2DXRD\EVALXRD2D\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>EVAL2DXRD</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark />
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>\EVAL2DXRD\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\EVALXRD2D\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\EVALXRD2D\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\EVALXRD2D\for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}\EVALXRD2D</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>EVAL2DXRD</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text>Syntax 
+	  -? 
+	 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 input arguments</param.help.text>
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.target.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.create.log />
+      <param.log.file />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\XRD2DStressAnalysis_modPV_pyFAI.m</file>
+    </fileset.main>
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\Classes</file>
+    </fileset.resources>
+    <fileset.package>
+      <file>${PROJECT_ROOT}\Data</file>
+      <file>${PROJECT_ROOT}\pyfai_multigeom_run.py</file>
+      <file>${PROJECT_ROOT}\pyfai_ring_peaks_only.py</file>
+    </fileset.package>
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\applyDetectorMaskToFitData.m</file>
+      <file>${PROJECT_ROOT}\applyExcludeZone.m</file>
+      <file>${PROJECT_ROOT}\applyTimeSeriesLayout.m</file>
+      <file>${PROJECT_ROOT}\applyTSResultsLayout.m</file>
+      <file>${PROJECT_ROOT}\bool2vis.m</file>
+      <file>${PROJECT_ROOT}\CalcBinnedGamma.m</file>
+      <file>${PROJECT_ROOT}\CalcPeakPositions2DXRD.m</file>
+      <file>${PROJECT_ROOT}\calcStress.m</file>
+      <file>${PROJECT_ROOT}\cbfViewerShowCaked.m</file>
+      <file>${PROJECT_ROOT}\CBFViewModeCallback.m</file>
+      <file>${PROJECT_ROOT}\Conversion_2D_XRD.m</file>
+      <file>${PROJECT_ROOT}\CreateSampleEPostheo.m</file>
+      <file>${PROJECT_ROOT}\ensureCakedSingleAvailable.m</file>
+      <file>${PROJECT_ROOT}\extractNumFromStr.m</file>
+      <file>${PROJECT_ROOT}\filterpeakscallback.m</file>
+      <file>${PROJECT_ROOT}\fitCentroid.m</file>
+      <file>${PROJECT_ROOT}\getBound.m</file>
+      <file>${PROJECT_ROOT}\getPlausibleCol.m</file>
+      <file>${PROJECT_ROOT}\getTSXData.m</file>
+      <file>${PROJECT_ROOT}\getTSXRange.m</file>
+      <file>${PROJECT_ROOT}\globalSliderToGroupBin.m</file>
+      <file>${PROJECT_ROOT}\hasNonZeroData.m</file>
+      <file>${PROJECT_ROOT}\isCakedAvailable.m</file>
+      <file>${PROJECT_ROOT}\loadCBF.m</file>
+      <file>${PROJECT_ROOT}\loadDAT.m</file>
+      <file>${PROJECT_ROOT}\loadDataset.m</file>
+      <file>${PROJECT_ROOT}\makeDraggableBGLines.m</file>
+      <file>${PROJECT_ROOT}\makeDraggablePeakLines.m</file>
+      <file>${PROJECT_ROOT}\markInvalidGammaRegions.m</file>
+      <file>${PROJECT_ROOT}\multiPseudoVoigt.m</file>
+      <file>${PROJECT_ROOT}\multiPseudoVoigtAsym.m</file>
+      <file>${PROJECT_ROOT}\multiPseudoVoigtKalpha12.m</file>
+      <file>${PROJECT_ROOT}\openPeakFilterDialog.m</file>
+      <file>${PROJECT_ROOT}\parsePoniFile.m</file>
+      <file>${PROJECT_ROOT}\plotCaked2DInAxes.m</file>
+      <file>${PROJECT_ROOT}\plotCakedSingle.m</file>
+      <file>${PROJECT_ROOT}\plotRingDetInAxes.m</file>
+      <file>${PROJECT_ROOT}\pyfai_extract_binned_tracking_data.m</file>
+      <file>${PROJECT_ROOT}\readLogAll.m</file>
+      <file>${PROJECT_ROOT}\readLogSingle.m</file>
+      <file>${PROJECT_ROOT}\rebindatacallback.m</file>
+      <file>${PROJECT_ROOT}\resetAxesForCBFRaw.m</file>
+      <file>${PROJECT_ROOT}\resizecallback.m</file>
+      <file>${PROJECT_ROOT}\run_pyfai_multigeometry_from_matlab.m</file>
+      <file>${PROJECT_ROOT}\runBinning.m</file>
+      <file>${PROJECT_ROOT}\Script\CreateSampleGUI.m</file>
+      <file>${PROJECT_ROOT}\selectStressPoints.m</file>
+      <file>${PROJECT_ROOT}\struct2array.m</file>
+      <file>${PROJECT_ROOT}\tsBGSubtract.m</file>
+      <file>${PROJECT_ROOT}\tsOpenFitBoundsDialog.m</file>
+      <file>${PROJECT_ROOT}\undostresscallback.m</file>
+      <file>${PROJECT_ROOT}\updateBgMarkers.m</file>
+      <file>${PROJECT_ROOT}\updateFitSumOverlay.m</file>
+      <file>${PROJECT_ROOT}\updateFittedPeakPlot.m</file>
+      <file>${PROJECT_ROOT}\updateHeaterPlot.m</file>
+      <file>${PROJECT_ROOT}\updatePhaseLines.m</file>
+      <file>${PROJECT_ROOT}\updateStressPlots.m</file>
+      <file>${PROJECT_ROOT}\updateTimeSeriesPlot.m</file>
+      <file>${PROJECT_ROOT}\updateTmaxLine.m</file>
+      <file>${PROJECT_ROOT}\updateTSFitResultsPlot.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\EVALXRD2D\for_testing" name="EVAL2DXRD.exe" optional="false">D:\EDDIDAT_EVAL2DXRD\EVALXRD2D\for_testing\EVAL2DXRD.exe</file>
+      <file location="${PROJECT_ROOT}\EVALXRD2D\for_testing" name="splash.png" optional="false">D:\EDDIDAT_EVAL2DXRD\EVALXRD2D\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\EVALXRD2D\for_testing" name="readme.txt" optional="true">D:\EDDIDAT_EVAL2DXRD\EVALXRD2D\for_testing\readme.txt</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>D:\Program Files\MATLAB\R2023b</root>
+      <toolboxes>
+        <toolbox name="fixedpoint" />
+      </toolboxes>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
