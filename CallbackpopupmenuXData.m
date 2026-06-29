@@ -1,6 +1,6 @@
 function [h] = CallbackpopupmenuXData(h, PlotWindow, XDataStr, valueSlider)
 % Load "DiffractionLines" variable, depending on diffractometer used
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Change slider parameters according to number of FittedPeaksDet1
         DiffractionLinestmp = h.DiffractionLinesDet1;
@@ -47,7 +47,7 @@ PeakCountColumn = size(PsiFileTableDataArray,2);
 [C,~,~] = unique(PsiFileTableDataArray(:,1));
 % Get row index containing unique C 
 indexUniquePeak = cell(1);
-assignin('base','PsiFileTableDataArray',PsiFileTableDataArray)
+% assignin('base','PsiFileTableDataArray',PsiFileTableDataArray)
 for k = 1:length(C)
     indexUniquePeak{k} = find(PsiFileTableDataArray(:,1) == C(k));
 end
@@ -72,15 +72,35 @@ end
 
 
 % Get index from peaks to be kept
-if isfield(h, 'idxkeepPeaks')
-    idxkeepPeaks = h.idxkeepPeaks;
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        if isfield(h, 'idxkeepPeaksDet1')
+            idxkeepPeaks = h.idxkeepPeaksDet1;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmpDet1{1},2))';
+        end
+    elseif strcmp(h.Detsel,'Detector 2')
+        if isfield(h, 'idxkeepPeaksDet2')
+            idxkeepPeaks = h.idxkeepPeaksDet2;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmpDet2{1},2))';
+        end
+    end
 else
-    % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
-    % instead.
-    idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    if isfield(h, 'idxkeepPeaks')
+        idxkeepPeaks = h.idxkeepPeaks;
+    else
+        % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+        % instead.
+        idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    end
 end
 
-assignin('base','DiffractionLinestmp',DiffractionLinestmp)
+% assignin('base','DiffractionLinestmp',DiffractionLinestmp)
 if length(idxkeepPeaks) == 1
     set(h.(Slider),'Min',0);
     set(h.(Slider),'Max',1);
@@ -156,7 +176,7 @@ end
 % Params.Temperature = repmat(Temperaturetmp,1,size(idxkeepPeaks,2));
 % Params.Scans = repmat(Scantmp,1,size(idxkeepPeaks,2));
 Params.Scans = indexPeakToKeep;
-assignin('base','Params',Params)
+% assignin('base','Params',Params)
 % assignin('base','Params',Params)
 % If measured under more than one phi angle, rearrange data
 for k = 1:size(Params.Phi_Winkel,2)
@@ -172,7 +192,7 @@ h.idxphi270 = find(PhiWinkel{1}==270);
 
 % If Eta or sin²Eta was choosen, check whether eta was changed during
 % measurement
-if strcmp(XDataStr,'Eta') || strcmp(XDataStr,'sin²Eta')
+if strcmp(XDataStr,'Eta') || strcmp(XDataStr,['sin',char(178)','Eta'])
     % Check if eta was changed during the measurement
     for k = 1:size(Params,2)
         for l = 1:size(Params(k).Eta_Winkel,2)
@@ -410,7 +430,7 @@ elseif length(ia{1}) == 4
     end
 end
 
-assignin('base','ParamsToFit',ParamsToFit)
+% assignin('base','ParamsToFit',ParamsToFit)
 
 % Find indices of phi angles.
 if length(unique(ParamsToFit(1).Phi_Winkel{1})) <= 4
@@ -532,7 +552,7 @@ for j = 1:length(ParamsToFit)
         tau(j).temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(ParamsToFit(j).Psi_Winkel{k}))./(2.*tau(j).absorbcoeff{k}./10000);
     end
 end
-assignin('base','tau',tau)
+% assignin('base','tau',tau)
 for k = 1:size(tau,2)
     h.TauMaxAxesLimits{k} = cellfun(@max, tau(k).temptau,'UniformOutput',0);
 end
@@ -558,7 +578,8 @@ if ~isempty(idxphi0)
                 h.(Axes).XTick = (Psimin:20:round(Psimax,-1));
             end
         end
-    elseif strcmp(XDataStr,'sin²Psi')
+    elseif strcmp(XDataStr,['sin',char(178)','Psi'])
+        assignin('base','ParamsToFitXData',ParamsToFit(idxphi0).Psi_Winkel)
         func = @(x) sind(x).^2;
         XDataphi0 = cellfun(func,ParamsToFit(idxphi0).Psi_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\psi')
@@ -570,7 +591,7 @@ if ~isempty(idxphi0)
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
-    elseif strcmp(XDataStr,'sin²Eta')
+    elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi0 = cellfun(func,ParamsToFit(idxphi0).Eta_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\eta')
@@ -628,7 +649,7 @@ if ~isempty(idxphi90)
         xlabel(h.(Axes),'\psi')
         h.(Axes).XLim = [0 90];
         h.(Axes).XTick = (0:10:90);
-    elseif strcmp(XDataStr,'sin²Psi')
+    elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi90 = cellfun(func,ParamsToFit(idxphi90).Psi_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\psi')
@@ -640,7 +661,7 @@ if ~isempty(idxphi90)
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto') 
-    elseif strcmp(XDataStr,'sin²Eta')
+    elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi90 = cellfun(func,ParamsToFit(idxphi90).Eta_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\eta')
@@ -687,7 +708,7 @@ if ~isempty(idxphi180)
         xlabel(h.(Axes),'\psi')
         h.(Axes).XLim = [0 90];
         h.(Axes).XTick = (0:10:90);
-    elseif strcmp(XDataStr,'sin²Psi')
+    elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi180 = cellfun(func,ParamsToFit(idxphi180).Psi_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\psi')
@@ -699,7 +720,7 @@ if ~isempty(idxphi180)
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
-    elseif strcmp(XDataStr,'sin²Eta')
+    elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi180 = cellfun(func,ParamsToFit(idxphi180).Eta_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\eta')
@@ -746,7 +767,7 @@ if ~isempty(idxphi270)
         xlabel(h.(Axes),'\psi')
         h.(Axes).XLim = [0 90];
         h.(Axes).XTick = (0:10:90);
-    elseif strcmp(XDataStr,'sin²Psi')
+    elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi270 = cellfun(func,ParamsToFit(idxphi270).Psi_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\psi')
@@ -758,7 +779,7 @@ if ~isempty(idxphi270)
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
-    elseif strcmp(XDataStr,'sin²Eta')
+    elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi270 = cellfun(func,ParamsToFit(idxphi270).Eta_Winkel,'UniformOutput',0);
         xlabel(h.(Axes),'sin²\eta')
@@ -816,11 +837,11 @@ end
 
 % If eta measurements are analyzed, data has to be prepared in a different
 % way.
-if strcmp(XDataStr,'Eta') || strcmp(XDataStr,'sin²Eta')
+if strcmp(XDataStr,'Eta') || strcmp(XDataStr,['sin',char(178)','Eta'])
     for i = 1:length(ParamsToFit.Psi_Winkel)
         h.(eta).psiIndex{i} = unique(ParamsToFit.Psi_Winkel{i}, 'stable');
     end
-    assignin('base','hpsiIndex',h.(eta).psiIndex)
+%     assignin('base','hpsiIndex',h.(eta).psiIndex)
 
     for k = 1:length(ParamsToFit.Psi_Winkel)
         for i = 1:length(h.(eta).psiIndex{k})
@@ -842,7 +863,7 @@ if strcmp(XDataStr,'Eta') || strcmp(XDataStr,'sin²Eta')
             h.(eta).TableIntensity_Int{k,i} = ParamsToFit.Intensity_Int{k}(psiTable{k}(i,1):psiTable{k}(i,2),:);
         end
     end
-    assignin('base','heta',h.(eta))
+%     assignin('base','heta',h.(eta))
     % Set plot data from other plots to zero and invisible
     set(h.(PlotPhi0),{'XData','YData','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
     set(h.(PlotErrPhi0),{'XData','YData','YNegativeDelta','YPositiveDelta','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
@@ -854,7 +875,7 @@ if strcmp(XDataStr,'Eta') || strcmp(XDataStr,'sin²Eta')
     for i = 1:length(h.(eta).psiIndex{valueSlider})
         if strcmp(XDataStr,'Eta')
             h.(eta).etaplot{i} = errorbar(h.(Axes),h.(eta).TableEta{valueSlider,i},h.(eta).Tabledspacing{valueSlider,i}.*0,h.(eta).Tabledspacingdelta{valueSlider,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i});
-        elseif strcmp(XDataStr,'sin²Eta')
+        elseif strcmp(XDataStr,['sin',char(178)','Eta'])
             h.(eta).etaplot{i} = errorbar(h.(Axes),sind(h.(eta).TableEta{valueSlider,i}).^2,h.(eta).Tabledspacing{valueSlider,i}.*0,h.(eta).Tabledspacingdelta{valueSlider,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i});
         end
         % Create label data from psi angles
@@ -902,7 +923,7 @@ if strcmp(XDataStr,'Phi')
         end
     end
     h.(dataforplotting).X = h.(phi).Tablephi;
-    assignin('base','hphi',h.(phi))
+%     assignin('base','hphi',h.(phi))
     
     % Set plot data from other plots to zero and invisible
     set(h.(PlotPhi0),{'XData','YData','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})

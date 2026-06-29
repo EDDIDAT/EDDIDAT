@@ -69,7 +69,7 @@ if strcmp(Diffractometer,'ETA3000')
 %     dmin_tmp = TPeaks.T.Peaks(:,4).*twothetapos_tmpidx;
 %     dmin_tmp(dmin_tmp==0) = [];
 %     T.dmin = min(dmin_tmp);
-    T.dmin = 0.09;
+    T.dmin = 0.05;
     % Calculation of maximum hkl²
     if ~isempty(T.a0)
         T.hklquadratmax = (T.a0(1)/T.dmin)^2;
@@ -149,22 +149,28 @@ if strcmp(Diffractometer,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+% 
+% 
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
         
     % Calculation of peak positions for bcc materials
     elseif strcmp(T.cs,'fcc')
@@ -235,22 +241,28 @@ if strcmp(Diffractometer,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+% 
+% 
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
 
     %--------------------------------------------------------------------------
     else
@@ -270,24 +282,30 @@ if strcmp(Diffractometer,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-%         assignin('base','TEtheoka1',T.Etheoka1)
-%         assignin('base','TEtheoka2',T.Etheoka2)
-%         assignin('base','Thkl_sort',T.hkl_sort)
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+%         
+% %         assignin('base','TEtheoka1',T.Etheoka1)
+% %         assignin('base','TEtheoka2',T.Etheoka2)
+% %         assignin('base','Thkl_sort',T.hkl_sort)
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
         
     end
 %     assignin('base','TPeaks',T)
@@ -313,7 +331,7 @@ if strcmp(Diffractometer,'ETA3000')
 else
 
     % Plot of substrate peaks
-    PlotSubstratePeaks = Measurement(1).Sample.Materials.ShowSubstratePeaks;
+%     PlotSubstratePeaks = Measurement(1).Sample.Materials.ShowSubstratePeaks;
     % TwoTheta of measurement
     T.twotheta = Measurement(1).twotheta;
     % T.twotheta = 9;
@@ -330,35 +348,37 @@ else
     % Lattice parameter of the material
     T.a0 = Measurement(1).Sample.Materials.LatticeParameter;
     % Calculation of minimum d spacing
-    T.dmin = (0.6199/sind(T.twotheta/2))/T.EMax;
+    T.dmin = (0.6199./sind(T.twotheta./2))./T.EMax;
     % Calculation of maximum hkl²
     if ~isempty(T.a0)
-        T.hklquadratmax = (T.a0(1)/T.dmin)^2;
+        T.hklquadratmax = (T.a0(1)./T.dmin)^2;
     else
         T.hklquadratmax = [];
     end
     
     % Info from substrate
-    if (PlotSubstratePeaks)
-        % Maximum Energy up to which peak positions are calculated
-        S.EMax = Measurement(1).Sample.Substrate.EnergyMax;
-        % Crystal structure of the material
-        S.cs = Measurement(1).Sample.Substrate.CrystalStructure;
-        % Lattice parameter of the material
-        S.a0 = Measurement(1).Sample.Substrate.LatticeParameter;
-        % Calculation of minimum d spacing
-        S.dmin = (0.6199/sind(T.twotheta/2))/S.EMax;
-        % Calculation of maximum hkl²
-        if ~isempty(S.a0)
-            S.hklquadratmax = (S.a0(1)/S.dmin)^2;
-        else
-            S.hklquadratmax = [];
-        end
-        
-    end
+%     if (PlotSubstratePeaks)
+%         % Maximum Energy up to which peak positions are calculated
+%         S.EMax = Measurement(1).Sample.Substrate.EnergyMax;
+%         % Crystal structure of the material
+%         S.cs = Measurement(1).Sample.Substrate.CrystalStructure;
+%         % Lattice parameter of the material
+%         S.a0 = Measurement(1).Sample.Substrate.LatticeParameter;
+%         % Calculation of minimum d spacing
+%         S.dmin = (0.6199/sind(T.twotheta/2))/S.EMax;
+%         % Calculation of maximum hkl²
+%         if ~isempty(S.a0)
+%             S.hklquadratmax = (S.a0(1)/S.dmin)^2;
+%         else
+%             S.hklquadratmax = [];
+%         end
+%         
+%     end
     
     % Calculation of the maximum peak intensities of the respecive spectrum
     T.Peaks_y = zeros(length(Measurement),1);
+%     assignin('base','MeasurementEPos',Measurement)
+%     assignin('base','DataTmpEPos',DataTmp)
     % Find intensity maximum
     for i = 1:length(Measurement)
         T.Peaks_y(i,:) = max(DataTmp{i}(:, 2));
@@ -490,7 +510,7 @@ else
         T.hkl = T.hkl(ia,1:4);
         T.hkl_sort = sortrows(T.hkl, -4);
         for i = 1:size(T.hkl,1)
-            T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
+            T.Etheo(i,:) = (0.6199./sind(T.twotheta./2))./T.hkl_sort(i,4);
         end
     
         if strcmp(calib,'Channel_scale')
@@ -516,131 +536,131 @@ else
     T.Y3(size(T.Peaks,1).*3,:)= [];
     % assignin('base','TEtheo',T)
     %% Plot diffraction lines from Substrate 
-    if (PlotSubstratePeaks)
-        % Calculation of peak positions for bcc materials
-        if strcmp(S.cs,'bcc')
-            % Calculation of all possible hkl combinations
-            [S.h, S.k, S.l] = ndgrid(1:10, 0:9, 0:9);
-            S.d = S.h+S.k+S.l;
-            i = find(rem(S.d,2) == 0);
-            S.p = [S.h(i),S.k(i),S.l(i)];
-            % Use only hkl with hkl² < hkl²max
-            for i=1:size(S.p,1)
-                if (S.p(i,1)^2 + S.p(i,2)^2 + S.p(i,3)^2) <= S.hklquadratmax
-                    S.y(i,:) = S.p(i,:);
-                end
-            end
-            % delete zero rows
-            S.y(all(S.y == 0,2),:)=[];
-            % Use only hkl that are allowed for bcc materials
-            for i=1:size(S.y,1)
-                if S.y(i,1) >= S.y(i,2) && S.y(i,1) >= S.y(i,3) && S.y(i,2) >= S.y(i,3)
-                   S.z(i,:) = S.y(i,:);
-                end
-            end
-            % delete zero rows
-            S.z(all(S.z == 0,2),:)=[];
-            % Calculation of theoretical d spacings for the used hkl values
-            for i = 1:size(S.z,1)
-                S.dtheo(i,:) = S.a0/(sqrt(S.z(i,1)^2+S.z(i,2)^2+S.z(i,3)^2));
-            end
-    
-            S.hkl = [S.z S.dtheo];
-            % Sort columns in descending order
-            S.hkl_sort = sortrows(S.hkl, -4);
-            % Calculation of theoreitcal energy positons for the used hkl values
-            for i = 1:size(S.hkl_sort,1)
-                S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl_sort(i,4);
-            end
-    
-            S.Peaks = [S.hkl_sort S.Etheo];
-    
-        % Calculation of peak positions for bcc materials
-        elseif strcmp(S.cs,'fcc')
-            % Calculation of all possible hkl combinations
-            [S.h, S.k, S.l] = ndgrid(1:10, 0:9, 0:9);
-            S.d = S.h+S.k+S.l;
-            i = find(rem(S.d,2) == 0);
-            j = find(rem(S.d,2) == 1);
-            S.p = [S.h(i),S.k(i),S.l(i);S.h(j),S.k(j),S.l(j)];
-            % Use only hkl with hkl² < hkl²max
-            for i=1:size(S.p,1)
-                if (S.p(i,1)^2 + S.p(i,2)^2 + S.p(i,3)^2) <= S.hklquadratmax
-                    S.y(i,:) = S.p(i,:);
-                end
-            end
-            % delete zero rows
-            S.y(all(S.y == 0,2),:)=[];
-            % Use only hkl that are allowed for fcc materials
-            for i=1:size(S.y,1)
-                if S.y(i,1) >= S.y(i,2) && S.y(i,1) >= S.y(i,3) && S.y(i,2) >= S.y(i,3)
-                    S.z(i,:) = S.y(i,:);
-                end
-            end
-            % delete zero rows
-            S.z(all(S.z == 0,2),:)=[];
-            % Find only hkl that are all even
-            for i=1:size(S.z,1)
-                if rem(S.z(i,1),2) == 0 && rem(S.z(i,2),2) == 0 && rem(S.z(i,3),2) == 0
-                    S.w1(i,:) = S.z(i,:);
-                end
-            end
-            % delete zero rows
-            S.w1(all(S.w1 == 0,2),:)=[];
-            % Find only hkl that are all odd
-            for i=1:size(S.z,1)
-                if rem(S.z(i,1),2) == 1 && rem(S.z(i,2),2) == 1 && rem(S.z(i,3),2) == 1
-                    S.w2(i,:) = S.z(i,:);
-                end
-            end
-            % delete zero rows
-            S.w2(all(S.w2 == 0,2),:)=[];
-    
-            S.w = [S.w1; S.w2];
-            % delete zero rows
-            S.w(all(S.w == 0,2),:)=[];
-            % Calculation of theoretical d spacings for the used hkl values
-            for i = 1:size(S.w,1)
-                S.dtheo(i,:) = S.a0/(sqrt(S.w(i,1)^2+S.w(i,2)^2+S.w(i,3)^2));
-            end
-    
-            S.hkl = [S.w, S.dtheo];
-            % Sort columns in descending order
-            S.hkl_sort = sortrows(S.hkl, -4);
-            % Calculation of theoreitcal energy positons for the used hkl values
-            for i = 1:size(S.hkl_sort,1)
-                S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl_sort(i,4);
-            end
-    
-            S.Peaks = [S.hkl_sort S.Etheo];
-        %--------------------------------------------------------------------------
-        else
-            S.hkl = Measurement(1).Sample.Substrate.HKLdspacing;
-    
-            for i = 1:size(S.hkl,1)
-                S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl(i,4);
-            end
-    
-            S.Peaks = [S.hkl S.Etheo];
-        end
-    
-        % Create matrix for the line plot of the peak positions (X values)
-        for i = 1:size(S.Peaks,1)
-            S.X1(i,:) = [S.Peaks(i,5) S.Peaks(i,5) nan];
-        end
-        % Adjust the size of matrix to the measurement
-        S.X2 = reshape(S.X1',size(S.Peaks,1).*3,1);
-        S.X2(size(S.Peaks,1).*3,:) = [];
-        S.X3 = repmat(S.X2,1,length(Measurement));
-        % Adjust the size of matrix to the measurement
-        S.Y2 = reshape(T.Y1',3,length(Measurement));
-        S.Y3 = repmat(S.Y2,size(S.Peaks,1),1);
-        S.Y3(length(S.Peaks).*3,:)= [];
-    end
+%     if (PlotSubstratePeaks)
+%         % Calculation of peak positions for bcc materials
+%         if strcmp(S.cs,'bcc')
+%             % Calculation of all possible hkl combinations
+%             [S.h, S.k, S.l] = ndgrid(1:10, 0:9, 0:9);
+%             S.d = S.h+S.k+S.l;
+%             i = find(rem(S.d,2) == 0);
+%             S.p = [S.h(i),S.k(i),S.l(i)];
+%             % Use only hkl with hkl² < hkl²max
+%             for i=1:size(S.p,1)
+%                 if (S.p(i,1)^2 + S.p(i,2)^2 + S.p(i,3)^2) <= S.hklquadratmax
+%                     S.y(i,:) = S.p(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.y(all(S.y == 0,2),:)=[];
+%             % Use only hkl that are allowed for bcc materials
+%             for i=1:size(S.y,1)
+%                 if S.y(i,1) >= S.y(i,2) && S.y(i,1) >= S.y(i,3) && S.y(i,2) >= S.y(i,3)
+%                    S.z(i,:) = S.y(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.z(all(S.z == 0,2),:)=[];
+%             % Calculation of theoretical d spacings for the used hkl values
+%             for i = 1:size(S.z,1)
+%                 S.dtheo(i,:) = S.a0/(sqrt(S.z(i,1)^2+S.z(i,2)^2+S.z(i,3)^2));
+%             end
+%     
+%             S.hkl = [S.z S.dtheo];
+%             % Sort columns in descending order
+%             S.hkl_sort = sortrows(S.hkl, -4);
+%             % Calculation of theoreitcal energy positons for the used hkl values
+%             for i = 1:size(S.hkl_sort,1)
+%                 S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl_sort(i,4);
+%             end
+%     
+%             S.Peaks = [S.hkl_sort S.Etheo];
+%     
+%         % Calculation of peak positions for bcc materials
+%         elseif strcmp(S.cs,'fcc')
+%             % Calculation of all possible hkl combinations
+%             [S.h, S.k, S.l] = ndgrid(1:10, 0:9, 0:9);
+%             S.d = S.h+S.k+S.l;
+%             i = find(rem(S.d,2) == 0);
+%             j = find(rem(S.d,2) == 1);
+%             S.p = [S.h(i),S.k(i),S.l(i);S.h(j),S.k(j),S.l(j)];
+%             % Use only hkl with hkl² < hkl²max
+%             for i=1:size(S.p,1)
+%                 if (S.p(i,1)^2 + S.p(i,2)^2 + S.p(i,3)^2) <= S.hklquadratmax
+%                     S.y(i,:) = S.p(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.y(all(S.y == 0,2),:)=[];
+%             % Use only hkl that are allowed for fcc materials
+%             for i=1:size(S.y,1)
+%                 if S.y(i,1) >= S.y(i,2) && S.y(i,1) >= S.y(i,3) && S.y(i,2) >= S.y(i,3)
+%                     S.z(i,:) = S.y(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.z(all(S.z == 0,2),:)=[];
+%             % Find only hkl that are all even
+%             for i=1:size(S.z,1)
+%                 if rem(S.z(i,1),2) == 0 && rem(S.z(i,2),2) == 0 && rem(S.z(i,3),2) == 0
+%                     S.w1(i,:) = S.z(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.w1(all(S.w1 == 0,2),:)=[];
+%             % Find only hkl that are all odd
+%             for i=1:size(S.z,1)
+%                 if rem(S.z(i,1),2) == 1 && rem(S.z(i,2),2) == 1 && rem(S.z(i,3),2) == 1
+%                     S.w2(i,:) = S.z(i,:);
+%                 end
+%             end
+%             % delete zero rows
+%             S.w2(all(S.w2 == 0,2),:)=[];
+%     
+%             S.w = [S.w1; S.w2];
+%             % delete zero rows
+%             S.w(all(S.w == 0,2),:)=[];
+%             % Calculation of theoretical d spacings for the used hkl values
+%             for i = 1:size(S.w,1)
+%                 S.dtheo(i,:) = S.a0/(sqrt(S.w(i,1)^2+S.w(i,2)^2+S.w(i,3)^2));
+%             end
+%     
+%             S.hkl = [S.w, S.dtheo];
+%             % Sort columns in descending order
+%             S.hkl_sort = sortrows(S.hkl, -4);
+%             % Calculation of theoreitcal energy positons for the used hkl values
+%             for i = 1:size(S.hkl_sort,1)
+%                 S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl_sort(i,4);
+%             end
+%     
+%             S.Peaks = [S.hkl_sort S.Etheo];
+%         %--------------------------------------------------------------------------
+%         else
+%             S.hkl = Measurement(1).Sample.Substrate.HKLdspacing;
+%     
+%             for i = 1:size(S.hkl,1)
+%                 S.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/S.hkl(i,4);
+%             end
+%     
+%             S.Peaks = [S.hkl S.Etheo];
+%         end
+%     
+%         % Create matrix for the line plot of the peak positions (X values)
+%         for i = 1:size(S.Peaks,1)
+%             S.X1(i,:) = [S.Peaks(i,5) S.Peaks(i,5) nan];
+%         end
+%         % Adjust the size of matrix to the measurement
+%         S.X2 = reshape(S.X1',size(S.Peaks,1).*3,1);
+%         S.X2(size(S.Peaks,1).*3,:) = [];
+%         S.X3 = repmat(S.X2,1,length(Measurement));
+%         % Adjust the size of matrix to the measurement
+%         S.Y2 = reshape(T.Y1',3,length(Measurement));
+%         S.Y3 = repmat(S.Y2,size(S.Peaks,1),1);
+%         S.Y3(length(S.Peaks).*3,:)= [];
+%     end
     Peakhandles.T = T;
-    if PlotSubstratePeaks
-        Peakhandles.S = S;
-    end
+%     if PlotSubstratePeaks
+%         Peakhandles.S = S;
+%     end
     % Peakhandles.SPeaks = S.Peaks;
 end
 

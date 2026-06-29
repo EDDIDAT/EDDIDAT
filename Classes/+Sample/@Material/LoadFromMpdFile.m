@@ -16,6 +16,7 @@ function obj = LoadFromMpdFile(Filename)
     Path = fullfile(Sample.Material.FilePath, [Filename '.mpd']);
     %Laden der Datei und speichern in ein CharArray M
     M = Tools.StringOperations.AsciiFile2Text(Path,'\r\n'); 
+    assignin('base','M',M)
     % Delimiter: \Zeilenende\Neue Zeile
     % Die Funktion AsciiFile2Text braucht als Input den Dateipfad und einen
     % Delimiter. 
@@ -41,7 +42,7 @@ function obj = LoadFromMpdFile(Filename)
         % Einlesen der hkl- und d-Werteliste
         Index_tmp = Tools.StringOperations.SearchString(M,'hkl- und d-Wertliste');
         % Neues Char Array erzeugen, dass nur die hkl- und d-Werte enthält
-        M1 = M(Index_tmp+1:size(M,1),:);
+        M1 = M(Index_tmp(1)+1:size(M,1),:);
         % Werte einlesen (cell) um d-spacing Werte zu extrahieren
         for i = 1:size(M1,1)
             % geaendert, so dass jetzt die hkl-werte als String eingelesen

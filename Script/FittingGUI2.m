@@ -73,10 +73,11 @@ for c = 1:length(Measurement)
     PeakRegions = Tools.LogicalRegions(PeakRegions,length(X));
     Index_Peaks = Tools.Data.DataSetOperations.FindNearestIndex(X,R.Index_Peaks{c});
     if strcmp(Diffractometer,'ETA3000')
-        Index_Peakska2 = Tools.Data.DataSetOperations.FindNearestIndex(X,R.Index_Peakska2{c});
-        Index_Peaks = sort([Index_Peaks,Index_Peakska2]);
+%         Index_Peakska2tmp = Tools.Data.DataSetOperations.FindNearestIndex(X,R.Index_Peakska2{c})-2; % hier wird -1 genommen, da sonst die indices bei einem doppelpeak identisch sein koennen
+%         
+%         Index_Peaks = sort([Index_Peaks,Index_Peakska2tmp]);
+        Index_Peaks = [Index_Peaks,Index_Peaks+1];
     end
-    
     
     % Regionen zusammenfassen
 %     PeakRegions.Regions = PeakRegions.Regions;
@@ -130,7 +131,7 @@ for c = 1:length(Measurement)
 %                 Index_PeaksInRegionKa2 = (intersect(a:b, Index_Peakska2) - a + 1)';
                 if FitFunc == 2 %(PV-Func)
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0;...
-                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1];
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 10, 1];
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeakETA(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, lambdaka1, lambdaka2);
                 elseif FitFunc == 3 %TCH
@@ -153,7 +154,7 @@ for c = 1:length(Measurement)
             else
                 if FitFunc == 2 %(PV-Func)
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
-                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1];
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 1.5, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1];
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
                 elseif FitFunc == 3 %TCH
@@ -280,7 +281,7 @@ for c = 1:length(Measurement)
         % For fitting with fixed peak position boundarys. lb and ub can be
         % changed according to the needs of the user.
             if FitFunc == 2 %(PV-Func)
-                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0;...
+                PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, 0, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, 0, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0;...
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 1];
                 [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
                     X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
@@ -368,6 +369,9 @@ F.FitFehler = cell2mat(CI');
     for i = 1:length(Measurement)
         CI{i}(isnan(CI{i}))=1;
     end
+
+% assignin('base','FitFehler',F.FitFehler)
+
 clear('F');
 % clear Peaks;
 

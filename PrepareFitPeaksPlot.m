@@ -1,4 +1,4 @@
-function [FittedPeaksCalc,FittedPeaksCalctmp,xDataTmpCalc,XFit,YFit,XPlot,YPlot] = PrepareFitPeaksPlot(DataTmpCalc,FittedPeaksCalc,PeaksCalc,PeakRegionsXCalc,SE,PopupValueFitFunc,valueSlider,Diffractometer,lambdaka1,lambdaka2)
+function [FittedPeaksCalc,FittedPeaksCalctmp,xDataTmpCalc,XFit,YFit,XPlot,YPlot,SinglePlot_tmp] = PrepareFitPeaksPlot(DataTmpCalc,FittedPeaksCalc,PeaksCalc,PeakRegionsXCalc,SE,PopupValueFitFunc,valueSlider,Diffractometer,lambdaka1,lambdaka2)
 
 XFit = DataTmpCalc{valueSlider}(:, 1);
 YFit = DataTmpCalc{valueSlider}(:, 2);  
@@ -19,7 +19,8 @@ for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
             x,p(1)/2,(2.*asind(lambdaka2./(2.*lambdaka1./sind(p(2)/2)./2))),p(3),p(4)));
 
             SinglePlot = funka1ka2([FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4)],XPlot); %,FittedPeaksCalc{valueSlider}(d, 5));
-
+            SinglePlot_tmp{d} = SinglePlot;
+            
             funka1 = @(p,x)(Tools.Science.Math.FF_PseudoVoigt(x,p(1),p(2),p(3),p(4)));
             Plotka1 = funka1([FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4)],XPlot);
 
@@ -28,25 +29,34 @@ for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
         else
             SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
                 FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4));
+            SinglePlot_tmp{d} = SinglePlot;
         end
     elseif PopupValueFitFunc == 3 %TCH
         SinglePlot = Tools.Science.Math.FF_TCH(XPlot, ...
             FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4));
+        SinglePlot_tmp{d} = SinglePlot;
     elseif PopupValueFitFunc == 4 %Gauss
         SinglePlot = Tools.Science.Math.FF_Gauss(XPlot, ...
-            FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3));    
+            FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3)); 
+        SinglePlot_tmp{d} = SinglePlot;
     elseif PopupValueFitFunc == 5 %Lorentz
         SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
             FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3));  
+        SinglePlot_tmp{d} = SinglePlot;
     end
-    
+%     assignin('base','SinglePlot_tmp',SinglePlot_tmp)
     if strcmp(Diffractometer,'ETA3000')
         YPlot_tmp = YPlot_tmp + SinglePlot;
         Ka1Plot = Ka1Plot + Plotka1;
         Ka2Plot = Ka2Plot + Plotka2;
         YPlot = [YPlot_tmp' Ka1Plot' Ka2Plot'];
     else
+%         YPlotSinglePlot = YPlot;
+%         for k = 1:size(SinglePlot_tmp,2)
+%             YPlotSinglePlot = YPlotSinglePlot + SinglePlot_tmp{k};
+%         end
         YPlot = YPlot + SinglePlot;
+        
     end
 end
 
@@ -168,11 +178,11 @@ else
             xDataTmpCalc(ii,:) = linspace(PeakRegionsXCalc{valueSlider}(1,ii),PeakRegionsXCalc{valueSlider}(2,ii));
     end
 end
-assignin('base','xDataTmpCalc',xDataTmpCalc)
-assignin('base','PeaksCalc',PeaksCalc)
-assignin('base','lambdaka1',lambdaka1)
-assignin('base','lambdaka2',lambdaka2)
-assignin('base','FittedPeaksCalcPP',FittedPeaksCalc)
+% assignin('base','xDataTmpCalc',xDataTmpCalc)
+% assignin('base','PeaksCalc',PeaksCalc)
+% assignin('base','lambdaka1',lambdaka1)
+% assignin('base','lambdaka2',lambdaka2)
+% assignin('base','FittedPeaksCalcPP',FittedPeaksCalc)
 % Calculate integrated intensities
 if PopupValueFitFunc == 2 %PV-Func
     % Calculate integrated intensities
@@ -233,24 +243,24 @@ end
 for k = 1:size(FittedPeaksCalc,2)
     if PopupValueFitFunc == 2 %PV-Func
         if strcmp(Diffractometer,'ETA3000')
-            FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.0f')); % IntMax.
+            FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
             FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % 2Theta-ka1
             FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % delta2Theta
             FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % ETA-PV
             FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % FWHM
             FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.4f')); % IB
-            FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.0f')); % Int.Int
+            FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.2f')); % Int.Int
         else
-            FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.0f')); % IntMax.
+            FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
             FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
             FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
             FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % ETA
             FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % IB
             FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.4f')); % FWHM
-            FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.0f')); % Int.Int
+            FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.2f')); % Int.Int
         end
     elseif PopupValueFitFunc == 3 %TCH-Func
-        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.0f')); % Int.Int
+        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % Int.Int
         FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
         FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
         FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,3),'%.4f')); % FWHM_Gauss
@@ -258,21 +268,21 @@ for k = 1:size(FittedPeaksCalc,2)
         FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % IB
         FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.4f')); % FWHM
         FittedPeaksCalctmp{1,k}(:,8) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.2e')); % ETA
-        FittedPeaksCalctmp{1,k}(:,9) = cellstr(num2str(FittedPeaksCalc{1,k}(:,8),'%.0f')); % IntMax.
+        FittedPeaksCalctmp{1,k}(:,9) = cellstr(num2str(FittedPeaksCalc{1,k}(:,8),'%.2f')); % IntMax.
     elseif PopupValueFitFunc == 4 %Gauss
-        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.0f')); % IntMax.
+        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
         FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
         FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
         FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % IB
         FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % FWHM
-        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.0f')); % Int.Int
+        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.2f')); % Int.Int
     elseif PopupValueFitFunc == 5 %Lorentz
-        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.0f')); % IntMax.
+        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
         FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
         FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
         FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % IB
         FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % FWHM
-        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.0f')); % Int.Int
+        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.2f')); % Int.Int
     end
 end
 

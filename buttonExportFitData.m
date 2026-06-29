@@ -18,7 +18,7 @@ phi = join(['phi',PlotWindow]);
 
 % Convert plot data from struct to cell array
 DataExport = struct2cell(h.(dataforplotting));
-assignin('base','DataExport',DataExport)
+% assignin('base','DataExport',DataExport)
 if ~isfield(h,'PathName')
     formatOut = 'ddmmyyyy';
     d = datestr(now, formatOut);
@@ -32,7 +32,7 @@ Path = fullfile(h.PathName,Folder);
 if exist(Path,'dir') ~= 7
     mkdir(Path);
 end
-
+assignin('base','hplot',h)
 if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
     %% Create Plots
     Marker = {'s','o','d','p'};
@@ -338,20 +338,56 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
         set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
         % Save plots to file
         if h.checkboxnorm.Value == 1 && strcmp(YDataStr,'d-spacing')
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Line_','%d'],k);
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Line_','%d','_Det1'],k);
+                elseif strcmp(h.Detsel,'Detector 2')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Line_','%d','_Det2'],k);
+                end
+            else
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Line_','%d'],k);
+            end
+            
             print(fig,[Path,FileName],'-painters','-dtiff','-r300')
         else
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det1'],k);
+                elseif strcmp(h.Detsel,'Detector 2')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det2'],k);
+                end
+            else
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            end
+            
             print(fig,[Path,FileName],'-painters','-dtiff','-r300')
         end
     end
     
     %% Create data files from plotted data
     if h.checkboxnorm.Value == 1 && strcmp(YDataStr,'d-spacing')
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr,'_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_norm_vs_',XDataStr],k);
+        end
     else
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        end
     end
+
+    
 
     formatOut = 'ddmmyyyy';
     d = datestr(now, formatOut);
@@ -427,9 +463,9 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);    
                 elseif strcmp(YDataStr,'Int. Intensity')|| strcmp(YDataStr,'Max. Intensity')
-                    str = sprintf('%.4f    %d\n',...
+                    str = sprintf('%.4f    %.2f\n',...
                     Datahkltmp{k}{1}(m,1),...
-                    round(Datahkltmp{k}{1}(m,2)));
+                    Datahkltmp{k}{1}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
                 end
@@ -485,9 +521,9 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                 elseif strcmp(YDataStr,'Int. Intensity')|| strcmp(YDataStr,'Max. Intensity')
                     str = sprintf('%.4f    %d    %.4f    %d\n',...
                     Datahkltmp{k}{1}(m,1),...
-                    round(Datahkltmp{k}{1}(m,2)),...
+                    Datahkltmp{k}{1}(m,2),...
                     Datahkltmp{k}{2}(m,1),...
-                    round(Datahkltmp{k}{2}(m,2)));
+                    Datahkltmp{k}{2}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
                 end
@@ -553,11 +589,11 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                 elseif strcmp(YDataStr,'Int. Intensity')|| strcmp(YDataStr,'Max. Intensity')
                     str = sprintf('%.4f    %d     %.4f    %d    %.4f    %d\n',...
                     Datahkltmp{k}{1}(m,1),...
-                    round(Datahkltmp{k}{1}(m,2)),...
+                    Datahkltmp{k}{1}(m,2),...
                     Datahkltmp{k}{2}(m,1),...
-                    round(Datahkltmp{k}{2}(m,2)),...
+                    Datahkltmp{k}{2}(m,2),...
                     Datahkltmp{k}{3}(m,1),...
-                    round(Datahkltmp{k}{3}(m,2)));
+                    Datahkltmp{k}{3}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
                 end
@@ -633,13 +669,13 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                 elseif strcmp(YDataStr,'Int. Intensity')|| strcmp(YDataStr,'Max. Intensity')
                     str = sprintf('%.4f    %d     %.4f    %d    %.4f    %d    %.4f    %d\n',...
                     Datahkltmp{k}{1}(m,1),...
-                    round(Datahkltmp{k}{1}(m,2)),...
+                    Datahkltmp{k}{1}(m,2),...
                     Datahkltmp{k}{2}(m,1),...
-                    round(Datahkltmp{k}{2}(m,2)),...
+                    Datahkltmp{k}{2}(m,2),...
                     Datahkltmp{k}{3}(m,1),...
-                    round(Datahkltmp{k}{3}(m,2)),...
+                    Datahkltmp{k}{3}(m,2),...
                     Datahkltmp{k}{4}(m,1),...
-                    round(Datahkltmp{k}{4}(m,2)));
+                    Datahkltmp{k}{4}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
                 end
@@ -791,12 +827,30 @@ else
 
             set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
             % Save plots to file
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det1'],k);
+                elseif strcmp(h.Detsel,'Detector 2')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det2'],k);
+                end
+            else
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            end
+            
             print(fig,[Path,FileName],'-painters','-dtiff','-r300')
         end
 
         %% Create data files from plotted data
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        end
+        
 
         formatOut = 'ddmmyyyy';
         d = datestr(now, formatOut);
@@ -1017,12 +1071,30 @@ else
 
             set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
             % Save plots to file
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det1'],k);
+                elseif strcmp(h.Detsel,'Detector 2')
+                    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d','_Det2'],k);
+                end
+            else
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Line_','%d'],k);
+            end
+            
             print(fig,[Path,FileName],'-painters','-dtiff','-r300')
         end
 
         %% Create data files from plotted data
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr,'_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_',strrep(strrep(strrep(YDataStr,'.','_'),' ','_'),'__','_'),'_vs_',XDataStr],k);
+        end
+        
 
         formatOut = 'ddmmyyyy';
         d = datestr(now, formatOut);

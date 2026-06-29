@@ -2,13 +2,19 @@ function [meas,Sample,EnergyRange,SpectrumBackup] = SelectMeasurementsGUI(Measur
 %% (* Select measurements to be analysed *)
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % Vector of the measurement numbers which you want to select.
-WhichMeasurementsDetector = (P.WhichMeasurementsDetector(1):P.WhichMeasurementsDetector(2));
+if strcmp(P.Diffsel,'LEDDI_KETEK_TWODET')
+    WhichMeasurementsDetector = (P.WhichMeasurementsDetector(1):P.WhichMeasurementsDetector(2)/2);
+else
+    WhichMeasurementsDetector = (P.WhichMeasurementsDetector(1):P.WhichMeasurementsDetector(2));
+end
+
 % If EDDI has been used, enter the same values as before.
 % WhichMeasurements = [1:length(P.WhichMeasurementsDetector(1):P.WhichMeasurementsDetector(2))];
 % Specify the energy range (keV) which will be considered during the
 % analysis ("[LowLimit, HighLimit]"). If you don't want to make any
 % restrictions type "[]"
-if strcmp(P.Diffsel,'LEDDI')
+
+if strcmp(P.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(P.Detsel,'Detector 1')
         ShrinkEnergyRange = [P.EnergyRangeDet1];
     elseif strcmp(P.Detsel,'Detector 2')

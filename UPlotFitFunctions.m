@@ -1,6 +1,8 @@
 function [func,funcz,FitParams] = UPlotFitFunctions(h,FitData,StressComponent)
 %UNTITLED2 Summary of this function goes here
 % Polynomial fit functions for stress distributions
+    % assignin('base','FitDataUPlot',FitData)
+    % assignin('base','StressComponentUPlot',StressComponent)
     % Sigma11 and sigma22
     % Damped polynomials
     % Laplace space 'tau'

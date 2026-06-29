@@ -4,7 +4,7 @@ UserSelectedPoints = ismembertol(DataTmp{valueSlider}(:,1),ceil(BackgroundPoints
 % assignin('base', 'UserSelectedPoints', UserSelectedPoints);
 % Find index of user selected bkg points
 indexUSP = find(UserSelectedPoints == 1);
-% assignin('base', 'indexUSP', indexUSP);
+% assignin('base', 'BackgroundPoints', BackgroundPoints);
 
 n = 0.0001;
 

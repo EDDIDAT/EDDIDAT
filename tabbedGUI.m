@@ -8,7 +8,8 @@ screenWidth = screensize(3);
 % screenHeight = screensize(4);
 % Create GUI figure
 if screenWidth < 5120
-    h.myfig = figure('Name','EDDIDAT','MenuBar','none','ToolBar','none','NumberTitle','off','Tag','MainGUI','units', 'normalized','Position', [0.05 0.05 .92 .85]); %[0.05 0.05 .92 .85] [0.05 0.05 .4 .8]
+    h.myfig = figure('Name','EDDIDAT','MenuBar','none','ToolBar','none','NumberTitle','off','Tag','MainGUI','units', 'normalized','Position', [0.05 0.05 .62 .85]); %[0.05 0.05 .92 .85] [0.05 0.05 .4 .8]
+    % h.myfig = figure('Name','EDDIDAT','MenuBar','none','ToolBar','none','NumberTitle','off','Tag','MainGUI','units', 'normalized','Position', [0.05 0.05 .92 .85]); %[0.05 0.05 .92 .85] [0.05 0.05 .4 .8]
 else
     h.myfig = figure('Name','EDDIDAT','MenuBar','none','ToolBar','none','NumberTitle','off','Tag','MainGUI','units', 'normalized','Position', [0.05 0.1 .4 .8]); %[0.05 0.05 .92 .85] [0.05 0.05 .4 .8]
 end
@@ -1304,7 +1305,7 @@ h.textcreatepsi7 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.00625 0.226 0.08 0.075], ...
 'HorizontalAlignment', 'left', ...
-'String', 'Phi [all - 0,90,...]' ...
+'String', [char(966),' [all - 0,90,...]'] ...
 );
 h.editfieldcreatepsi6 = uicontrol( ...
 'Parent', h.createpsifilepanel, ...
@@ -1323,7 +1324,7 @@ h.textcreatepsi8 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.00625 0.1375 0.08 0.075], ...
 'HorizontalAlignment', 'left', ...
-'String', ['delete Psi > [',char(178),']'] ...
+'String', ['delete ',char(968),' > [',char(178),']'] ...
 );
 h.editfieldcreatepsi7 = uicontrol( ...
 'Parent', h.createpsifilepanel, ...
@@ -1354,6 +1355,18 @@ h.buttoncreatepsi2 = uicontrol( ...
 'Tag', 'buttoncreatepsi2', ...
 'Callback', {@buttoncreatepsi2} ...
 );
+
+% Neuer Button fuer Texturanalyse
+h.buttonTexturenAnalysis = uicontrol( ...
+'Parent', h.plotpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.35 0.038 0.09 0.03], ...
+'String', 'Texture analysis', ...
+'Tag', 'buttonTexturenAnalysis', ...
+'Callback', {@buttonTextureAnalysis} ...
+);
+
 h.textcreatepsi7 = uicontrol( ...
 'Parent', h.createpsifilepanel, ...
 'Style', 'text', ...
@@ -1381,7 +1394,7 @@ h.checkboxEditTableData = uicontrol( ...
 'Callback', {@checkboxEditTableData}, ...
 'Value', 0);
 
-d = zeros(13,23);
+d = zeros(15,22);
 h.tablepsifile = uitable(h.createpsifilepanel, ...
 'Units', 'Normalized', ...
 'Position', [0.2 0.03 0.7915 0.9615], ...
@@ -1391,25 +1404,28 @@ h.tablepsifile = uitable(h.createpsifilepanel, ...
 'CellSelectionCallback',{@PsiFileTableData_CellEditCallback2}, ...
 'ColumnFormat', {'numeric'}, ...
 'ColumnWidth', {40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 50 60 60 60 80}, ...
-'ColumnName', {'LNr     ',...
-'Emax   ',...
-'dEmax    ',...
-'Iint      ',...
-'Ib      ',...
-'tth     ',...
-'phiP   ',...
-'psiP   ',...
-'etaP  ',...
-'xdiff   ',...
-'ydiff   ',...
-'zdiff   ',...
-'RT  ',...
-'DT   ',...
-'temp1   ',...
-'temp2   ',...
-'heatrate   ',...
-'Time   ',...
-'PeakCount   ',...
+'ColumnName', {'LNr',...
+'Emax',...
+'dEmax',...
+'Iint',...
+'Ib',...
+'tth',...
+'phiP',...
+'psiP',...
+'etaP',...
+'h',...
+'k',...
+'l',...
+'xdiff',...
+'ydiff',...
+'zdiff',...
+'RT',...
+'DT',...
+'temp1',...
+'temp2',...
+'heatrate',...
+'Time',...
+'PeakCount',...
 });
 
 %% Options panel
@@ -1527,7 +1543,7 @@ h.textcalibangEpos3 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.015 0.3 0.9 0.1], ...
 'HorizontalAlignment', 'left', ...
-'String', 'a0 [A] = ' ...
+'String', ['a0 ','[',char(197),'] = '] ...
 );
 h.texteditfieldcalibangEpos1 = uicontrol( ...
 'Parent', h.TabCalib(1), ...
@@ -1546,14 +1562,15 @@ h.textcalibangEpos4 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.015 0.21 0.9 0.1], ...
 'HorizontalAlignment', 'left', ...
-'String', ['twotheta_true','[',char(176),']',' = '] ...
+'Tooltip', ['modify 2',char(952),' value'],...
+'String', ['2',char(952),'_true ','[',char(176),']',' = '] ...
 );
 h.texteditfieldcalibangEpos2 = uicontrol( ...
 'Parent', h.TabCalib(1), ...
 'Style', 'edit', ...
 'Units', 'Normalized', ...
 'Position', [0.305 0.25 0.2 0.07], ...
-'String', 'twotheta', ...
+'String', ['2',char(952)], ...
 'Tag', 'texteditfieldcalibangEpos2', ...
 'Enable', 'inactive', ...
 'ButtonDownFcn', {@clearbuttondown} ...
@@ -1572,14 +1589,14 @@ h.textcalibangEpos5 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.015 0.12 0.9 0.1], ...
 'HorizontalAlignment', 'left', ...
-'String', 'deltaE_offset [keV] = ' ...
+'String', [char(916),'E_offset [keV] = '] ...
 );
 h.texteditfieldcalibangEpos3 = uicontrol( ...
 'Parent', h.TabCalib(1), ...
 'Style', 'edit', ...
 'Units', 'Normalized', ...
 'Position', [0.33 0.16 0.175 0.07], ...
-'String', 'deltaE', ...
+'String', [char(916),'E'], ...
 'Tag', 'texteditfieldcalibangEpos3', ...
 'Enable', 'inactive', ...
 'ButtonDownFcn', {@clearbuttondown} ...
@@ -1605,7 +1622,7 @@ h.textcalibangEpos6 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.015 0.03 0.47 0.1], ...
 'HorizontalAlignment', 'left', ...
-'String', 'Correct twotheta of theoretical line positions only' ...
+'String', ['Correct 2',char(952),' of theoretical line positions only'] ...
 );
 
 h.buttoncalibangEpos4 = uicontrol( ...
@@ -2011,9 +2028,9 @@ h.textazimuth = uicontrol( ...
 'Parent', h.fitresultspanel, ...
 'Style', 'text', ...
 'Units', 'Normalized', ...
-'Position', [0.2325 0.9825 0.07 0.0175], ...
+'Position', [0.23 0.9825 0.07 0.0175], ...
 'HorizontalAlignment', 'left', ...
-'String', 'Azimuth angle' ...
+'String', ['Azimuth angle ',char(966)] ...
 );
 h.checkboxphi0 = uicontrol( ...
 'Parent', h.fitresultspanel, ...
@@ -2146,7 +2163,8 @@ valueslider = get(h.SliderStressData,'Value');
 % Define color array
 %     h.Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,1,0],[1,0,1],[0 1 1],[.5 .6 .7],[.8 .2 .6],[.5 .1 .2],[.3 .8 .4],[.1 .7 .5],[.2 .4 .6],[.3 .1 .9],[.5 .7 .2],[.7 .2 .6],[.4 .3 .8]};
 
-h.Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1]};
+% h.Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1]};
+h.Colors = {[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,0.8398,0],[1,0,1],[0 1 1],[0 .4 .8],[.6 .2 .8],[.8 .4 .4],[.2 .4 .2],[1,.5469,0],[.2 .4 .6],[1,.4102,.7031],[.2 .8 .6],[0.6445,0.1641,0.1641],[0 .7461 1],[0.65,0.65,0.65],[1,0.65,0.65],[0.65,0.65,1],[0.65,1,0.65],[1,1,0.65],[1,0.65,1],[0.65 1 1],[0 .6 .8],[.6 .4 .8],[.8 .6 .4],[.2 .8 .2],[1 .8906 .7070],[.6875 .8750 .8984],[1 .75 .7930],[0 .9792 .6016],[0.8203 .7031 .5469],[.2 1 1]};
 h.Colors2 = {[0.65,0.65,0.65],[1,0.65,0.65],[0.65,0.65,1],[0.65,1,0.65],[1,1,0.65],[1,0.65,1],[0.65 1 1],[0 .6 .8],[.6 .4 .8],[.8 .6 .4],[.2 .8 .2],[1 .8906 .7070],[.6875 .8750 .8984],[1 .75 .7930],[0 .9792 .6016],[0.8203 .7031 .5469],[.2 1 1]};
 % Empty data for plot    
 x = 0;
@@ -2728,6 +2746,205 @@ h.SelectPeaktable = uitable(h.panelSelectPeaktable, ...
 
 % set(h.figSelectPeaktable,'CloseRequestFcn',@my_Figclosereq2)
 
+%% Analyse texture measurements
+if screenWidth < 5120
+    h.figTextureAnalysis = figure('menubar','figure','NumberTitle','off','Tag','TextureDataAnalysis','units','normalized','Position',[0.1 0.1 0.8 0.8],'Visible','off');
+else
+    h.figTextureAnalysis = figure('menubar','figure','NumberTitle','off','Tag','TextureDataAnalysis','units','normalized','Position',[0.1 0.2 0.3 0.6],'Visible','off');
+end
+
+% set(gca,'Visible','off') 
+
+h.panelTextureAnalysis = uipanel( ...
+'Parent', h.figTextureAnalysis, ...
+'Units', 'Normalized', ...
+'Position', [0.0025 0.005 0.9975 0.995], ...
+'Title', 'Texture analysis' ...
+);
+
+% empty data for plot    
+x = 0;
+y = 0;
+% Create plot
+h.axesplotRawDataTexture = axes('Parent', h.panelTextureAnalysis, 'Position', [0.275 0.1125 0.7 0.85]);
+h.plotTexturedata = plot(h.axesplotRawDataTexture, x,y); hold on;
+h.axesplotPeakDataTextureDet1 = axes('Parent', h.panelTextureAnalysis, 'Position', [0.275 0.1125 0.7 0.85],'Visible','off');
+h.axesplotPeakDataTextureDet2 = axes('Parent', h.panelTextureAnalysis, 'Position', [0.275 0.1125 0.7 0.85],'Visible','off');
+h.plotEtheoTexture = line(h.axesplotRawDataTexture,x,y,'LineStyle',':','LineWidth',1.5);
+set(h.plotEtheoTexture, 'Color', 'red');
+
+d = zeros(18,5);
+idxdata = d(:,1)>0;
+h.tablephasehklTexture = uitable(h.panelTextureAnalysis, ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.58 0.2055 0.37], ...
+'Tag', 'tablephasehklTexture', ...
+'data', [num2cell(d) num2cell(idxdata)],...
+'ColumnEditable', [false false false false false true], ...
+'ColumnWidth', {25 25 25 85 77 25}, ...
+'CellEditCallback',{@celleditcallbackHKLTable}, ...
+'ColumnName', {'h', 'k', 'l', 'dspacing', 'Energy', 'Use'});
+
+h.PopupMenuSelectDetTexture = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'popupmenu', ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.4 0.1 0.1], ...
+'Tag', 'PopupMenuSelectDetTexture', ...
+'String', {'Select detector', 'Detector 1', 'Detector 2'}, ...
+'Enable', 'on', ...
+'Value', 2, ...
+'Callback', {@SelectDetectorCallbackTex} ...
+);
+
+h.textselectERange = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.35 0.15 0.1], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Energy range' ...
+);
+
+h.SelectEmin = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.075 0.425 0.03 0.03], ...
+'Tag', 'SelectEmin', ...
+'String', 'Emin', ...
+'ButtonDownFcn', {@clearbuttondown}, ...
+'Enable', 'inactive' ...
+);
+
+h.textselectmeas6 = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.11 0.35 0.15 0.1], ...
+'HorizontalAlignment', 'left', ...
+'String', 'to' ...
+);
+
+h.SelectEmax = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.125 0.425 0.03 0.03], ...
+'Tag', 'SelectEmax', ...
+'String', 'Emax', ...
+'ButtonDownFcn', {@clearbuttondown}, ...
+'Enable', 'inactive' ...
+);
+
+h.buttonSelectERange = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.16 0.425 0.04 0.03], ...
+'String', 'Ok', ...
+'Tag', 'buttonSelectERange', ...
+'Callback', {@buttonSelectERange, h} ...
+);
+
+h.buttonDefinePeaks = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.075 0.375 0.125 0.03], ...
+'String', 'Define Peaks and start fitting', ...
+'Tag', 'buttonDefinePeaks', ...
+'Callback', {@buttonDefinePeaks} ...
+);
+
+h.editYmeanInt = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.375 0.04 0.03], ...
+'String', '3', ...
+'Tag', 'editYmeanInt', ...
+'Tooltip', 'Ymean value usedf to check if a real peak or a data outlier in background can be found at the corresponding position',...
+'Enable', 'inactive', ...
+'ButtonDownFcn', {@clearbuttondown} ...
+);
+
+h.buttonCreateNJAFiles = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.325 0.125 0.03], ...
+'String', 'Create and export nja-Files', ...
+'Tag', 'buttonCreateNJAFiles', ...
+'Callback', {@buttonExportNJAFiles} ...
+);
+
+h.textchangetwothetaTex = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.26 0.03 0.2 0.04], ...
+'HorizontalAlignment', 'left', ...
+'Tooltip', ['modify 2',char(952),' value'],...
+'String', ['Change 2',char(952),' of theoretical peak positions ','[',char(176),']',' = '] ...
+);
+
+h.editchangetwothetaTex = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.41 0.045 0.04 0.03], ...
+'String', ['2',char(952)], ...
+'Tag', 'editchangetwothetaTex', ...
+'Enable', 'inactive', ...
+'ButtonDownFcn', {@clearbuttondown} ...
+);
+
+h.buttonchangetwothetaTex = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.46 0.045 0.04 0.03], ...
+'String', 'Ok', ...
+'Tag', 'buttonchangetwothetaTex', ...
+'Callback', {@buttonchangetwothetaTex, h} ...
+);
+
+h.checkboxFilterTheoPeaks = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.575 0.045 0.15 0.025], ...
+'Tag', 'checkboxFilterTheoPeaks', ...
+'Tooltip', 'Define Ymin in order to display only peaks that have a corresponding min. intensity',...
+'String', 'Filter theoretical peak position matches', ...
+'Value', 0, ...
+'Callback', {@checkboxFilteredPeaks} ...
+);
+
+h.editYminInt = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.53 0.045 0.04 0.03], ...
+'String', '6', ...
+'Tag', 'editYminInt', ...
+'Tooltip', 'Ymin value depending on measurement data',...
+'Enable', 'inactive', ...
+'ButtonDownFcn', {@clearbuttondown} ...
+);
+
+h.checkboxShowTheoPeaks = uicontrol( ...
+'Parent', h.panelTextureAnalysis, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.75 0.045 0.15 0.025], ...
+'Tag', 'checkboxShowTheoPeaks', ...
+'String', 'Show/hide theoretical peaks', ...
+'Value', 1, ...
+'Callback', {@checkboxShowFilteredPeaks} ...
+);
+
 %% Plot Fit Data Panel
 % Plot fit data 1
 h.plotwindowfitdata1 = uipanel( ...
@@ -2866,7 +3083,7 @@ h.TextPhiData1 = uicontrol( ...
 'Units','normalized',...
 'Position', [0.063 0.63 0.15 0.04],...
 'FontWeight', 'bold', ...
-'String', 'Azimuth angle',...
+'String', ['Azimuth angle ',char(966)],...
 'FontSize', 10,...
 'HorizontalAlignment', 'left');
 
@@ -3041,7 +3258,7 @@ h.TextPhiData2 = uicontrol( ...
 'Units','normalized',...
 'Position', [0.063 0.63 0.15 0.04],...
 'FontWeight', 'bold', ...
-'String', 'Azimuth angle',...
+'String', ['Azimuth angle ',char(966)],...
 'FontSize', 10,...
 'HorizontalAlignment', 'left');
 
@@ -3214,7 +3431,7 @@ h.TextPhiData3 = uicontrol( ...
 'Units','normalized',...
 'Position', [0.063 0.63 0.15 0.04],...
 'FontWeight', 'bold', ...
-'String', 'Azimuth angle',...
+'String', ['Azimuth angle ',char(966)],...
 'FontSize', 10,...
 'HorizontalAlignment', 'left');
 
@@ -3388,7 +3605,7 @@ h.TextPhiData4 = uicontrol( ...
 'Units','normalized',...
 'Position', [0.063 0.63 0.15 0.04],...
 'FontWeight', 'bold', ...
-'String', 'Azimuth angle',...
+'String', ['Azimuth angle ',char(966)],...
 'FontSize', 10,...
 'HorizontalAlignment', 'left');
 
@@ -5566,11 +5783,308 @@ h.openPeriodicTablePDFDatabase = uicontrol( ...
 'Parent', h.PDFDataBasePanel, ...
 'Style', 'Pushbutton', ...
 'Units', 'Normalized', ...
-'Position', [0.025 0.8 0.38 0.025], ...
+'Position', [0.0025 0.96 0.065 0.025], ...
 'String', 'Open periodic table', ...
 'Tag', 'openPeriodicTablePDFDatabase', ...
 'Callback', {@OpenPeriodicTableCallback} ...
 );
+ 
+h.SelectedElementsPDFDatabase = uicontrol( ...
+'Parent', h.PDFDataBasePanel, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.0721 0.96 0.08 0.025], ...
+'Tag', 'SelectedElementsPDFDatabase', ...
+'String', 'No elements selected', ...
+'Enable', 'inactive' ...
+);
+
+
+% Search button in order to select the elements
+h.StartSearchButtonPDFDatabase = uicontrol( ...
+'Parent', h.PDFDataBasePanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.1575 0.96 0.065 0.025], ...
+'String', 'Start Search', ...
+'Tag', 'StartSearchButtonPDFDatabase', ...
+'Callback', {@StartSearchButtonPDFDataCallback} ...
+);
+
+h.CreateMPDFileButton = uicontrol( ...
+'Parent', h.PDFDataBasePanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.25 0.96 0.065 0.025], ...
+'String', 'Create MPD file', ...
+'Tag', 'CreateMPDFileButton', ...
+'Callback', {@CreateMPDFileCallback} ...
+);
+
+d = zeros(30,5);
+h.tablePDFDatabase = uitable(h.PDFDataBasePanel, ...
+'Units', 'Normalized', ...
+'Position', [0.0025 0.525 0.274 0.4175], ...
+'Tag', 'tablePDFDatabase', ...
+'data', d, ...
+'ColumnEditable', [false,false,false,false,false], ...
+'CellSelectionCallback',{@PDFDataTable_CellEditCallback}, ...
+'ColumnFormat', {'char','char','char','char','char'}, ...
+'ColumnWidth', {70 120 120 80 80}, ...
+'ColumnName', {'PDF #',...
+'Name',...
+'Formula',...
+'SG Symbol',...
+'SG Number',...
+});
+
+h.PDFDataInfoPanel = uipanel( ...
+'Parent', h.PDFDataBasePanel, ...
+'Units', 'Normalized', ...
+'Position', [0.0025 0.0025 0.495 0.5], ...
+'Title', 'PDF Card Data'...
+);
+
+d1 = zeros(25,7);
+h.tabledhklPDF = uitable(h.PDFDataInfoPanel, ...
+'Units', 'Normalized', ...
+'Position', [0.4 0.172 0.425 0.728], ...
+'Tag', 'tabledhklPDF', ...
+'data', d1, ...
+'ColumnEditable', [false,false,false,false,false,false,false], ...
+'ColumnFormat', {'numeric','numeric','numeric','numeric','numeric','numeric','numeric'}, ...
+'ColumnWidth', {70 70 30 30 30 60 90}, ...
+'RowName',[],...
+'ColumnName', {['d [',char(197),']'],...
+'Intensity',...
+'h',...
+'k',...
+'l',...
+['2',char(952),' [',char(176),']'],...
+'Energy [keV]',...
+});
+
+h.textelementSelectLambda = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.935 0.13 0.03], ...
+'HorizontalAlignment', 'left', ...
+'String', ['Select wavelength ',[char(955)],':'] ...
+);
+
+h.popupmenulambda = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'popupmenu', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.925 0.05 0.05], ...
+'Tag', 'popupmenulambda', ...
+'String', {'Cu', 'Co', 'Ag', 'Fe', 'Mo', 'Cr'}, ...
+'Value', 1, ...
+'Visible', 'on', ...
+'Callback', {@popupmenulambdaCallback} ...
+);
+
+h.textelementSelectTwoTheta = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.24 0.935 0.1 0.03], ...
+'HorizontalAlignment', 'left', ...
+'String', ['Select ',['2',char(952)],':'] ...
+);
+
+h.SelectTwothetaPDFDatabase = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.3 0.9275 0.04 0.05], ...
+'Tag', 'SelectTwothetaPDFDatabase', ...
+'String', '16', ...
+'Enable', 'on', ...
+'Callback', {@SelectTwothetaPDFDatabaseCallback} ...
+);
+
+h.textelementPDFData1 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.85 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'PDF #:' ...
+);
+
+h.textelementPDFData2 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.8 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Space Group:' ...
+);
+
+h.textelementPDFData3 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.75 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Molecular Weight:' ...
+);
+
+h.textelementPDFData4 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.7 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Density:' ...
+);
+
+h.textelementPDFData5 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.65 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Cell Parameters' ...
+);
+
+h.textelementPDFData6 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.6 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'a:' ...
+);
+
+h.textelementPDFData7 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.55 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'b:' ...
+);
+
+h.textelementPDFData8 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.0125 0.5 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', 'c:' ...
+);
+
+
+
+h.textdataelementPDFData1 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.85 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData2 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.8 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData3 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.75 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData4 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.7 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData5 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.65 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData6 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.6 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData7 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.55 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.textdataelementPDFData8 = uicontrol( ...
+'Parent', h.PDFDataInfoPanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.15 0.5 0.13 0.05], ...
+'HorizontalAlignment', 'left', ...
+'String', '' ...
+);
+
+h.PDFPlotPanel = uipanel( ...
+'Parent', h.PDFDataBasePanel, ...
+'Units', 'Normalized', ...
+'Position', [0.5025 0.0025 0.495 1], ...
+'Title', 'Data Plot'...
+);
+
+% Axes for plot of diffraction line positions
+h.axesplotPDFData = axes('Parent', h.PDFPlotPanel, 'Position', [0.08 0.57 0.9 0.4]);
+
+% h.plotdataNoise = plot(h.axesplotNoiseCorrData, x,y); hold on;
+% h.plotdataNoisecorr = plot(h.axesplotNoiseCorrData,x,y);
+% h.plotdataNoisecorrchannel = plot(h.axesplotNoiseCorrData,x,y,'o','Visible','off');
+% 
+h.axesplotPDFData.XLim = [0,160];
+h.axesplotPDFData.YLim = [0,110];
+% h.axesplotNoiseCorrData.YLimMode = 'auto';
+% % h.axesplotNoiseCorrData.XLimMode = 'auto';
+% grid on
+% set(h.plotdataNoise, 'Color', 'blue');
+% set(h.plotdataNoisecorr, 'Color', 'black');
+% set(h.plotdataNoisecorrchannel, 'Color', 'red');
+% 
+xlabel(h.axesplotPDFData,'2\theta [°]');
+ylabel(h.axesplotPDFData,'rel. Intensity');
+
+% Axes for plot of diffraction line positions
+h.axesplotPDFDataEnergy = axes('Parent', h.PDFPlotPanel, 'Position', [0.08 0.07 0.9 0.4]);
+
+h.axesplotPDFDataEnergy.XLim = [0,100];
+h.axesplotPDFDataEnergy.YLim = [0,110];
+
+xlabel(h.axesplotPDFDataEnergy,'Energy [keV]');
+ylabel(h.axesplotPDFDataEnergy,'rel. Intensity');
 
 
 % %% Rietveld analysis tab
@@ -6411,12 +6925,16 @@ set(h.buttonSelectPeaktable1,'callback',{@buttonSelectPeaktableok, h})
 set(h.buttonSelectPeaktable2,'callback',{@buttonSelectPeaktablecancel, h})
 set(h.SelectPeaktable,'CellEditCallback',{@celleditcallbackSelectPeaktable, h})
 set(h.figSelectPeaktable,'CloseRequestFcn',@my_Figclosereq2)
+set(h.figTextureAnalysis,'CloseRequestFcn',@my_Figclosereq2)
+
 
 set(h.AcceptXEditButton,'callback',{@acceptXlimEdit, h})
 set(h.CancelXEditButton,'callback',{@cancelXlimEdit, h})
 set(h.AcceptYEditButton,'callback',{@acceptYlimEdit, h})
 set(h.CancelYEditButton,'callback',{@cancelYlimEdit, h})
 
+% f = fieldnames(h);
+% assignin('base','f',f)
 % set (gcf, 'WindowButtonMotionFcn', @mouseMove);
 % f = fieldnames(h);
 % assignin('base','fieldnames',f)
@@ -6444,6 +6962,9 @@ else
     msgbox({'Sample Created'});
 end
 assignin('base','Sample',h.Sample)
+
+%Test
+
 guidata(hObj, h);
 
 function popupmenuCallback1(hObj,~)
@@ -6478,9 +6999,30 @@ h.P.PopupValueDiff = str{val};
 if strcmp(str{val},'ETA3000')
     set(h.tablephasehkl,'ColumnName',{'h', 'k', 'l', 'dspacing', ['2',char(952),'-ka1'], 'Use'})
     set(h.tablephasehkl2,'ColumnName',{'h', 'k', 'l', 'dspacing', ['2',char(952),'-ka1']})
+    set(h.textcalibangEpos4,'String', ['wavelength ',char(955),' [',char(197),']',' = '])
+    txt = sprintf(['Modify ',char(955),' in order to move\ntheoretical line positions:','\nCu = 1.54056\nCo = 1.78897\nAg = 0.55941\nFe = 1.93579\nMo = 0.70926\nCr = 2.28962\n']);
+    set(h.textcalibangEpos4,'Tooltip', txt)
+    set(h.texteditfieldcalibangEpos2,'String', char(955))
+    set(h.textcalibangEpos5,'String',[char(916),char(952),' offset [',char(176),'] = '])
+    set(h.texteditfieldcalibangEpos3,'String', [char(916),char(952)])
+elseif strcmp(str{val},'LEDDI_KETEK_TWODET')
+    % Allow input of detector number
+    set(h.popupmenuselectmeas1, 'enable', 'on')
+    set(h.tablephasehkl,'ColumnName',{'h', 'k', 'l', 'dspacing', 'Energy', 'Use'})
+    set(h.tablephasehkl2,'ColumnName',{'h', 'k', 'l', 'dspacing', 'Energy'})
+    set(h.textcalibangEpos4,'String', ['2',char(952),'_true ','[',char(176),']',' = '])
+    set(h.textcalibangEpos4,'Tooltip', ['modify 2',char(952),' value'])
+    set(h.texteditfieldcalibangEpos2,'String', ['2',char(952)])
+    set(h.textcalibangEpos5,'String',[char(916),'E offset [keV] = '])
+    set(h.texteditfieldcalibangEpos3,'String', [char(916),'E'])
 else
     set(h.tablephasehkl,'ColumnName',{'h', 'k', 'l', 'dspacing', 'Energy', 'Use'})
     set(h.tablephasehkl2,'ColumnName',{'h', 'k', 'l', 'dspacing', 'Energy'})
+    set(h.textcalibangEpos4,'String', ['2',char(952),'_true ','[',char(176),']',' = '])
+    set(h.textcalibangEpos4,'Tooltip', ['modify 2',char(952),' value'])
+    set(h.texteditfieldcalibangEpos2,'String', ['2',char(952)])
+    set(h.textcalibangEpos5,'String',[char(916),'E offset [keV] = '])
+    set(h.texteditfieldcalibangEpos3,'String', [char(916),'E'])
 end
 
 
@@ -6548,22 +7090,84 @@ else
     h.P.ScanMode = scanmode;
     calib = get(h.popupmenuDTCorr,'string');
     h.P.Calibration = calib{get(h.popupmenuDTCorr,'value')};
+    
     % Run "SpecFileConversionGUI" script
     [meas,~,DataTmp,Diffractometer,P,T] = SpecFileConversionGUI(h.P,h.Sample,h.T,h);
     % IF LEDDI measurements were conducted using only one detector
 %     assignin('base','measbefore',meas)
 
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if meas(1).NumberOfDetectors == 1
             meas = reshape(repmat(meas,2,1),size(meas,2)*2,[]);
             meas = meas';
             DataTmp = reshape(repmat(DataTmp,2,1),size(DataTmp,2)*2,[]);
             DataTmp = DataTmp';
         end
+%         for k = 1:length(meas)
+%             Intensity(:,k) = meas(k).EDSpectrum(:,2);
+%         end
+% 
+%         IntDet1 = sum((Intensity(:,2:2:10)),2);
+%         IntDet2 = sum((Intensity(:,1:2:10)),2);
+% 
+%         meas(3:end) = [];
+%         meas(1).EDSpectrum(:,2) = IntDet2;
+%         meas(2).EDSpectrum(:,2) = IntDet1;
+    end
+
+    % Get theoretical peak positions
+    h.TPeaks = TheoreticalPeakPositions(meas,DataTmp,h.P.Calibration,h.Diffsel);
+    % Check if psi angles from ETA measurement are in correct order
+    if strcmp(h.Diffsel,'ETA3000')
+        % Extract angles from meas
+        for k = 1:length(meas)
+            phiSmeas(k) = meas(k).Motors_all.PhiS;
+            phimeas(k) = meas(k).SCSAngles.phi;
+            psimeas(k) = meas(k).SCSAngles.psi;
+        end
+%         assignin('base','meas',meas)
+        % Check if phiS was changed
+        phiSvalmeas = unique(phiSmeas);
+         
+        if length(phiSvalmeas) == 1
+            % Get number of phi values
+            phivalmeas = unique(phimeas);
+%         end
+            % Get indices of each phi angle
+            for k = 1:length(phivalmeas)
+                idxphi(:,k) = find(phimeas==phivalmeas(k));
+            end
+            % Get psi angle of each phi angle index
+            for k = 1:size(idxphi,2)
+                psiidxphi(:,k) = psimeas(idxphi(:,k));
+            end
+            % Check if psi angles are sorted in ascending order
+            for k = 1:size(idxphi,2)
+                psisortedidx(:,k) = issorted(psiidxphi(:,k));
+            end
+        
+            % Sort meas data if psisortedidx == 0
+            for k = 1:size(idxphi,2)
+                if psisortedidx(k) == 0
+                    h.psisortedidx = psisortedidx;
+                    % Flip order of phi index
+                    idxphisort = flip(idxphi(:,k));
+                    % Sort meas data to new variable
+                    for i = 1:length(idxphisort)
+                        meassorted(i) = meas(idxphisort(i));
+                    end
+                    % a = flip(h.TPeaks.T.Y3,2);
+                    % h.TPeaks.T.Y3 = a;
+                    meas(idxphi(:,k)) = meassorted;
+                else
+                    h.psisortedidx = psisortedidx;
+                end
+            end
+        end
     end
 
     % Change Emax according to diffractometer
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         for k = 1:length(meas)
             meas(k).Sample.Materials.EnergyMax = 60;
         end
@@ -6585,8 +7189,7 @@ else
     h.P = P;
     h.T = T;
     assignin('base','meas',meas)
-    % Get theoretical peak positions
-    h.TPeaks = TheoreticalPeakPositions(meas,DataTmp,h.P.Calibration,h.Diffsel);
+    
     if strcmp(h.Diffsel,'ETA3000')
         h.lambdaka1 = h.TPeaks.T.lambdaka1;
         h.lambdaka2 = h.TPeaks.T.lambdaka2;
@@ -6595,11 +7198,20 @@ else
         h.lambdaka1 = 1;
         h.lambdaka2 = 1;
     end
-%     assignin('base','TPeaks',h.TPeaks)
-    if strcmp(h.Diffsel,'LEDDI')
+    % assignin('base','TPeaks',h.TPeaks)
+    if strcmp(h.Diffsel,'ETA3000')
+        if isfield(h,'psisortedidx')
+            if h.psisortedidx(1) == 0
+                h.TPeaks.T.Y3 = flip(h.TPeaks.T.Y3,2);
+            end
+        end
+    end
+
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+%             assignin('base','hTPeaksDet1',h.TPeaksDet1)
             a = h.TPeaksDet1.T.Etheo < 60;
             EtheoLimit = h.TPeaksDet1.T.Etheo(a);
 %             X1Limit = h.TPeaksDet1.T.X1(a,:);
@@ -6634,6 +7246,7 @@ else
         % Set data for table with hkl, d-spacing and E[keV] values
         set(h.tablephasehkl,'data',[num2cell(h.TPeaks.T.Peaks(aka1,1:5)) num2cell(false(size(num2cell(h.TPeaks.T.Peaks(aka1,1:5)),1),1))])
     else
+%         assignin('base','T',h.TPeaks)
         a = h.TPeaks.T.Etheo < h.TPeaks.T.EMax;
         EtheoLimit = h.TPeaks.T.Etheo(a);
 %         X1Limit = h.TPeaks.T.X1(a,:);
@@ -6644,7 +7257,7 @@ else
     end
 
 %     if h.P.ShowSubstratePeaks == 1
-%         if strcmp(h.Diffsel,'LEDDI')
+%         if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 %             b = h.TPeaks.S.Etheo < 60;
 %         else
 %             b = h.TPeaks.S.Etheo < h.TPeaks.S.EMax;
@@ -6655,7 +7268,7 @@ else
 %         SY3Limit = h.TPeaks.S.Y3((1:(3*length(SEtheoLimit)-1)),:);
 %     end
     % Set plot data for theoretical line positions        
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         % Distinguish between Det1 and Det2
         if strcmp(h.Detsel,'Detector 1')
 %             assignin('base','X3Limit',X3Limit)
@@ -6678,10 +7291,10 @@ else
             end   
         end
     elseif strcmp(h.Diffsel,'ETA3000')
-%         assignin('base','X3Limitka1',X3Limitka1)
-%         assignin('base','X3Limitka2',X3Limitka2)
-%         assignin('base','Y3Limitka1',Y3Limitka1)
-%         assignin('base','Y3Limitka2',Y3Limitka2)
+        % assignin('base','X3Limitka1',X3Limitka1)
+        % assignin('base','X3Limitka2',X3Limitka2)
+        % assignin('base','Y3Limitka1',Y3Limitka1)
+        % assignin('base','Y3Limitka2',Y3Limitka2)
         set(h.plotEtheo,'xdata',[X3Limitka1(:,1); nan; X3Limitka2(:,1)])
         set(h.plotEtheo,'ydata',[Y3Limitka1(:,1); nan; 0.5.*Y3Limitka2(:,1)])
     else
@@ -6699,7 +7312,7 @@ else
 %         set(h.tablephasehkl2,'data',h.TPeaks.S.Peaks(b,:))
 %     end
     % Change slider parameters according to size of meas
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if length(meas) == 2
             set(h.Slider,'Min',1);
             set(h.Slider,'Max',length(meas));
@@ -6723,7 +7336,7 @@ else
         end
     end
     % Set plot data and parameters
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             set(h.plotdata,'xdata',DataTmp{2}(:,1))
@@ -6744,9 +7357,9 @@ else
             set(h.axesplotRawData.Title,'String',['Measurement data for ', meas(1).Name])
         end
         
-        set(h.editfieldselectmeas1,'String',length(meas)/2)
+        set(h.editfieldselectmeas1,'String',length(meas))
         set(h.editfieldselectmeas2,'String',1)
-        set(h.editfieldselectmeas3,'String',length(meas)/2)
+        set(h.editfieldselectmeas3,'String',length(meas))
         h.axesplotRawData.XLim = [0, 60];
         % h.axesplotRawData.YLim = [0, Inf];
     else
@@ -6874,7 +7487,7 @@ if h.P.PopupValueMpd3 == 3
     set(h.popupmenuselectmeas1, 'enable', 'on')
     % Search for LEDDI string in popup menu
     StringDTcorr = get(h.popupmenuDTCorr,'String');
-    LeddiValtmp = strcmp(StringDTcorr,'LEDDI');
+    LeddiValtmp = strcmp(StringDTcorr,'LEDDI_KETEK_TWODET');
     LedddiVal = find(LeddiValtmp==1);
     if strcmp(hObj.Tag,'popupmenudiffQA')
         set(h.popupmenuDTCorrQA,'Value',LedddiVal)
@@ -6920,8 +7533,15 @@ ValueCheckBox = get(hObj, 'value');
 % Get slider value
 valueSlider = round(get(h.Slider, 'Value'));
 
+Detstr = get(h.popupmenuselectmeas1,'String');
+Detval = get(h.popupmenuselectmeas1,'Value');
+Detsel = Detstr{Detval};
+h.Detsel = Detsel;
+
 if ValueCheckBox == 1 
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        assignin('base','hDataTmp',h.DataTmp)
+        disp(h.Detsel)
         PlotDataXtmp = cell(1);
         PlotDataYtmp = cell(1);
         if strcmp(h.Detsel,'Detector 1')
@@ -6941,7 +7561,8 @@ if ValueCheckBox == 1
             set(h.plotdata,'xdata',h.DataTmp{Slidersteps(valueSlider)}(:,1))
             set(h.plotdata,'ydata',h.DataTmp{Slidersteps(valueSlider)}(:,2))
 
-            h.plotdataAll = plot(h.axesplotRawData, h.PlotDataXDet1(:,1), h.PlotDataYDet1);
+            h.plotdataAll = plot(h.axesplotRawData, h.PlotDataXDet1, h.PlotDataYDet1);
+            h.axesplotRawData.YLim = [0, Inf];
             set(h.plotdataAll, 'Color', [0.7 0.7 0.7]);
             uistack(h.plotdata,'top');
             if isfield(h,'plotfits')
@@ -6959,12 +7580,15 @@ if ValueCheckBox == 1
             h.PlotDataXDet2 = cell2mat(PlotDataXtmp);
             n = cellfun(@numel,PlotDataYtmp);
             PlotDataYtmp = cellfun(@(x,y)[x(:);zeros(max(n)-y,1)],PlotDataYtmp,num2cell(n),'un',0);
+%             assignin('base','PlotDataYtmp',PlotDataYtmp)
             h.PlotDataYDet2 = cell2mat(PlotDataYtmp);
             % Set plot data
             set(h.plotdata,'xdata',h.DataTmp{Slidersteps(valueSlider)}(:,1))
             set(h.plotdata,'ydata',h.DataTmp{Slidersteps(valueSlider)}(:,2))
 
-            h.plotdataAll = plot(h.axesplotRawData, h.PlotDataXDet2(:,1), h.PlotDataYDet2);
+            h.plotdataAll = plot(h.axesplotRawData, h.PlotDataXDet2, h.PlotDataYDet2);
+            h.axesplotRawData.YLim = [0, Inf];
+%             assignin('base','axesplotRawData',h.axesplotRawData)
             set(h.plotdataAll, 'Color', [0.7 0.7 0.7]);
             uistack(h.plotdata,'top');
             if isfield(h,'plotfits')
@@ -6985,7 +7609,7 @@ if ValueCheckBox == 1
         n = cellfun(@numel,PlotDataYtmp);
         PlotDataYtmp = cellfun(@(x,y)[x(:);zeros(max(n)-y,1)],PlotDataYtmp,num2cell(n),'un',0);
         h.PlotDataY = cell2mat(PlotDataYtmp);
-        assignin('base','DataTmpButton',h.DataTmp)
+%         assignin('base','DataTmpButton',h.DataTmp)
         % Set plot data
         set(h.plotdata,'xdata',h.DataTmp{valueSlider}(:,1))
         set(h.plotdata,'ydata',h.DataTmp{valueSlider}(:,2))
@@ -7005,6 +7629,7 @@ if ValueCheckBox == 1
 %         set(h.plotdata,'Ydata',h.PlotDataY)
 %         assignin()
         h.plotdataAll = plot(h.axesplotRawData, h.PlotDataX(:,1), h.PlotDataY);
+        h.axesplotRawData.YLim = [0, Inf];
         set(h.plotdataAll, 'Color', [0.7 0.7 0.7])
 %         set(h.plotdataAll, 'Visible', 'off')
         uistack(h.plotdata,'top');
@@ -7013,7 +7638,7 @@ if ValueCheckBox == 1
         end
     end
 else    
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             set(h.plotdata,'xdata',h.DataTmp{Slidersteps(valueSlider)}(:,1))
@@ -7027,6 +7652,7 @@ else
         set(h.plotdata,'xdata',h.DataTmp{valueSlider}(:,1))
         set(h.plotdata,'ydata',h.DataTmp{valueSlider}(:,2))
     end
+    h.axesplotRawData.YLim = [0, Inf];
     set(h.plotdataAll,'Visible','off')
 end
 
@@ -7054,6 +7680,15 @@ guidata(hObj, h);
 function buttonswitchplotmode(hObj, ~)
 % Callback for open table to select peaks 
 h = guidata(hObj);
+
+% Detstr = get(h.popupmenuselectmeas1,'String');
+% Detval = get(h.popupmenuselectmeas1,'Value');
+% Detsel = Detstr{Detval};
+% h.Detsel = Detsel;
+
+% Interpolate RawData to get YData for PeakRegions after background
+% correction
+
 % Get X and Y data from main plot window
 PlotXdata = get(h.plotdata,'Xdata');
 PlotYdata = get(h.plotdata,'Ydata');
@@ -7081,45 +7716,117 @@ else
 end
 
 % Check if single peak plot or whole plot is active and switch accordingly
-if abs(h.P.EnergyRange(1)-h.P.EnergyRange(2)) == abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2))
-    % Set limits for x-axis
-    h.axesplotRawData.XLim = [peakbkgdata(1,1)-1,peakbkgdata(2,1)+1];
-    % Calculate Ymax in peak region
-    Ymax = max(PlotYdata(IndRawData(1):IndRawData(2)));
-    % Calculate fit residual
-    if isfield(h,'YFit')
-        if strcmp(h.Diffsel,'ETA3000')
-            ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot(:,1),h.XFit);
-        else
-            ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot,h.XFit);
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        if abs(h.P.EnergyRangeDet1(1)-h.P.EnergyRangeDet1(2)) == abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2))
+            % Set limits for x-axis
+            h.axesplotRawData.XLim = [peakbkgdata(1,1)-1,peakbkgdata(2,1)+1];
+            % Calculate Ymax in peak region
+            Ymax = max(PlotYdata(IndRawData(1):IndRawData(2)));
+            % Calculate fit residual
+            if isfield(h,'YFit')
+                ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot,h.XFit);
+                % Shift residual plot by Ymax/3
+                set(h.plotfitresidual,'Ydata',ydataplotfitresidual-Ymax/3)
+                set(h.plotfitresidual,'Xdata',h.XFit)
+            end
+            % Set limits for y-axis
+            h.axesplotRawData.YLim = [-Ymax/2 ceil((max(PlotYdata(IndRawData(1):IndRawData(2)))+1/3*max(PlotYdata(IndRawData(1):IndRawData(2))))/100)*100];
+            h.axesplotRawData.YLimMode = 'manual';
+            % Set slider visiblity on
+            h.SliderSinglePeakData.Visible = 'on';
+            % Deactivate theoretical line positions
+            set(h.plotEtheo,'visible','off')
+        elseif abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2)) < abs(h.P.EnergyRangeDet1(1)-h.P.EnergyRangeDet1(2))
+            % Set x-axis limits to default
+            h.axesplotRawData.XLim = h.P.EnergyRangeDet1;
+            h.axesplotRawData.YLimMode = 'auto';
+            h.SliderSinglePeakData.Visible = 'off';
+            % Activate theoretical line positions
+            set(h.plotEtheo,'visible','on')
+            % Reset residual plot data
+            if isfield(h,'YFit')
+                ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot,h.XFit)) - (max(h.YFit)/4);
+                set(h.plotfitresidual,'Ydata',ydataplotfitresidual)
+                set(h.plotfitresidual,'Xdata',h.XFit)
+            end
         end
-        % Shift residual plot by Ymax/3
-        set(h.plotfitresidual,'Ydata',ydataplotfitresidual-Ymax/3)
-        set(h.plotfitresidual,'Xdata',h.XFit)
+    elseif strcmp(h.Detsel,'Detector 2')
+        if abs(h.P.EnergyRangeDet2(1)-h.P.EnergyRangeDet2(2)) == abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2))
+            % Set limits for x-axis
+            h.axesplotRawData.XLim = [peakbkgdata(1,1)-1,peakbkgdata(2,1)+1];
+            % Calculate Ymax in peak region
+            Ymax = max(PlotYdata(IndRawData(1):IndRawData(2)));
+            % Calculate fit residual
+            if isfield(h,'YFit')
+                ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot,h.XFit);
+                % Shift residual plot by Ymax/3
+                set(h.plotfitresidual,'Ydata',ydataplotfitresidual-Ymax/3)
+                set(h.plotfitresidual,'Xdata',h.XFit)
+            end
+            % Set limits for y-axis
+            h.axesplotRawData.YLim = [-Ymax/2 ceil((max(PlotYdata(IndRawData(1):IndRawData(2)))+1/3*max(PlotYdata(IndRawData(1):IndRawData(2))))/100)*100];
+            h.axesplotRawData.YLimMode = 'manual';
+            % Set slider visiblity on
+            h.SliderSinglePeakData.Visible = 'on';
+            % Deactivate theoretical line positions
+            set(h.plotEtheo,'visible','off')
+        elseif abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2)) < abs(h.P.EnergyRangeDet2(1)-h.P.EnergyRangeDet2(2))
+            % Set x-axis limits to default
+            h.axesplotRawData.XLim = h.P.EnergyRangeDet2;
+            h.axesplotRawData.YLimMode = 'auto';
+            h.SliderSinglePeakData.Visible = 'off';
+            % Activate theoretical line positions
+            set(h.plotEtheo,'visible','on')
+            % Reset residual plot data
+            if isfield(h,'YFit')
+                ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot,h.XFit)) - (max(h.YFit)/4);
+                set(h.plotfitresidual,'Ydata',ydataplotfitresidual)
+                set(h.plotfitresidual,'Xdata',h.XFit)
+            end
+        end
     end
-    % Set limits for y-axis
-    h.axesplotRawData.YLim = [-Ymax/2 ceil((max(PlotYdata(IndRawData(1):IndRawData(2)))+1/3*max(PlotYdata(IndRawData(1):IndRawData(2))))/100)*100];
-    h.axesplotRawData.YLimMode = 'manual';
-    % Set slider visiblity on
-    h.SliderSinglePeakData.Visible = 'on';
-    % Deactivate theoretical line positions
-    set(h.plotEtheo,'visible','off')
-elseif abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2)) < abs(h.P.EnergyRange(1)-h.P.EnergyRange(2))
-    % Set x-axis limits to default
-    h.axesplotRawData.XLim = h.P.EnergyRange;
-    h.axesplotRawData.YLimMode = 'auto';
-    h.SliderSinglePeakData.Visible = 'off';
-    % Activate theoretical line positions
-    set(h.plotEtheo,'visible','on')
-    % Reset residual plot data
-    if isfield(h,'YFit')
-        if strcmp(h.Diffsel,'ETA3000')
-            ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot(:,1),h.XFit)) - (max(h.YFit)/4);
-        else
-            ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot,h.XFit)) - (max(h.YFit)/4);
+else
+    if abs(h.P.EnergyRange(1)-h.P.EnergyRange(2)) == abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2))
+        % Set limits for x-axis
+        h.axesplotRawData.XLim = [peakbkgdata(1,1)-1,peakbkgdata(2,1)+1];
+        % Calculate Ymax in peak region
+        Ymax = max(PlotYdata(IndRawData(1):IndRawData(2)));
+        % Calculate fit residual
+        if isfield(h,'YFit')
+            if strcmp(h.Diffsel,'ETA3000')
+                ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot(:,1),h.XFit);
+            else
+                ydataplotfitresidual = h.YFit - interp1(h.XPlot,h.YPlot,h.XFit);
+            end
+            % Shift residual plot by Ymax/3
+            set(h.plotfitresidual,'Ydata',ydataplotfitresidual-Ymax/3)
+            set(h.plotfitresidual,'Xdata',h.XFit)
         end
-        set(h.plotfitresidual,'Ydata',ydataplotfitresidual)
-        set(h.plotfitresidual,'Xdata',h.XFit)
+        % Set limits for y-axis
+        h.axesplotRawData.YLim = [-Ymax/2 ceil((max(PlotYdata(IndRawData(1):IndRawData(2)))+1/3*max(PlotYdata(IndRawData(1):IndRawData(2))))/100)*100];
+        h.axesplotRawData.YLimMode = 'manual';
+        % Set slider visiblity on
+        h.SliderSinglePeakData.Visible = 'on';
+        % Deactivate theoretical line positions
+        set(h.plotEtheo,'visible','off')
+    elseif abs(h.axesplotRawData.XLim(1)-h.axesplotRawData.XLim(2)) < abs(h.P.EnergyRange(1)-h.P.EnergyRange(2))
+        % Set x-axis limits to default
+        h.axesplotRawData.XLim = h.P.EnergyRange;
+        h.axesplotRawData.YLimMode = 'auto';
+        h.SliderSinglePeakData.Visible = 'off';
+        % Activate theoretical line positions
+        set(h.plotEtheo,'visible','on')
+        % Reset residual plot data
+        if isfield(h,'YFit')
+            if strcmp(h.Diffsel,'ETA3000')
+                ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot(:,1),h.XFit)) - (max(h.YFit)/4);
+            else
+                ydataplotfitresidual = (h.YFit - interp1(h.XPlot,h.YPlot,h.XFit)) - (max(h.YFit)/4);
+            end
+            set(h.plotfitresidual,'Ydata',ydataplotfitresidual)
+            set(h.plotfitresidual,'Xdata',h.XFit)
+        end
     end
 end
 
@@ -7185,7 +7892,7 @@ Filter2 = str2double(get(h1data.NoiseFilter2edit,'String'));
 
 % Noise Correction of Mythen data
 ScanCountsNoiseCorr = YData;
-assignin('base','ScanCountsNoiseCorr',ScanCountsNoiseCorr)
+% assignin('base','ScanCountsNoiseCorr',ScanCountsNoiseCorr)
 for i = 1:size(ScanCountsNoiseCorr,2)
     % Find difference of measured counts for each twotheta step
     % Calculate difference for increasing twotheta
@@ -7202,7 +7909,7 @@ for i = 1:size(ScanCountsNoiseCorr,2)
     
     % Create matrix
     diffall = [diffup'  flip(diffdown)'];
-    assignin('base','diffall',diffall)
+%     assignin('base','diffall',diffall)
     % Find indices of values for diffall > 1.15 (user selected limit)
     idx = [abs(diffall(:,1))>Filter1 abs(diffall(:,2))>Filter1];
     % Sum idx values in order to find entries which are 1 for both columns
@@ -7318,6 +8025,8 @@ Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 h.P.Diffsel = h.Diffsel;
 
+ExportCorrSpec = get(h.checkboxcorrectionsExportData,'value');
+
 if isfield(h,'corrcnt')
     msgbox({'Corrections already performed'});  
 else
@@ -7331,7 +8040,7 @@ else
     h.DataTmp = DataTmp;
 %     assignin('base','hDataTmpCorr',h.DataTmp)
     % Set plot data and title  
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         % Distinguish between Det1 and Det2
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
@@ -7360,7 +8069,7 @@ else
     % Ydata of Etheo has to be changed according to the change in intensity due
     % to applied corrections
     % Set plot data for theoretical line positions  
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         % Distinguish between Det1 and Det2
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
@@ -7383,10 +8092,12 @@ else
     end
 
     % Messagebox
-    msgbox({'Corrections performed'});
+    if ExportCorrSpec == 0
+        msgbox({'Corrections performed'});
+    end
 end
 
-ExportCorrSpec = get(h.checkboxcorrectionsExportData,'value');
+
 
 if ExportCorrSpec == 1
     % Create new folder in plot folder with name of measurement file
@@ -7395,7 +8106,7 @@ if ExportCorrSpec == 1
     Path = fullfile([h.PathName,Folder]);
     formatOut = 'ddmmyyyy';
     d = datestr(now, formatOut);
-
+                                                
     if exist(Path,'dir') ~= 7
         mkdir(Path);
     end
@@ -7405,19 +8116,27 @@ if ExportCorrSpec == 1
     XCorrDataExportCh = cell(1);
 							   
     for k = 1:size(h.DataTmpBackup, 2)
-        XCorrDataExportCh{k} = 1:16383;
+        XCorrDataExportCh{k} = 0:16383;
         XCorrDataExport{k} = h.DataTmp{k}(:, 1);
         YCorrDataExport{k} = h.DataTmp{k}(:, 2);																   
     end
+    
+    assignin('base','XCorrDataExportCh',XCorrDataExportCh)
+    assignin('base','XCorrDataExport',XCorrDataExport)
+    assignin('base','YCorrDataExport',YCorrDataExport)
+    % assignin('base','DataTmp',h.DataTmp)
+    assignin('base','DataTmpBackup',h.DataTmpBackup)
 
     for k = 1:size(h.DataTmpBackup, 2)
         fid = fopen([[Path,'\'],name,'_','CorrData','_',num2str(k),'_',d,'.dat'],'w');
-        fprintf(fid,'%12s %12s %15s \r\n','Channel[ch]','Energy[keV]','Intensity[cts]');
-        fprintf(fid,'%.6f %.6f %.6f \n',[XCorrDataExportCh{k} XCorrDataExport{k} YCorrDataExport{k}]');
-        fprintf(fid,'\n');
+        fprintf(fid,'%12s %15s \r\n','Energy[keV]','Intensity[cts]');
+        fprintf(fid,'%.6f %.6f \n',[XCorrDataExport{k} YCorrDataExport{k}].');
         fclose(fid);
     end
+
+    msgbox({'Corrections performed'});
 end
+
 % assignin('base','DataTmpCorr',h.DataTmp)
 guidata(hObj, h);
 
@@ -7495,7 +8214,7 @@ if IntegrateSpectra == 0
 
     % If Emin and Emax have not been set, set them to the min and max value of
     % the raw data
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             if strcmp(get(h.editfieldselectmeas4,'String'),'Emin') && strcmp(get(h.editfieldselectmeas5,'String'),'Emax')
                 h.P.EnergyRangeDet1 = [ceil(min(h.DataTmp{1}(:,1))) ceil(max(h.DataTmp{1}(:,1)))-1];
@@ -7518,7 +8237,7 @@ if IntegrateSpectra == 0
     end
 
     % Run "SelectMeasurementsGUI" script    
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Create variable in order to save unedited spectra (only if it was not
             % already created)
@@ -7561,10 +8280,11 @@ if IntegrateSpectra == 0
     % Set output to variables
     h.Sample = Sample;
     % Define energy range   
-    if strcmp(h.Diffsel,'LEDDI')
-        if strcmp(h.Detsel,'Detector 1')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')            
             % Energy range for Det1
             h.EnergyRangeDet1 = EnergyRange;
+            h.Sample.Materials.EnergyMax = EnergyRange(2);
             % Plot data considering the user defined energy range
             SliderstepsDet1 = 2:2:length(h.Measurement);
 %             SliderstepsDet1keep = SliderstepsDet1(h.P.WhichMeasurements);
@@ -7575,9 +8295,9 @@ if IntegrateSpectra == 0
                 h.DataTmpDet1{c} = meas(c).EDSpectrum;
                 h.Measurement(SliderstepsDet1(c)) = meas(c);
             end
-
         elseif strcmp(h.Detsel,'Detector 2')
             h.EnergyRangeDet2 = EnergyRange;
+            h.Sample.Materials.EnergyMax = EnergyRange(2);
             % Plot data considering the user defined energy range
             h.DataTmpDet2 = cell(1, length(meas));
             SliderstepsDet2 = 1:2:length(h.Measurement);
@@ -7615,9 +8335,11 @@ else
     DiscardRemainder = get(h.checkboxselectmeas2,'Value');
     % Energy Range of Interest
     EnergyRange = [str2double(get(h.editfieldselectmeas4,'String')) str2double(get(h.editfieldselectmeas5,'String'))];
+    h.EnergyRange = EnergyRange;
+    h.P.EnergyRange = EnergyRange;
     % Energy Resolution
     EnergyRes = 0.01;                                                          
-
+    
     % Processing
     if Binning ~= 1
         if Binning > length(h.Measurement)
@@ -7642,12 +8364,12 @@ else
            % Sum up DeadTime                                  
            h.MeasurementInt(i/Binning).DeadTime = mean([h.Measurement(i-Binning+1:i).DeadTime]);
            %Loop over spectra to integrate                                  
-		   Intensity_interp = zeros(1,Binning);
+		   % Intensity_interp = zeros(1,Binning);
            
            for j = 1:Binning
                % Save current EDSpectrum
                EDSpectrum = h.Measurement(i-Binning+j).EDSpectrum;
-               X = linspace(EDSpectrum(1,1),EDSpectrum(end,1),length(EDSpectrum))'; 
+               % X = linspace(EDSpectrum(1,1),EDSpectrum(end,1),length(EDSpectrum))'; 
 %                assignin('base','EDSpectrum',EDSpectrum)
                % Interpolate Spectrum on common Energy range vector
                Intensity_interp(j,:) = interp1(EDSpectrum(:,1),EDSpectrum(:,2),X);
@@ -7665,17 +8387,42 @@ else
             % remove remainder
             h.MeasurementInt(end) = [];
         end
+
+        % Read temperatures and build mean according to binning
+        for k = 1:length(h.Measurement)
+            temp(k,:) = h.Measurement(k).Temperatures;
+        end
+        
+        n     = Binning;
+        nRows = floor(size(temp, 1) / n) * n;   % auf vielfaches von 10 kürzen
+        data_trim = temp(1:nRows, :);
+        
+        % Reshape und Mittelwert
+        data_mean = reshape(data_trim, n, [], size(temp,2));
+        mean_Temp    = squeeze(mean(data_mean, 1));
         %% Overwrite Data
         % Backup Measurement data
 %         h.MeasurementBackup = h.Measurement.Clone;
         % Overwrite h.Measurement object with integrated data
-        h.Measurement = h.MeasurementInt;                                              
+        h.Measurement = h.MeasurementInt;  
+        % Neu setzen der Messdaten
+        for c = 1:length(h.Measurement)
+	        DataTmp{c} = h.Measurement(c).EDSpectrum;
+            h.Measurement(c).Temperatures = ceil(mean_Temp(c,:));   
+        end
+        h.DataTmp = DataTmp;
+        h.DataTmpBackup = DataTmp;
+        h.RawData = DataTmp;	
+        assignin('base','hMeasurement',h.Measurement)
         % Screen Output
-        disp('spectra integrated');                                          
+        disp('spectra integrated');
+        % Mess
+        h.P.WhichMeasurementsDetector(1) = 1;
+        h.P.WhichMeasurementsDetector(2) = length(Binning:Binning:NrMeas);
     end
 end    
 % Set slider values
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
            if length(h.DataTmpDet1) == 1
                 set(h.Slider,'Min',1);
@@ -7728,7 +8475,7 @@ end
 valueSlider = round(get(h.Slider, 'Value'));
 % Set plot data and change energy range according to USER input
  
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Set plot data and limits
         Slidersteps = 2:2:length(h.Measurement);
@@ -7739,8 +8486,9 @@ if strcmp(h.Diffsel,'LEDDI')
         set(h.axesplotRawData.Title,'String',['Measurement data for ', h.Measurement(Slidersteps(valueSlider)).Name])
         h.axesplotRawData.XLim = h.P.EnergyRangeDet1;
         % Get theoretical peak positions
+        h.Sample.Materials.EnergyMax = h.P.EnergyRangeDet1(2);
         h.TPeaksDet1 = TheoreticalPeakPositions(h.MeasurementBackup(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
-%         assignin('base','TPeaksDet1',h.TPeaksDet1)
+%         assignin('base','TPeaksDet1SelMeas',h.TPeaksDet1)
         a = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
 %         assignin('base','a',a)
         h.FitPeaksLogicalErangeDet1 = a;
@@ -7787,6 +8535,7 @@ if strcmp(h.Diffsel,'LEDDI')
         set(h.axesplotRawData.Title,'String',['Measurement data for ', h.Measurement(Slidersteps(valueSlider)).Name])
         h.axesplotRawData.XLim = h.P.EnergyRangeDet2;
         % Get theoretical peak positions
+        h.Sample.Materials.EnergyMax = h.P.EnergyRangeDet2(2);
         h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
         a = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
         h.FitPeaksLogicalErangeDet2 = a;
@@ -7838,6 +8587,8 @@ elseif strcmp(h.Diffsel,'ETA3000')
     X3Limitka2 = h.TPeaks.T.X3ka2((1:(3*find(a, 1, 'last')-1)),:);
     Y3Limitka1 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
     Y3Limitka2 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+%     assignin('base','X3Limitka1',X3Limitka1)
+%     assignin('base','Y3Limitka1',Y3Limitka1)
 %     if h.P.ShowSubstratePeaks == 1
 %         b = h.TPeaks.S.Etheo < h.TPeaks.S.EMax;
 %         SEtheoLimit = h.TPeaks.S.Etheo(b);
@@ -7849,8 +8600,8 @@ elseif strcmp(h.Diffsel,'ETA3000')
     set(h.plotEtheo,'xdata',[X3Limitka1(:,valueSlider); nan; X3Limitka2(:,valueSlider)])
     set(h.plotEtheo,'ydata',[Y3Limitka1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3Limitka1(:,valueSlider))); nan; 0.5.*(Y3Limitka2(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3Limitka2(:,valueSlider))))])
     if isfield(h, 'PeaksTheoAdd') 
-        Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
-        set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))))
+        Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAddka1)-1)),:);
+        set(h.plotEtheoAdd1,'ydata',[Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))); nan;Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))).*0.5])
     end
 %     if h.P.ShowSubstratePeaks == 1
 %         set(h.plotEtheoSub,'xdata',SX3Limit(:,valueSlider))
@@ -7858,11 +8609,11 @@ elseif strcmp(h.Diffsel,'ETA3000')
 %     end
     % Set data for table with hkl, d-spacing and E[keV] values
     if ~isfield(h, 'TableBkgColorArray')
-        set(h.tablephasehkl,'data',[num2cell(h.TPeaks.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaks.T.Peaks(a,:)),1),1))])
+        set(h.tablephasehkl,'data',[num2cell(h.TPeaks.T.Peaks(a,1:5)) num2cell(false(size(num2cell(h.TPeaks.T.Peaks(a,1:5)),1),1))])
     else
         PeakSelLogical = false(length(h.TableBkgColorArray(:,3)),1);
         PeakSelLogical(h.TableBkgColorArray(:,3)==0.6) = true;
-        set(h.tablephasehkl,'data',[num2cell(h.TPeaks.T.Peaks(a,:)) num2cell(PeakSelLogical)])
+        set(h.tablephasehkl,'data',[num2cell(h.TPeaks.T.Peaks(a,1:5)) num2cell(PeakSelLogical)])
     end
     
 %     if h.P.ShowSubstratePeaks == 1
@@ -7969,6 +8720,9 @@ if h.P.DetectorLEDDIselected == 2
     set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(valueSlider)).Name])
     % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
     % whether an energy range has been defined by the user
+    if isfield(h, 'EnergyRangeDet1')
+        h.Sample.Materials.EnergyMax = h.P.EnergyRangeDet1(2);
+    end
     h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
     if isfield(h, 'EnergyRangeDet1')
         a = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
@@ -8021,9 +8775,10 @@ if h.P.DetectorLEDDIselected == 2
     end
     % Set user defined peak positions
     if isfield(h, 'PeaksDet1')
+        disp('Det1')
         Slidersteps = 2:2:length(h.Measurement);
 %         set(h.tablepeakdata,'data',h.PeaksDet1{valueSlider})
-        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
         % Interpolate RawData to get YData for PeakRegions
         h.DataInterpPeaksDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet1{valueSlider});
         % Plot of peak positions
@@ -8115,8 +8870,13 @@ if h.P.DetectorLEDDIselected == 2
     end
     
     if isfield(h, 'PsiFileTableDataDet1')
-        % Set table data
-        set(h.tablepsifile,'data',h.PsiFileTableDataDet1);
+        if isfield(h, 'PsiFileTableDataBkpDet1')
+            % Set table data
+            set(h.tablepsifile,'data',h.PsiFileTableDataBkpDet1);
+        else
+            % Set table data
+            set(h.tablepsifile,'data',h.PsiFileTableDataDet1);
+        end
     end
 
 % If detector 2 has been selected
@@ -8149,11 +8909,14 @@ elseif h.P.DetectorLEDDIselected == 3
     set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(valueSlider)).Name])
     % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
     % whether an energy range has been defined by the user
+    if isfield(h, 'EnergyRangeDet2')
+        h.Sample.Materials.EnergyMax = h.P.EnergyRangeDet2(2);
+    end
     h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
     if isfield(h, 'EnergyRangeDet2')
         a = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
     else
-        a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+        a = h.TPeaksDet2.T.Etheo < 60; %h.TPeaksDet2.T.EMax;
     end
 %     EtheoLimit = h.TPeaksDet2.T.Etheo(a);
 %     X1Limit = h.TPeaksDet2.T.X1(a,:);
@@ -8203,9 +8966,10 @@ elseif h.P.DetectorLEDDIselected == 3
     end
     % Set user defined peak positions
     if isfield(h, 'PeaksDet2')
+        disp('Det2')
         Slidersteps = 1:2:length(h.Measurement);
 %         set(h.tablepeakdata,'data',h.PeaksDet2{valueSlider})
-        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
         % Interpolate RawData to get YData for PeakRegions
         h.DataInterpPeaksDet2 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet2{valueSlider});
         % Plot of peak positions
@@ -8297,11 +9061,17 @@ elseif h.P.DetectorLEDDIselected == 3
     end
     
     if isfield(h, 'PsiFileTableDataDet2')
-        % Set table data
-        set(h.tablepsifile,'data',h.PsiFileTableDataDet2);
+        if isfield(h, 'PsiFileTableDataBkpDet2')
+            % Set table data
+            set(h.tablepsifile,'data',h.PsiFileTableDataBkpDet2);
+        else
+            % Set table data
+            set(h.tablepsifile,'data',h.PsiFileTableDataDet2);
+        end
     end
 end
-
+% assignin('base','TPeaksDet1',h.TPeaksDet1)
+% assignin('base','TPeaksDet2',h.TPeaksDet2)
 guidata(hObj,h);
 
 function undobuttonselectmeas(hObj,~)
@@ -8372,7 +9142,7 @@ Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
     elseif strcmp(h.Detsel,'Detector 2')
@@ -8412,12 +9182,11 @@ set(h.plotdataZoom, 'Visible', 'off');
 set(h.plotdataZoomCH, 'Visible', 'off');
 % Set explanatory text visible off
 set(h.textbkg,'Visible','off')
-
 % Find closest point to user selected point
 indexUSP = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{Slidersteps(valueSlider)}(:,1),HT.x);
 % assignin('base','indexUSP',indexUSP)
 % assignin('base','DataTmp2',h.DataTmp)
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % Get x and y data in the range of +/- 5 channels of user selected bkg point
     xBKG = cell(1,1);
     yBKG = cell(1,1);
@@ -8543,9 +9312,8 @@ else
         h.PeakRegionsX{l} = reshape([h.PeakRegionsXdata{l,:}],2,size([h.PeakRegionsXdata{l,:}],2)/2);
     end
 end
-
 % Set table data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         h.PeakRegionsXDet1 = h.PeakRegionsX;
         h.PeakRegionsXdataDet1 = h.PeakRegionsXdata;
@@ -8562,7 +9330,7 @@ else
 end
 
 % Set plot data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdataDet1{valueSlider,:}],[h.PeakRegionsYdataDet1{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
     elseif strcmp(h.Detsel,'Detector 2')
@@ -8583,12 +9351,13 @@ h = guidata(hObj);
 % Material
 material = h.P.PopupValueMpd1;
 % Create variables to be saved in the ULD file                
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeakRegionsXDet1') && ~isfield(h, 'PeakRegionsXDet2')
         bkg.PeakRegionsXDet1 = h.PeakRegionsXDet1;
         bkg.PeakRegionsXdataDet1 = h.PeakRegionsXdataDet1;
         bkg.PeakRegionsYdataDet1 = h.PeakRegionsYdataDet1;
         bkg.EnergyRangeDet1 = h.EnergyRangeDet1;
+        bkg.EnergyrangeDet1Energy = h.P.EnergyRangeDet1;
         
         [filename, filepath] = uiputfile({'*.mat', 'MAT-files (*.mat)'}, 'Save Background Variable', [General.ProgramInfo.Path,'\Data\ULD\',...
                     [strtrim(h.Measurement(1).MeasurementSeries),'_',material]]);
@@ -8605,6 +9374,7 @@ if strcmp(h.Diffsel,'LEDDI')
         bkg.PeakRegionsXdataDet2 = h.PeakRegionsXdataDet2;
         bkg.PeakRegionsYdataDet2 = h.PeakRegionsYdataDet2;
         bkg.EnergyRangeDet2 = h.EnergyRangeDet2;
+        bkg.EnergyrangeDet2Energy = h.P.EnergyRangeDet2;
 
         [filename, filepath] = uiputfile({'*.mat', 'MAT-files (*.mat)'}, 'Save Background Variable', [General.ProgramInfo.Path,'\Data\ULD\',...
                     [strtrim(h.Measurement(1).MeasurementSeries),'_',material]]);
@@ -8621,10 +9391,12 @@ if strcmp(h.Diffsel,'LEDDI')
         bkg.PeakRegionsXdataDet1 = h.PeakRegionsXdataDet1;
         bkg.PeakRegionsYdataDet1 = h.PeakRegionsYdataDet1;
         bkg.EnergyRangeDet1 = h.EnergyRangeDet1;
+        bkg.EnergyrangeDet1Energy = h.P.EnergyRangeDet1;
         bkg.PeakRegionsXDet2 = h.PeakRegionsXDet2;
         bkg.PeakRegionsXdataDet2 = h.PeakRegionsXdataDet2;
         bkg.PeakRegionsYdataDet2 = h.PeakRegionsYdataDet2;
         bkg.EnergyRangeDet2 = h.EnergyRangeDet2;
+        bkg.EnergyrangeDet2Energy = h.P.EnergyRangeDet2;
         
         [filename, filepath] = uiputfile({'*.mat', 'MAT-files (*.mat)'}, 'Save Background Variable', [General.ProgramInfo.Path,'\Data\ULD\',...
                     [strtrim(h.Measurement(1).MeasurementSeries),'_',material]]);
@@ -8647,6 +9419,7 @@ else
     bkg.PeakRegionsXdata = h.PeakRegionsXdata;
     bkg.PeakRegionsYdata = h.PeakRegionsYdata;
     bkg.EnergyRange = h.EnergyRange;
+    bkg.EnergyrangeEnergy = h.P.EnergyRange;
 
     [filename, filepath] = uiputfile({'*.mat', 'MAT-files (*.mat)'}, 'Save Background Variable', [General.ProgramInfo.Path,'\Data\ULD\',...
                 [strtrim(h.Measurement(1).MeasurementSeries),'_',material]]);
@@ -8690,19 +9463,21 @@ if isfield(bkg,'MinVal')
     h.MinVal = bkg.MinVal;
 end
     
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+
     if isfield(bkg,'PeakRegionsXDet1') == 1 && size(bkg.PeakRegionsXDet1,1) == length(h.Measurement)/2
         Slidersteps = 2:2:length(h.Measurement);
         h.PeakRegionsXDet1 = bkg.PeakRegionsXDet1;
         h.PeakRegionsXdataDet1 = bkg.PeakRegionsXdataDet1;
         h.PeakRegionsYdataDet1 = bkg.PeakRegionsYdataDet1;
         h.EnergyRangeDet1 = bkg.EnergyRangeDet1;% - (EnergyRangeDet1(1)-1);
-        h.P.EnergyRangeDet1 = [ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(1),1)) ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(2),1))];
+%         h.P.EnergyRangeDet1 = [ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(1),1)) ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(2),1))];
+        h.P.EnergyRangeDet1 = bkg.EnergyrangeDet1Energy;
         h.TPeaksDet1 = TheoreticalPeakPositions(h.MeasurementBackup(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
         h.FitPeaksLogicalErangeDet1 = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
         if strcmp(h.Detsel,'Detector 1')
-            set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRangeDet1(1)))) 
-            set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRangeDet1(2))))      
+            set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRangeDet1(1))) 
+            set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRangeDet1(2)))      
             h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdataDet1{valueSlider,:}],[h.PeakRegionsYdataDet1{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
             % Set background table data
             set(h.tablebkgdata,'data',h.PeakRegionsXDet1{valueSlider})
@@ -8718,12 +9493,13 @@ if strcmp(h.Diffsel,'LEDDI')
         h.PeakRegionsXdataDet1 = PeakRegionsXdataDet1new;
         h.PeakRegionsYdataDet1 = PeakRegionsYdataDet1new;
         h.EnergyRangeDet1 = bkg.EnergyRangeDet1;% - (EnergyRangeDet1(1)-1);
-        h.P.EnergyRangeDet1 = [ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(1),1)) ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(2),1))];
+%         h.P.EnergyRangeDet1 = [ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(1),1)) ceil(h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet1(2),1))];
+        h.P.EnergyRangeDet1 = bkg.EnergyrangeDet1Energy;
         h.TPeaksDet1 = TheoreticalPeakPositions(h.MeasurementBackup(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
         h.FitPeaksLogicalErangeDet1 = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);  
         if strcmp(h.Detsel,'Detector 1')
-            set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRangeDet1(1)))) 
-            set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRangeDet1(2))))
+            set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRangeDet1(1))) 
+            set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRangeDet1(2)))
             h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdataDet1{Slidersteps(valueSlider),:}],[h.PeakRegionsYdataDet1{Slidersteps(valueSlider),:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
             % Set background table data
             set(h.tablebkgdata,'data',h.PeakRegionsXDet1{valueSlider})
@@ -8732,18 +9508,18 @@ if strcmp(h.Diffsel,'LEDDI')
     
     if isfield(bkg,'PeaksDet1') == 1 && size(bkg.PeakRegionsXDet1,1) == length(h.Measurement)/2
         h.PeaksDet1 = bkg.PeaksDet1;
-        h.Peakslb = bkg.Peakslb;
-        h.Peaksub = bkg.Peaksub;
+        h.PeakslbDet1 = bkg.PeakslbDet1;
+        h.PeaksubDet1 = bkg.PeaksubDet1;
         PeaksTheo = h.TPeaksDet1.T.Peaks(:,5);
         PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet1;
         PeaksTheo(PeaksTheo==0) = [];
         [CompareFitPeaksLogical,~,~,~] = ComparePeaks(h.PeaksDet1,PeaksTheo);
         h.FitPeaksLogicalDet1 = CompareFitPeaksLogical;
-        h.TableBkgColorArrayDet1 = TableBkgColorArrayDet1;
+        h.TableBkgColorArrayDet1 = bkg.TableBkgColorArrayDet1;
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
 %             set(h.tablepeakdata,'data',h.PeaksDet1{valueSlider})
-            set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
             % Interpolate RawData to get YData for PeakRegions
             h.DataInterpPeaksDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet1{valueSlider});
             % Plot of peak positions
@@ -8753,13 +9529,13 @@ if strcmp(h.Diffsel,'LEDDI')
         end
     elseif isfield(bkg,'PeaksDet1') == 1 && size(bkg.PeakRegionsXDet1,1) ~= length(h.Measurement)/2
         PeaksDet1tmp = bkg.PeaksDet1{1}(:);
-        Peakslbtmp = bkg.Peakslb{1}(:);
-        Peaksubtmp = bkg.Peaksub{1}(:);
+        PeakslbDet1tmp = bkg.PeakslbDet1{1}(:);
+        PeaksubDet1tmp = bkg.PeaksubDet1{1}(:);
         h.TableBkgColorArrayDet1 = TableBkgColorArrayDet1;
         for l = 1:size(h.DataTmp,2)/2
             h.PeaksDet1{l} = PeaksDet1tmp';
-            h.Peakslb{l} = Peakslbtmp';
-            h.Peaksub{l} = Peaksubtmp';
+            h.PeakslbDet1{l} = PeakslbDet1tmp';
+            h.PeaksubDet1{l} = PeaksubDet1tmp';
         end
         
         PeaksTheo = h.TPeaksDet1.T.Peaks(:,5);
@@ -8770,7 +9546,7 @@ if strcmp(h.Diffsel,'LEDDI')
         
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
-            set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
             % Interpolate RawData to get YData for PeakRegions
             h.DataInterpPeaksDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet1{valueSlider});
             % Plot of peak positions
@@ -8785,12 +9561,13 @@ if strcmp(h.Diffsel,'LEDDI')
         h.PeakRegionsXdataDet2 = bkg.PeakRegionsXdataDet2;
         h.PeakRegionsYdataDet2 = bkg.PeakRegionsYdataDet2;
         h.EnergyRangeDet2 = bkg.EnergyRangeDet2;% - (EnergyRangeDet2(1)-1);
-        h.P.EnergyRangeDet2 = ceil([h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(1),1) h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(2),1)]);
+%         h.P.EnergyRangeDet2 = ceil([h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(1),1) h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(2),1)]);
+        h.P.EnergyRangeDet2 = bkg.EnergyrangeDet2Energy;
         h.TPeaksDet2 = TheoreticalPeakPositions(h.MeasurementBackup(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
         h.FitPeaksLogicalErangeDet2 = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
         if strcmp(h.Detsel,'Detector 2')
-            set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRangeDet2(1))))
-            set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRangeDet2(2)))) 
+            set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRangeDet2(1)))
+            set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRangeDet2(2))) 
             h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdataDet2{valueSlider,:}],[h.PeakRegionsYdataDet2{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
             % Set background table data
             set(h.tablebkgdata,'data',h.PeakRegionsXDet2{valueSlider})
@@ -8806,12 +9583,13 @@ if strcmp(h.Diffsel,'LEDDI')
         h.PeakRegionsXdataDet2 = PeakRegionsXdataDet2new;
         h.PeakRegionsYdataDet2 = PeakRegionsYdataDet2new;
         h.EnergyRangeDet2 = bkg.EnergyRangeDet2;% - (EnergyRangeDet2(1)-1);
-        h.P.EnergyRangeDet2 = ceil([h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(1),1) h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(2),1)]);
+%         h.P.EnergyRangeDet2 = ceil([h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(1),1) h.DataTmp{Slidersteps(valueSlider)}(bkg.EnergyRangeDet2(2),1)]);
+        h.P.EnergyRangeDet2 = bkg.EnergyrangeDet2Energy;
         h.TPeaksDet2 = TheoreticalPeakPositions(h.MeasurementBackup(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
         h.FitPeaksLogicalErangeDet2 = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
         if strcmp(h.Detsel,'Detector 2')
-            set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRangeDet2(1)))) 
-            set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRangeDet2(2))))
+            set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRangeDet2(1))) 
+            set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRangeDet2(2)))
             h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdataDet2{Slidersteps(valueSlider),:}],[h.PeakRegionsYdataDet2{Slidersteps(valueSlider),:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');    
             % Set background table data
             set(h.tablebkgdata,'data',h.PeakRegionsXDet2{valueSlider})
@@ -8820,18 +9598,18 @@ if strcmp(h.Diffsel,'LEDDI')
     
     if isfield(bkg,'PeaksDet2') == 1 && size(bkg.PeakRegionsXDet2,1) == length(h.Measurement)/2
         h.PeaksDet2 = bkg.PeaksDet2;
-        h.Peakslb = bkg.Peakslb;
-        h.Peaksub = bkg.Peaksub;
+        h.PeakslbDet2 = bkg.PeakslbDet2;
+        h.PeaksubDet2 = bkg.PeaksubDet2;
         PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
         PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet2;
         PeaksTheo(PeaksTheo==0) = [];
         [CompareFitPeaksLogical,~,~,~] = ComparePeaks(h.PeaksDet2,PeaksTheo);
         h.FitPeaksLogicalDet2 = CompareFitPeaksLogical;
-        h.TableBkgColorArrayDet2 = TableBkgColorArrayDet2; 
+        h.TableBkgColorArrayDet2 = bkg.TableBkgColorArrayDet2; 
         if strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
 %             set(h.tablepeakdata,'data',h.PeaksDet2{valueSlider})
-            set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
             % Interpolate RawData to get YData for PeakRegions
             h.DataInterpPeaksDet2 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet2{valueSlider});
             % Plot of peak positions
@@ -8840,14 +9618,14 @@ if strcmp(h.Diffsel,'LEDDI')
         end
     elseif isfield(bkg,'PeaksDet2') == 1 && size(bkg.PeakRegionsXDet2,1) ~= length(h.Measurement)/2
         PeaksDet2tmp = bkg.PeaksDet2{1}(:);
-        Peakslbtmp = bkg.Peakslb{1}(:);
-        Peaksubtmp = bkg.Peaksub{1}(:);
+        PeakslbDet2tmp = bkg.PeakslbDet2{1}(:);
+        PeaksubDet2tmp = bkg.PeaksubDet2{1}(:);
         h.TableBkgColorArrayDet2 = TableBkgColorArrayDet2;
         
         for l = 1:size(h.DataTmp,2)/2
             h.PeaksDet2{l} = PeaksDet2tmp';
-            h.Peakslb{l} = Peakslbtmp';
-            h.Peaksub{l} = Peaksubtmp';
+            h.PeakslbDet2{l} = PeakslbDet2tmp';
+            h.PeaksubDet2{l} = PeaksubDet2tmp';
         end
         
         PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
@@ -8858,7 +9636,7 @@ if strcmp(h.Diffsel,'LEDDI')
         
         if strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
-            set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
             % Interpolate RawData to get YData for PeakRegions
             h.DataInterpPeaksDet2 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet2{valueSlider});
             % Plot of peak positions
@@ -8884,15 +9662,16 @@ else
 %         h.P.EnergyRange = [round(h.DataTmp{valueSlider}(h.EnergyRange(1),1)) round(h.DataTmp{valueSlider}(h.EnergyRange(2),1))];
         h.EnergyRange = bkg.EnergyRange;% - (EnergyRange(1)-1);
 %         h.P.EnergyRange = [0,0];
-        h.P.EnergyRange = [ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(1),1)) ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(2),1))];
+%         h.P.EnergyRange = [ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(1),1)) ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(2),1))];
+        h.P.EnergyRange = bkg.EnergyrangeEnergy;
         assignin('base','TPeaks',h.TPeaks)
         if strcmp(h.Diffsel,'ETA3000')
             h.FitPeaksLogicalErange = h.TPeaks.T.Etheoka1 > h.P.EnergyRange(1) & h.TPeaks.T.Etheoka1 < h.P.EnergyRange(2);
         else
             h.FitPeaksLogicalErange = h.TPeaks.T.Etheo > h.P.EnergyRange(1) & h.TPeaks.T.Etheo < h.P.EnergyRange(2);
         end
-        set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRange(1)))) 
-        set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRange(2)))) 
+        set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRange(1))) 
+        set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRange(2))) 
         h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdata{valueSlider,:}],[h.PeakRegionsYdata{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
         % Set background table data
         set(h.tablebkgdata,'data',h.PeakRegionsX{valueSlider})
@@ -8908,10 +9687,11 @@ else
 %         h.EnergyRange = EnergyRange - (EnergyRange(1)-1);
 %         h.P.EnergyRange = [round(h.DataTmp{valueSlider}(h.EnergyRange(1),1)) round(h.DataTmp{valueSlider}(h.EnergyRange(2),1))];
         h.EnergyRange = bkg.EnergyRange;% - (EnergyRange(1)-1);
-        h.P.EnergyRange = [ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(1),1)) ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(2),1))];
+%         h.P.EnergyRange = [ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(1),1)) ceil(h.DataTmp{valueSlider}(bkg.EnergyRange(2),1))];
+        h.P.EnergyRange = bkg.EnergyrangeEnergy;
         h.FitPeaksLogicalErange = h.TPeaks.T.Etheo > h.P.EnergyRange(1) & h.TPeaks.T.Etheo < h.P.EnergyRange(2);
-        set(h.editfieldselectmeas4,'String',string(floor(h.P.EnergyRange(1)))) 
-        set(h.editfieldselectmeas5,'String',string(floor(h.P.EnergyRange(2)))) 
+        set(h.editfieldselectmeas4,'String',num2str(h.P.EnergyRange(1))) 
+        set(h.editfieldselectmeas5,'String',num2str(h.P.EnergyRange(2))) 
         h.plotbkgpoints = plot(h.axesplotRawData,[h.PeakRegionsXdata{valueSlider,:}],[h.PeakRegionsYdata{valueSlider,:}],'o','Color','r','MarkerFaceColor','r','MarkerSize',5,'Tag','plotbkgpoints');
         % Set background table data
         set(h.tablebkgdata,'data',h.PeakRegionsX{valueSlider})
@@ -8982,7 +9762,7 @@ Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 
 % Run "BackgroundReductionGUI" script  
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.P.Calibration);
@@ -9016,7 +9796,7 @@ set(h.plotbkgpoints,'Visible','off')
 % end
 
 % Plot background corrected data  
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
 %         Slidersteps = 2:2:length(h.Measurement);
         h.plotBKG = plot(h.axesplotRawData, h.DataTmpToAcceptDet1{valueSlider}(:,1), h.DataTmpToAcceptDet1{valueSlider}(:,2),'Color','r','LineWidth',2);
@@ -9027,7 +9807,7 @@ if strcmp(h.Diffsel,'LEDDI')
 else
     h.plotBKG = plot(h.axesplotRawData, DataTmp{valueSlider}(:,1), DataTmp{valueSlider}(:,2),'Color','r','LineWidth',2);
 end
-
+h.axesplotRawData.YLim(1) = 0;
 % h.plotBKG = plot(h.axesplotRawData, DataTmp{valueSlider}(:,1), DataTmp{valueSlider}(:,2),'Color','r','LineWidth',2);
 % h.DataTmpToAccept = DataTmp;
 % h.MeasurementToAccept = Measurement;
@@ -9036,9 +9816,9 @@ end
 %         set(h.plotEtheoSub,'visible','off')
 % end
 % Messagebox
-if strcmp(h.Diffsel,'LEDDI') && strcmp(h.Detsel,'Detector 1')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 1')
     msgbox('Background of Det1 corrected. Accept if background correction is good.');
-elseif strcmp(h.Diffsel,'LEDDI') && strcmp(h.Detsel,'Detector 2')
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 2')
 	msgbox('Background of Det2 corrected. Accept if background correction is good.');
 else
     msgbox('Background corrected. Accept if background correction is good.');
@@ -9058,7 +9838,7 @@ Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
             for c = 1:length(h.DataTmpToAcceptDet1)
@@ -9079,7 +9859,7 @@ else
 end
 % assignin('base','DataTmp',h.DataTmp)
 % Set plot data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         set(h.plotdata,'xdata',h.DataTmp{Slidersteps(valueSlider)}(:,1))
@@ -9105,33 +9885,42 @@ end
 % Set plot background corrected data visible off
 set(h.plotBKG,'Visible','off')
 % Set peak position plot visible
-if isfield(h, 'Peaks') || isfield(h, 'PeaksDet1') || isfield(h, 'PeaksDet2')
-    if strcmp(h.Diffsel,'LEDDI')
+if isfield(h, 'Peaks') 
+    h.DataInterpPeaks = interp1(h.DataTmp{valueSlider}(:,1),h.DataTmp{valueSlider}(:,2),h.Peaks{valueSlider});
+    % Plot of peak positions
+    set(h.plotpeakpoints,'ydata',h.DataInterpPeaks)
+%         h.plotpeakpoints = plot(h.axesplotRawData,h.Peaks{valueSlider},h.DataInterpPeaks,'d','Color','r','MarkerFaceColor','r','MarkerSize',5);
+end
+    
+if isfield(h, 'PeaksDet1')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             h.DataInterpPeaksDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet1{valueSlider});
             % Plot of peak positions
             set(h.plotpeakpoints,'ydata',h.DataInterpPeaksDet1)
 %             h.plotpeakpoints = plot(h.axesplotRawData,h.PeaksDet1{valueSlider},h.DataInterpPeaksDet1,'d','Color','r','MarkerFaceColor','r','MarkerSize',5);
-        elseif strcmp(h.Detsel,'Detector 2')
+        end
+    end
+end
+
+if isfield(h, 'PeaksDet2')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
             h.DataInterpPeaksDet2 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet2{valueSlider});
             % Plot of peak positions
             set(h.plotpeakpoints,'ydata',h.DataInterpPeaksDet2)
 %             h.plotpeakpoints = plot(h.axesplotRawData,h.PeaksDet2{valueSlider},h.DataInterpPeaksDet2,'d','Color','r','MarkerFaceColor','r','MarkerSize',5);
         end
-    else
-        h.DataInterpPeaks = interp1(h.DataTmp{valueSlider}(:,1),h.DataTmp{valueSlider}(:,2),h.Peaks{valueSlider});
-        % Plot of peak positions
-        set(h.plotpeakpoints,'ydata',h.DataInterpPeaks)
-%         h.plotpeakpoints = plot(h.axesplotRawData,h.Peaks{valueSlider},h.DataInterpPeaks,'d','Color','r','MarkerFaceColor','r','MarkerSize',5);
     end
 end
 
+
 % Messagebox   
-if strcmp(h.Diffsel,'LEDDI') && strcmp(h.Detsel,'Detector 1')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 1')
     msgbox('Background correction for Det1 accepted.');
-elseif strcmp(h.Diffsel,'LEDDI') && strcmp(h.Detsel,'Detector 2')
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 2')
 	msgbox('Background correction for Det2 accepted.');
 else
     msgbox('Background correction accepted.');
@@ -9177,7 +9966,7 @@ valueSlider = round(get(h.Slider, 'Value'));
 NewBkgPoint = eventdata.NewData;
 NewBKGPointIdx = eventdata.Indices;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         indexUSP = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{Slidersteps(valueSlider)}(:,1),NewBkgPoint);
@@ -9192,7 +9981,7 @@ end
 % Check if changes should be applied to one or to all spectra
 value = get(h.checkboxBKG,'value');
 if value == 0  
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             % Update changed X position of background from current slider value
@@ -9228,7 +10017,7 @@ if value == 0
         set(h.plotbkgpoints,'YData',[h.PeakRegionsYdata{valueSlider,:}])
     end
 elseif value == 1 
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             % Update changed X position of background for all slider values
@@ -10059,9 +10848,6 @@ function buttonExcludePoints(hObj, ~, handles)
 % h = guidata(hObj);
 h = handles;
 
-
-
-
 guidata(hObj, h);
 
 function buttonPolyFit(hObj, ~, handles)
@@ -10346,7 +11132,7 @@ h.Detsel = Detsel;
 
 % Interpolate RawData to get YData for PeakRegions after background
 % correction
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         h.DataInterpBkgYDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeakRegionsXDet1{valueSlider});
@@ -10373,7 +11159,7 @@ end
 % Get points selected from user
 [HT.x,~] = getpts(h.axesplotRawData);
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % Set peak data
     for l = 1:size(h.DataTmp,2)/2
         h.Peaks{l} = HT.x';
@@ -10392,8 +11178,8 @@ elseif strcmp(h.Diffsel,'ETA3000')
         end
         h.Peaks{l} = XPeakInd;
 %         h.Peaks{l} = HT.x';
-        h.Peakslb{l} = 0.3.*ones(1,size(HT.x,1));
-        h.Peaksub{l} = 0.3.*ones(1,size(HT.x,1));
+        h.Peakslb{l} = 0.8.*ones(1,size(HT.x,1));
+        h.Peaksub{l} = 0.8.*ones(1,size(HT.x,1));
     end
 else
     % Set peak data
@@ -10408,11 +11194,13 @@ assignin('base','hPeaks',h.Peaks)
 set(h.textbkg,'Visible','off')
 
 % Set table data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         h.PeaksDet1 = h.Peaks;
-        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        h.PeakslbDet1 = h.Peakslb;
+        h.PeaksubDet1 = h.Peaksub;
+        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
         % Interpolate RawData to get YData for PeakRegions
         h.DataInterpPeaksDet1 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet1{valueSlider});
         % Plot of peak positions
@@ -10421,13 +11209,23 @@ if strcmp(h.Diffsel,'LEDDI')
         set(h.plotbkgpointscorr,'Visible','off')
         % Compare user defined peaks and theoretical peak positons and
         % mark the respective peaks in the phase data table
-        PeaksTheo = h.TPeaksDet1.T.Peaks(:,5);
-        PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet1;
+%         PeaksTheo = h.TPeaksDet1.T.Peaks(:,5);
+% %         assignin('base','TPeaksDet1',h.TPeaksDet1)
+% %         a = h.FitPeaksLogicalErangeDet1
+% %         PeaksTheo
+%         PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet1;
+%         PeaksTheo(PeaksTheo==0) = [];
+
+        a = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
+        PeaksTheo = h.TPeaksDet1.T.Peaks(:,5).*a;
         PeaksTheo(PeaksTheo==0) = [];
+
+
         TableBkgColor = [1 0.6 0.6];
         TableBkgColorArrayDet1 = repmat(TableBkgColor,size(PeaksTheo,1),1);
         [CompareFitPeaksLogical,MinVal,IndVal,~] = ComparePeaks(h.PeaksDet1,PeaksTheo);
-%         assignin('base','CompareFitPeaksLogical',CompareFitPeaksLogical)
+        assignin('base','CompareFitPeaksLogical',CompareFitPeaksLogical)
+        assignin('base','TPeaksDet1',h.TPeaksDet1)
         h.MinVal = MinVal;
         h.FitPeaksLogicalDet1 = CompareFitPeaksLogical;
         CompareFitPeaksLogical = double(CompareFitPeaksLogical);
@@ -10444,7 +11242,9 @@ if strcmp(h.Diffsel,'LEDDI')
     elseif strcmp(h.Detsel,'Detector 2')
         Slidersteps = 1:2:length(h.Measurement);
         h.PeaksDet2 = h.Peaks;
-        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        h.PeakslbDet2 = h.Peakslb;
+        h.PeaksubDet2 = h.Peaksub;
+        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
         % Interpolate RawData to get YData for PeakRegions
         h.DataInterpPeaksDet2 = interp1(h.DataTmp{Slidersteps(valueSlider)}(:,1),h.DataTmp{Slidersteps(valueSlider)}(:,2),h.PeaksDet2{valueSlider});
         % Plot of peak positions
@@ -10453,12 +11253,19 @@ if strcmp(h.Diffsel,'LEDDI')
         set(h.plotbkgpointscorr,'Visible','off')
         % Compare user defined peaks and theoretical peak positons and
         % mark the respective peaks in the phase data table 
-        PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
-        PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet2;
+%         PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
+%         PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet2;
+%         PeaksTheo(PeaksTheo==0) = [];
+    
+        a = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
+        PeaksTheo = h.TPeaksDet2.T.Peaks(:,5).*a;
         PeaksTheo(PeaksTheo==0) = [];
+
         TableBkgColor = [1 0.6 0.6];
         TableBkgColorArrayDet2 = repmat(TableBkgColor,size(PeaksTheo,1),1);
         [CompareFitPeaksLogical,MinVal,IndVal,~] = ComparePeaks(h.PeaksDet2,PeaksTheo);
+        assignin('base','CompareFitPeaksLogical',CompareFitPeaksLogical)
+        assignin('base','TPeaksDet2',h.TPeaksDet2)
         h.MinVal = MinVal;
         h.FitPeaksLogicalDet2 = CompareFitPeaksLogical;
         CompareFitPeaksLogical = double(CompareFitPeaksLogical);
@@ -10667,7 +11474,7 @@ end
 %             disp([answer ' Twotheta value changed declined.'])
 %     end
 
-assignin('base','hPeaks',h.Peaks)
+% assignin('base','hPeaks',h.Peaks)
 % Messagebox
 msgbox('Peak positions created.');
 
@@ -10684,25 +11491,27 @@ BackgroundFileName = fullfile(folder, baseFileName);
 
 ULDDataFile = matfile(BackgroundFileName,'Writable',true);
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1') && ~isfield(h, 'PeaksDet2')
         ULDDataFile.PeaksDet1 = h.PeaksDet1;
-        ULDDataFile.Peakslb = h.Peakslb;
-        ULDDataFile.Peaksub = h.Peaksub;
+        ULDDataFile.PeakslbDet1 = h.PeakslbDet1;
+        ULDDataFile.PeaksubDet1 = h.PeaksubDet1;
         ULDDataFile.MinVal = h.MinVal;
         ULDDataFile.TableBkgColorArrayDet1 = h.TableBkgColorArrayDet1;
     elseif isfield(h, 'PeaksDet2') && ~isfield(h, 'PeaksDet1')
         ULDDataFile.PeaksDet2 = h.PeaksDet2;
-        ULDDataFile.Peakslb = h.Peakslb;
-        ULDDataFile.Peaksub = h.Peaksub;
+        ULDDataFile.PeakslbDet2 = h.PeakslbDet2;
+        ULDDataFile.PeaksubDet2 = h.PeaksubDet2;
         ULDDataFile.MinVal = h.MinVal;
         ULDDataFile.TableBkgColorArrayDet2 = h.TableBkgColorArrayDet2;
                   
     elseif isfield(h, 'PeaksDet1') && isfield(h, 'PeaksDet2')
         ULDDataFile.PeaksDet1 = h.PeaksDet1;
         ULDDataFile.PeaksDet2 = h.PeaksDet2;
-        ULDDataFile.Peakslb = h.Peakslb;
-        ULDDataFile.Peaksub = h.Peaksub;
+        ULDDataFile.PeakslbDet1 = h.PeakslbDet1;
+        ULDDataFile.PeaksubDet1 = h.PeaksubDet1;
+        ULDDataFile.PeakslbDet2 = h.PeakslbDet2;
+        ULDDataFile.PeaksubDet2 = h.PeaksubDet2;
         ULDDataFile.MinVal = h.MinVal;
         ULDDataFile.TableBkgColorArrayDet1 = h.TableBkgColorArrayDet1;
         ULDDataFile.TableBkgColorArrayDet2 = h.TableBkgColorArrayDet2;
@@ -10739,7 +11548,7 @@ set(hObj,'str','Fitting','backg',[1 .6 .6]) % Change color of button.
 pause(.01)
 % Get slider value
 valueSlider = round(get(h.Slider, 'Value'));
-
+% assignin('base','PeakslbFitButton',h.Peakslb)
 Detstr = get(h.popupmenuselectmeas1,'String');
 Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
@@ -10747,12 +11556,12 @@ h.Detsel = Detsel;
 
 % Run FittingGUI function in order to fit the user defined peaks. Depending
 % on the diffractometer used, different cases need to be considered 
-if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
         if strcmp(h.Detsel,'Detector 1')
             % Consider the following spectra
             Slidersteps = 2:2:length(h.Measurement);
             % Run fit script
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -10770,7 +11579,7 @@ if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
             h.SEDet1 = SE;
         elseif strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -10786,11 +11595,11 @@ if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
             h.CIDet2 = CI;
             h.SEDet2 = SE;
         end
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             % Here, no case analysis is done, the data from both detectors
             % is fitted directly one after the other
             Slidersteps = 2:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -10807,7 +11616,7 @@ elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
             h.SEDet1 = SE;
 
             Slidersteps = 1:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -10829,6 +11638,7 @@ else
     h.Measurement = Measurement;
     h.DataTmp = DataTmp;
     h.FittedPeaks = FittedPeaks;
+%     assignin('base','SE',SE)
     assignin('base','FittedPeaksGUI',FittedPeaks)
     % Find nan in SE and CI and replace with zero
     idx = cellfun(@isnan, SE,'UniformOutput',false);
@@ -10849,7 +11659,7 @@ set(hObj,'str','Fit','backg',col)  % Now reset the button features.
 set(h.plotpeakpoints,'Visible','off')
 if FitBothDet == 0
     % Prepare data for plotting fit results
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             DataTmpCalc = h.DataTmp(Slidersteps);
@@ -10869,16 +11679,20 @@ if FitBothDet == 0
         PeakRegionsXCalc = h.PeakRegionsX;
         PeaksCalc = h.Peaks;
     end
-    assignin('base','FittedPeaksCalc',FittedPeaksCalc)
+%     assignin('base','FittedPeaksCalc',FittedPeaksCalc)
 %     assignin('base','DataTmpCalc',DataTmpCalc)
     % Run script to prepare the plot data
 
-    [FittedPeaksCalc,FittedPeaksCalctmp,xDataTmpCalc,XFit,YFit,XPlot,YPlot] = PrepareFitPeaksPlot(DataTmpCalc,FittedPeaksCalc,PeaksCalc,PeakRegionsXCalc,SE,h.P.PopupValueFitFunc,valueSlider,h.Diffsel,h.lambdaka1,h.lambdaka2);
+    [FittedPeaksCalc,FittedPeaksCalctmp,xDataTmpCalc,XFit,YFit,XPlot,YPlot,SinglePlot_tmp] = PrepareFitPeaksPlot(DataTmpCalc,FittedPeaksCalc,PeaksCalc,PeakRegionsXCalc,SE,h.P.PopupValueFitFunc,valueSlider,h.Diffsel,h.lambdaka1,h.lambdaka2);
+    h.SinglePlot_tmp = SinglePlot_tmp;
 %     h.FittedPeaksCalctmp = FittedPeaksCalctmp;
-    assignin('base','FittedPeaksCalctmpPFPP',FittedPeaksCalctmp)
+%     assignin('base','FittedPeaksCalctmpPFPP',FittedPeaksCalctmp)
+%     assignin('base','FittedPeaksCalcPFPP',FittedPeaksCalc)
 %     assignin('base','XFit',XFit)
 %     assignin('base','YFit',YFit)
 %     assignin('base','XPlot',XPlot)
+%     assignin('base','YPlot',YPlot)
+%     assignin('base','SinglePlot_tmp',SinglePlot_tmp)
 %     assignin('base','PeakRegionsXdata',h.PeakRegionsXdata)
 %     assignin('base','PeakRegionsYdata',h.PeakRegionsYdata)
     % Add fit data to structure, for later use
@@ -10892,9 +11706,10 @@ if FitBothDet == 0
         h.plotka1 = plot(h.axesplotRawData, XPlot, YPlot(:,2),':','Color','green','LineWidth',1.5);
         h.plotka2 = plot(h.axesplotRawData, XPlot, YPlot(:,3),':','Color','blue','LineWidth',1.5);
         h.plotfitresidual = plot(h.axesplotRawData,XFit,(YFit - interp1(XPlot,YPlot(:,1),XFit)) - (max(YFit)/4),'Color','k','LineWidth',0.5);
-        assignin('base','YPlotFitPeaks',YPlot)
+%         assignin('base','YPlotFitPeaks',YPlot)
     else
         h.plotfits = plot(h.axesplotRawData, XPlot, YPlot,'Color','red','LineWidth',1.5);
+        h.plotfitsSinglePeaks = plot(h.axesplotRawData, XPlot, cell2mat(h.SinglePlot_tmp'),':','LineWidth',1.5);
         h.plotfitresidual = plot(h.axesplotRawData,XFit,(YFit - interp1(XPlot,YPlot,XFit)) - (max(YFit)/4),'Color','k','LineWidth',0.5);
     end
     % Change YLim
@@ -10939,7 +11754,7 @@ if FitBothDet == 0
             FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5)])
     end
 
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
 %            Slidersteps = 2:2:length(h.Measurement);
             h.xDataTmpCalcDet1 = xDataTmpCalc;
@@ -10970,7 +11785,7 @@ if FitBothDet == 0
         h.XPlot = XPlot;
         h.YPlot = YPlot;
     end
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     % Fit data from both detectors at once
     SliderstepsDet1 = 2:2:length(h.Measurement);
     DataTmpCalcDet1 = h.DataTmp(SliderstepsDet1);
@@ -10984,7 +11799,7 @@ elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
     PeakRegionsXCalcDet2 = h.PeakRegionsXDet2;
     PeaksCalcDet2 = h.PeaksDet2;
     % Run script to prepare the plot data
-    [FittedPeaksCalcDet1,FittedPeaksCalctmpDet1,xDataTmpCalcDet1,XFitDet1,YFitDet1,XPlotDet1,YPlotDet1] = PrepareFitPeaksPlot(DataTmpCalcDet1,FittedPeaksCalcDet1,PeaksCalcDet1,PeakRegionsXCalcDet1,h.SEDet1,h.P.PopupValueFitFunc,valueSlider);
+    [FittedPeaksCalcDet1,FittedPeaksCalctmpDet1,xDataTmpCalcDet1,XFitDet1,YFitDet1,XPlotDet1,YPlotDet1] = PrepareFitPeaksPlot(DataTmpCalcDet1,FittedPeaksCalcDet1,PeaksCalcDet1,PeakRegionsXCalcDet1,h.SEDet1,h.P.PopupValueFitFunc,valueSlider,h.Diffsel,h.lambdaka1,h.lambdaka2);
     
     h.FittedPeaksDet1 = FittedPeaksCalcDet1;
     h.FittedPeaksCalctmpDet1 = FittedPeaksCalctmpDet1;
@@ -10995,7 +11810,7 @@ elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
     h.YPlotDet1 = YPlotDet1;
     
     % Run script to prepare the plot data
-    [FittedPeaksCalcDet2,FittedPeaksCalctmpDet2,xDataTmpCalcDet2,XFitDet2,YFitDet2,XPlotDet2,YPlotDet2] = PrepareFitPeaksPlot(DataTmpCalcDet2,FittedPeaksCalcDet2,PeaksCalcDet2,PeakRegionsXCalcDet2,h.SEDet2,h.P.PopupValueFitFunc,valueSlider);
+    [FittedPeaksCalcDet2,FittedPeaksCalctmpDet2,xDataTmpCalcDet2,XFitDet2,YFitDet2,XPlotDet2,YPlotDet2] = PrepareFitPeaksPlot(DataTmpCalcDet2,FittedPeaksCalcDet2,PeaksCalcDet2,PeakRegionsXCalcDet2,h.SEDet2,h.P.PopupValueFitFunc,valueSlider,h.Diffsel,h.lambdaka1,h.lambdaka2);
 
     h.FittedPeaksDet2 = FittedPeaksCalcDet2;
     h.FittedPeaksCalctmpDet2 = FittedPeaksCalctmpDet2;
@@ -11063,7 +11878,7 @@ end
  
 % Prepare data for export
 if get(h.checkboxexportfits,'value') == 1   
-    if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             DataTmpCalc = h.DataTmp(Slidersteps);
@@ -11105,7 +11920,7 @@ if get(h.checkboxexportfits,'value') == 1
             if exist(Path,'dir') ~= 7
                 mkdir(Path);
             end
-
+            assignin('base','FittedPeaksCalc',FittedPeaksCalc)
             for k = 1:size(FittedPeaksCalc, 2)
                 fid = fopen([[Path,'\'],name,'_','FittedSpectra_Det1','_',num2str(k),'_',d,'.dat'],'w');
                 fprintf(fid,'%6s %8s %11s %10s \r\n','X','Y','YFit','Residual');
@@ -11166,7 +11981,7 @@ if get(h.checkboxexportfits,'value') == 1
             end
         end
         
-    elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+    elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             SliderstepsDet1 = 2:2:length(h.Measurement);
             DataTmpCalcDet1 = h.DataTmp(SliderstepsDet1);
             FittedPeaksCalcDet1 = h.FittedPeaksDet1;
@@ -11333,7 +12148,7 @@ h.Detsel = Detsel;
 % Get slider value
 % valueSlider = round(get(h.Slider, 'Value'));
 % Set plot table data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         set(h.tablephasehkl,'BackgroundColor',ones(size(h.FitPeaksLogicalErangeDet1,2),3))
         tabledata = get(h.tablephasehkl,'data');
@@ -11376,28 +12191,31 @@ if h.P.PopupValueFitFunc == 2
     set(h.tablefitresults, 'ColumnWidth',{70,70,60,60,60,75,50});
     set(h.tablefitresults, 'data',zeros(10,7));
     % Set Psi File table properties
-    set(h.tablepsifile, 'ColumnName', {'LNr     ',...
-    'Emax   ',...
-    'dEmax    ',...
-    'Iint      ',...
-    'Ib      ',...
-    'tth     ',...
-    'phiP   ',...
-    'psiP   ',...
-    'etaP  ',...
-    'xdiff   ',...
-    'ydiff   ',...
-    'zdiff   ',...
-    'RT  ',...
-    'DT   ',...
-    'temp1   ',...
-    'temp2   ',...
-    'heatrate   ',...
-    'Time   ',...
-    'PeakCount   ',...
-    })
-    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
-    set(h.tablepsifile, 'data',zeros(13,19));
+    set(h.tablepsifile, 'ColumnName', {'LNr',...
+        'Emax',...
+        'dEmax',...
+        'Iint',...
+        'Ib',...
+        'tth',...
+        'phiP',...
+        'psiP',...
+        'etaP',...
+        'h',...
+        'k',...
+        'l',...
+        'xdiff',...
+        'ydiff',...
+        'zdiff',...
+        'RT',...
+        'DT',...
+        'temp1',...
+        'temp2',...
+        'heatrate',...
+        'Time',...
+        'PeakCount',...
+        })
+    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
+    set(h.tablepsifile, 'data',zeros(16,22));
 elseif h.P.PopupValueFitFunc == 3
     % Set Fit Results table properties
     set(h.tablefitresults, 'ColumnName', {'Iint [cts]','Imax [cts]', ...
@@ -11407,31 +12225,34 @@ elseif h.P.PopupValueFitFunc == 3
     set(h.tablefitresults, 'ColumnWidth',{70,70,60,60,110,115,60,75,50});
     set(h.tablefitresults, 'data',zeros(10,9));
     % Set Psi File table properties
-    set(h.tablepsifile, 'ColumnName', {'LNr     ',...
-    'Emax   ',...
-    'dEmax    ',...
-    'Iint      ',...
-    'Ib      ',...
-    'FWHM      ',...
-    'FWHM_Gauss      ',...
-    'FWHM_Lorentz      ',...
-    'tth     ',...
-    'phiP   ',...
-    'psiP   ',...
-    'etaP  ',...
-    'xdiff   ',...
-    'ydiff   ',...
-    'zdiff   ',...
-    'RT  ',...
-    'DT   ',...
-    'temp1   ',...
-    'temp2   ',...
-    'heatrate   ',...
-    'Time   ',...
-    'PeakCount   ',...
+    set(h.tablepsifile, 'ColumnName', {'LNr',...
+    'Emax',...
+    'dEmax',...
+    'Iint',...
+    'Ib',...
+    'FWHM',...
+    'FWHM_Gauss',...
+    'FWHM_Lorentz',...
+    'tth',...
+    'phiP',...
+    'psiP',...
+    'etaP',...
+    'h',...
+    'k',...
+    'l',...
+    'xdiff',...
+    'ydiff',...
+    'zdiff',...
+    'RT',...
+    'DT',...
+    'temp1',...
+    'temp2',...
+    'heatrate',...
+    'Time',...
+    'PeakCount',...
     })
-    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 60 100 105 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
-    set(h.tablepsifile, 'data',zeros(16,19));
+    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 60 100 105 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
+    set(h.tablepsifile, 'data',zeros(16,25));
 elseif h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
     % Set Fit Results table properties
     set(h.tablefitresults, 'ColumnName', {'Iint [cts]','Imax [cts]', ...
@@ -11440,28 +12261,31 @@ elseif h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
     set(h.tablefitresults, 'ColumnWidth',{70,70,60,60,60,75});
     set(h.tablefitresults, 'data',zeros(10,6));
     % Set Psi File table properties
-    set(h.tablepsifile, 'ColumnName', {'LNr     ',...
-    'Emax   ',...
-    'dEmax    ',...
-    'Iint      ',...
-    'Ib      ',...
-    'tth     ',...
-    'phiP   ',...
-    'psiP   ',...
-    'etaP  ',...
-    'xdiff   ',...
-    'ydiff   ',...
-    'zdiff   ',...
-    'RT  ',...
-    'DT   ',...
-    'temp1   ',...
-    'temp2   ',...
-    'heatrate   ',...
-    'Time   ',...
-    'PeakCount   ',...
+    set(h.tablepsifile, 'ColumnName', {'LNr',...
+    'Emax',...
+    'dEmax',...
+    'Iint',...
+    'Ib',...
+    'tth',...
+    'phiP',...
+    'psiP',...
+    'etaP',...
+    'h',...
+    'k',...
+    'l',...
+    'xdiff',...
+    'ydiff',...
+    'zdiff',...
+    'RT',...
+    'DT',...
+    'temp1',...
+    'temp2',...
+    'heatrate',...
+    'Time',...
+    'PeakCount',...
     })
-    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
-    set(h.tablepsifile, 'data',zeros(13,19));    
+    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
+    set(h.tablepsifile, 'data',zeros(16,22));    
 end
 
 guidata(hObj,h);
@@ -11509,32 +12333,94 @@ elseif NewPeakPointIdx(1) == 2
         value = get(h.checkboxBKG,'value');
         if value == 0
             % Update changed X position of background from current slider value
-            h.Peakslb{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
-            % Set table data
-            set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    h.PeakslbDet1{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
+                elseif strcmp(h.Detsel,'Detector 2')
+                    h.PeakslbDet2{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
+                end
+            else
+                h.Peakslb{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                % Set table data
+                set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            end
+            
         elseif value == 1
             % Update changed X position of background for all slider values
             for k = 1:size(h.Peakslb,2)
-                h.Peakslb{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                    if strcmp(h.Detsel,'Detector 1')
+                        h.PeakslbDet1{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    elseif strcmp(h.Detsel,'Detector 2')
+                        h.PeakslbDet2{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    end
+                else
+                    h.Peakslb{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                end
             end
-            % Set table data
-            set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
+                elseif strcmp(h.Detsel,'Detector 2')
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
+                end
+            else
+                % Set table data
+                set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            end
         end
 elseif NewPeakPointIdx(1) == 3
         % Check if changes should be applied to one or to all spectra
         value = get(h.checkboxBKG,'value');
         if value == 0
             % Update changed X position of background from current slider value
-            h.Peaksub{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
-            % Set table data
-            set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    h.PeaksubDet1{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
+                elseif strcmp(h.Detsel,'Detector 2')
+                    h.PeaksubDet2{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
+                end
+            else
+                h.Peaksub{valueSlider}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                % Set table data
+                set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            end
+            
         elseif value == 1
             % Update changed X position of background for all slider values
-            for k = 1:size(h.Peaksub,2)
-                h.Peaksub{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+            for k = 1:size(h.Peakslb,2)
+                if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                    if strcmp(h.Detsel,'Detector 1')
+                        h.PeaksubDet1{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    elseif strcmp(h.Detsel,'Detector 2')
+                        h.PeaksubDet2{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                    end
+                else
+                    h.Peaksub{k}(1,NewPeakPointIdx(2)) = NewPeakPoint;
+                end
             end
-            % Set table data
-            set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
+                elseif strcmp(h.Detsel,'Detector 2')
+                    % Set table data
+                    set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
+                end
+            else
+                % Set table data
+                set(h.tablepeakdata,'data',[h.Peaks{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+            end
         end
 end
 
@@ -11558,7 +12444,7 @@ h.Detsel = Detsel;
 % from defining peaks manually. Keep backup of original one!
 idxhklPeaks = [SelectPeaktabledata{:,6}]';
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         if ~isfield(h, 'FitPeaksLogicalDet1')
             warndlg('No peaks defined. Please define peaks before choosing hkl values.','Warning')
@@ -11607,6 +12493,8 @@ function h = buttoncreatepsi1(hObj, ~, handles)
 h = guidata(hObj);
 
 % assignin('base','h',h)
+% assignin('base','FittedPeaksDet2',h.FittedPeaksDet2)
+% assignin('base','SelectPeaktabledata',h.SelectPeaktable.Data)
 
 Detstr = get(h.popupmenuselectmeas1,'String');
 Detval = get(h.popupmenuselectmeas1,'Value');
@@ -11687,78 +12575,121 @@ h.DiffractionLines = cell(length(h.Measurement),1);
 % If FittedPeaks data was already changed by the user, load backup of
 % FittedPeaks data in order to allow for unaffected changes. Also check
 % whether point wise correction is used, then do not load backup data.
-if isfield(h,'FittedPeaksbkp')
+if isfield(h,'FittedPeaksbkp') || isfield(h,'FittedPeaksbkpDet1') || isfield(h,'FittedPeaksbkpDet2')
     if isfield(h,'PWcorrcheck')
         if h.PWcorrcheck == 0
-            h.FittedPeaks = h.FittedPeaksbkp;
+            if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+                if strcmp(h.Detsel,'Detector 1')
+                    h.FittedPeaksDet1 = h.FittedPeaksbkpDet1;
+                elseif strcmp(h.Detsel,'Detector 2')
+                    h.FittedPeaksDet2 = h.FittedPeaksbkpDet2;
+                end
+            else
+                h.FittedPeaks = h.FittedPeaksbkp;
+            end
         end
     else
-        h.FittedPeaks = h.FittedPeaksbkp;
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                h.FittedPeaksDet1 = h.FittedPeaksbkpDet1;
+            elseif strcmp(h.Detsel,'Detector 2')
+                h.FittedPeaksDet2 = h.FittedPeaksbkpDet2;
+            end
+        else
+            h.FittedPeaks = h.FittedPeaksbkp;
+        end
     end
 end
+% assignin('base','idxkeepPeaksDet2',h.idxkeepPeaksDet2)
+% Get hkl values from "selectPeaktable data"
+hklDataPsiFile = h.SelectPeaktable.Data(:,1:3);
+% Create table with hkl values
+if isfield(h, 'idxkeepPeaksDet1')
+    hklDataPsiFile = hklDataPsiFile(h.idxkeepPeaksDet1,:);
+end
+
+if isfield(h, 'idxkeepPeaksDet2')
+    hklDataPsiFile = hklDataPsiFile(h.idxkeepPeaksDet2,:);
+end
+
+if isfield(h, 'idxkeepPeaks')
+    hklDataPsiFile = hklDataPsiFile(h.idxkeepPeaks,:);
+end
+h.hklDataPsiFile = cell2mat(hklDataPsiFile);
 % Create difraction lines from fitted peaks
 % For the case where LEDDI was used and single detector data should be
 % fitted
-if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         % Filter applied to the diffraction line data
         [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet1,h.SEDet1,h.P.PopupValueFitFunc,h.FilterOptions);
         h.DiffractionLinesDet1 = DiffractionLines;
+        DiffractionLinesDet1 = DiffractionLines;
         % If peaks were deselected by the user, delete them from DiffractionLines
-        if isfield(h, 'idxkeepPeaks')
-            if size(DiffractionLines{1},2) ~= size(h.idxkeepPeaks,1)
-                for k = 1:length(DiffractionLines)
-                    DiffractionLines{k}(h.idxdeletePeaks) = [];
+        if isfield(h, 'idxkeepPeaksDet1')
+            if size(DiffractionLinesDet1{1},2) ~= size(h.idxkeepPeaksDet1,1)
+                for k = 1:length(DiffractionLinesDet1)
+                    DiffractionLinesDet1{k}(h.idxdeletePeaksDet1) = [];
                 end
             end
         end
+%         h.DiffractionLinesDet1 = DiffractionLinesDet1;
     elseif strcmp(h.Detsel,'Detector 2')
         Slidersteps = 1:2:length(h.Measurement);
         [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet2,h.SEDet2,h.P.PopupValueFitFunc,h.FilterOptions);
         h.DiffractionLinesDet2 = DiffractionLines;
+        DiffractionLinesDet2 = DiffractionLines;
         % If peaks were deselected by the user, delete them from DiffractionLines
-        if isfield(h, 'idxkeepPeaks')
-            if size(DiffractionLines{1},2) ~= size(h.idxkeepPeaks,1)
-                for k = 1:length(DiffractionLines)
-                    DiffractionLines{k}(h.idxdeletePeaks) = [];
+        if isfield(h, 'idxkeepPeaksDet2')
+            if size(DiffractionLinesDet2{1},2) ~= size(h.idxkeepPeaksDet2,1)
+                for k = 1:length(DiffractionLinesDet2)
+                    DiffractionLinesDet2{k}(h.idxdeletePeaksDet2) = [];
                 end
             end
         end
+%         h.DiffractionLinesDet2 = DiffractionLinesDet2;
     end
+    
 % For the case where LEDDI was used and data from both detectors should be 
 % fitted  
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
-    Slidersteps = 2:2:length(h.Measurement);
-    % Filter applied to the diffraction line data
-    [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet1,h.SEDet1,h.P.PopupValueFitFunc,h.FilterOptions);
-    h.DiffractionLinesDet1 = DiffractionLines;
-    % If peaks were deselected by the user, delete them from DiffractionLines
-    if isfield(h, 'idxkeepPeaks')
-        if size(DiffractionLines{1},2) ~= size(h.idxkeepPeaks,1)
-            for k = 1:length(DiffractionLines)
-                DiffractionLines{k}(h.idxdeletePeaks) = [];
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
+%     if strcmp(h.Detsel,'Detector 1')
+        Slidersteps = 2:2:length(h.Measurement);
+        % Filter applied to the diffraction line data
+        [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet1,h.SEDet1,h.P.PopupValueFitFunc,h.FilterOptions);
+        h.DiffractionLinesDet1 = DiffractionLines;
+        DiffractionLinesDet1 = DiffractionLines;
+        % If peaks were deselected by the user, delete them from DiffractionLines
+        if isfield(h, 'idxkeepPeaksDet1')
+            if size(DiffractionLinesDet1{1},2) ~= size(h.idxkeepPeaksDet1,1)
+                for k = 1:length(DiffractionLinesDet1)
+                    DiffractionLinesDet1{k}(h.idxdeletePeaksDet1) = [];
+                end
             end
         end
-    end
-
-    Slidersteps = 1:2:length(h.Measurement);
-    [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet2,h.SEDet2,h.P.PopupValueFitFunc,h.FilterOptions);
-    h.DiffractionLinesDet2 = DiffractionLines;
-    % If peaks were deselected by the user, delete them from DiffractionLines
-    if isfield(h, 'idxkeepPeaks')
-        if size(DiffractionLines{1},2) ~= size(h.idxkeepPeaks,1)
-            for k = 1:length(DiffractionLines)
-                DiffractionLines{k}(h.idxdeletePeaks) = [];
+%         h.DiffractionLinesDet1 = DiffractionLinesDet1;
+%     elseif strcmp(h.Detsel,'Detector 2')
+        Slidersteps = 1:2:length(h.Measurement);
+        [DiffractionLines] = FilterDiffLine(h.Measurement(Slidersteps),h.FittedPeaksDet2,h.SEDet2,h.P.PopupValueFitFunc,h.FilterOptions);
+        h.DiffractionLinesDet2 = DiffractionLines;
+        DiffractionLinesDet2 = DiffractionLines;
+        % If peaks were deselected by the user, delete them from DiffractionLines
+        if isfield(h, 'idxkeepPeaksDet2')
+            if size(DiffractionLinesDet2{1},2) ~= size(h.idxkeepPeaksDet2,1)
+                for k = 1:length(DiffractionLinesDet2)
+                    DiffractionLinesDet2{k}(h.idxdeletePeaksDet2) = [];
+                end
             end
         end
-    end
+%         h.DiffractionLinesDet2 = DiffractionLinesDet2;
+%     end
 else
     % For the cases where EDDI or LIMAX-160 were used
     % Filter applied to the diffraction line data
     [DiffractionLines] = FilterDiffLine(h.Measurement,h.FittedPeaks,h.SE,h.P.PopupValueFitFunc,h.FilterOptions);
     h.DiffractionLines = DiffractionLines;
-    assignin('base','DiffractionLines',DiffractionLines)
+%     assignin('base','DiffractionLines',DiffractionLines)
 %     assignin('base','DiffractionLines',DiffractionLines)
     % If peaks were deselected by the user, delete them from DiffractionLines
     if isfield(h, 'idxkeepPeaks')
@@ -11780,117 +12711,170 @@ end
 
 % Prepare diffraction line data for table in the case where LEDDI was used
 % and data from both detectors was fitted
-if  strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     % Create structure with information from both detectors
     DiffractionLinestmp = struct;
-    DiffractionLinestmp(1).LEDDI = h.DiffractionLinesDet1;
-    DiffractionLinestmp(2).LEDDI = h.DiffractionLinesDet2;
+    DiffractionLinestmp(1).LEDDI = DiffractionLinesDet1;
+    DiffractionLinestmp(2).LEDDI = DiffractionLinesDet2;
+%     assignin('base','DiffractionLinestmp',DiffractionLinestmp)
     % Create Psidata for the two detectors, depending on the fit function
     % used to fit the data
     for k = 1:size(DiffractionLinestmp,2)
-        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5%PV-Func
-            if h.P.DiffractometerType == 1 % EDDI
-                [DiffractionLinestmp(k).Psidata] = EDDIPsiDataPV(DiffractionLinestmp(k).LEDDI);
-            elseif h.P.DiffractometerType == 2 % LEDDI
-                [DiffractionLinestmp(k).Psidata] = LEDDIPsiDataPV(DiffractionLinestmp(k).LEDDI);
-            elseif h.P.DiffractometerType == 3 % LIMAX-160
-                [DiffractionLinestmp(k).Psidata] = LIMAX160PsiDataPV(DiffractionLinestmp(k).LEDDI);
-            end
-            
-            % Adjust LinNumber in case peaks were deselected
-            LineCnt = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,2);
-            LineCnt = repmat(LineCnt,size(DiffractionLinestmp(k).Psidata.LineNumber,1),1);
-
-            % Replace Line number with ordered one
-            for m = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,2)
-                for l = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,1)
-                    DiffractionLinestmp(k).Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+        [Psidata] = PsiDataPVGeneral(DiffractionLinestmp(k).LEDDI,h.SpecFileCheck);
+        % Adjust LineNumber in case peaks were deselected
+        LineCnt = 1:size(Psidata.LineNumber,2);
+        LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % Replace Line number with ordered one
+            for m = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
                 end
             end
-            
-            % Create PsiFileTableData for both detectors
-            DiffractionLinestmp(k).PsiFileTableData = [reshape(DiffractionLinestmp(k).Psidata.LineNumber,numel(DiffractionLinestmp(k).Psidata.LineNumber),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Energy_Max,numel(DiffractionLinestmp(k).Psidata.Energy_Max),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Energy_Max_Delta,numel(DiffractionLinestmp(k).Psidata.Energy_Max_Delta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Intensity_Int_calc,numel(DiffractionLinestmp(k).Psidata.Intensity_Int_calc),1),...
-                reshape(DiffractionLinestmp(k).Psidata.IntegralWidth,numel(DiffractionLinestmp(k).Psidata.IntegralWidth),1),...
-                reshape(DiffractionLinestmp(k).Psidata.twotheta,numel(DiffractionLinestmp(k).Psidata.twotheta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.phi,numel(DiffractionLinestmp(k).Psidata.phi),1),...
-                reshape(DiffractionLinestmp(k).Psidata.psi,numel(DiffractionLinestmp(k).Psidata.psi),1),...
-                reshape(DiffractionLinestmp(k).Psidata.eta,numel(DiffractionLinestmp(k).Psidata.eta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.RingCurrent,numel(DiffractionLinestmp(k).Psidata.RingCurrent),1),...
-                reshape(DiffractionLinestmp(k).Psidata.RealTime,numel(DiffractionLinestmp(k).Psidata.RealTime),1),...
-                reshape(DiffractionLinestmp(k).Psidata.DeadTime,numel(DiffractionLinestmp(k).Psidata.DeadTime),1),...
-                reshape(DiffractionLinestmp(k).Psidata.x_achse,numel(DiffractionLinestmp(k).Psidata.x_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.y_achse,numel(DiffractionLinestmp(k).Psidata.y_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.z_achse,numel(DiffractionLinestmp(k).Psidata.z_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos1,numel(DiffractionLinestmp(k).Psidata.SampleStagePos1),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos2,numel(DiffractionLinestmp(k).Psidata.SampleStagePos2),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos3,numel(DiffractionLinestmp(k).Psidata.SampleStagePos3),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Temperatures1,numel(DiffractionLinestmp(k).Psidata.Temperatures1),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Temperatures2,numel(DiffractionLinestmp(k).Psidata.Temperatures2),1),...
-                reshape(DiffractionLinestmp(k).Psidata.HeatRate,numel(DiffractionLinestmp(k).Psidata.HeatRate),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Time,numel(DiffractionLinestmp(k).Psidata.Time),1),...
-                reshape(DiffractionLinestmp(k).Psidata.PeakCount,numel(DiffractionLinestmp(k).Psidata.PeakCount),1),...
-                ];
+        DiffractionLinestmp(k).Psidata = Psidata;
+        % Create PsiFileTableData
+        Psidata_tmp = struct2cell(Psidata);
+        PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+        DiffractionLinestmp(k).PsiFileTableData = [PsiFileTableData_tmp{:}];
+        % Create psidata for TCH function
         elseif h.P.PopupValueFitFunc == 3 %TCH-Func
-            if h.P.DiffractometerType == 1 % EDDI
-                [DiffractionLinestmp(k).Psidata] = EDDIPsiDataTCH(DiffractionLinestmp(k).LEDDI);
-            elseif h.P.DiffractometerType == 2 % LEDDI
-                [DiffractionLinestmp(k).Psidata] = LEDDIPsiDataTCH(DiffractionLinestmp(k).LEDDI);
-            elseif h.P.DiffractometerType == 3 % LIMAX-160
-                [DiffractionLinestmp(k).Psidata] = LIMAX160PsiDataTCH(DiffractionLinestmp(k).LEDDI);
-            end
-            
+            [Psidata] = PsiDataTCHGeneral(DiffractionLinestmp(k).LEDDI,h.SpecFileCheck);
             % Adjust LinNumber in case peaks were deselected
-            LineCnt = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,2);
-            LineCnt = repmat(LineCnt,size(DiffractionLinestmp(k).Psidata.LineNumber,1),1);
-
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+    
             % Replace Line number with ordered one
-            for m = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,2)
-                for l = 1:size(DiffractionLinestmp(k).Psidata.LineNumber,1)
-                    DiffractionLinestmp(k).Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
+            for m = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
                 end
             end
-            
-            % Create PsiFileTableData for both detectors
-            DiffractionLinestmp(k).PsiFileTableData = [reshape(DiffractionLinestmp(k).Psidata.LineNumber,numel(DiffractionLinestmp(k).Psidata.LineNumber),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Energy_Max,numel(DiffractionLinestmp(k).Psidata.Energy_Max),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Energy_Max_Delta,numel(DiffractionLinestmp(k).Psidata.Energy_Max_Delta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Intensity_Int_calc,numel(DiffractionLinestmp(k).Psidata.Intensity_Int_calc),1),...
-                reshape(DiffractionLinestmp(k).Psidata.IntegralWidth,numel(DiffractionLinestmp(k).Psidata.IntegralWidth),1),...
-                reshape(DiffractionLinestmp(k).Psidata.FWHM,numel(DiffractionLinestmp(k).Psidata.IntegralWidth),1),...
-                reshape(DiffractionLinestmp(k).Psidata.FWHM_Gauss,numel(DiffractionLinestmp(k).Psidata.IntegralWidth),1),...
-                reshape(DiffractionLinestmp(k).Psidata.FWHM_Lorentz,numel(DiffractionLinestmp(k).Psidata.IntegralWidth),1),...
-                reshape(DiffractionLinestmp(k).Psidata.twotheta,numel(DiffractionLinestmp(k).Psidata.twotheta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.phi,numel(DiffractionLinestmp(k).Psidata.phi),1),...
-                reshape(DiffractionLinestmp(k).Psidata.psi,numel(DiffractionLinestmp(k).Psidata.psi),1),...
-                reshape(DiffractionLinestmp(k).Psidata.eta,numel(DiffractionLinestmp(k).Psidata.eta),1),...
-                reshape(DiffractionLinestmp(k).Psidata.RingCurrent,numel(DiffractionLinestmp(k).Psidata.RingCurrent),1),...
-                reshape(DiffractionLinestmp(k).Psidata.RealTime,numel(DiffractionLinestmp(k).Psidata.RealTime),1),...
-                reshape(DiffractionLinestmp(k).Psidata.DeadTime,numel(DiffractionLinestmp(k).Psidata.DeadTime),1),...
-                reshape(DiffractionLinestmp(k).Psidata.x_achse,numel(DiffractionLinestmp(k).Psidata.x_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.y_achse,numel(DiffractionLinestmp(k).Psidata.y_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.z_achse,numel(DiffractionLinestmp(k).Psidata.z_achse),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos1,numel(DiffractionLinestmp(k).Psidata.SampleStagePos1),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos2,numel(DiffractionLinestmp(k).Psidata.SampleStagePos2),1),...
-                reshape(DiffractionLinestmp(k).Psidata.SampleStagePos3,numel(DiffractionLinestmp(k).Psidata.SampleStagePos3),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Temperatures1,numel(DiffractionLinestmp(k).Psidata.Temperatures1),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Temperatures2,numel(DiffractionLinestmp(k).Psidata.Temperatures2),1),...
-                reshape(DiffractionLinestmp(k).Psidata.HeatRate,numel(DiffractionLinestmp(k).Psidata.HeatRate),1),...
-                reshape(DiffractionLinestmp(k).Psidata.Time,numel(DiffractionLinestmp(k).Psidata.Time),1),...
-                reshape(DiffractionLinestmp(k).Psidata.PeakCount,numel(DiffractionLinestmp(k).Psidata.PeakCount),1),...
-                ];    
-        end
+            DiffractionLinestmp(k).Psidata = Psidata;
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            DiffractionLinestmp(k).PsiFileTableData = [PsiFileTableData_tmp{:}];
+        end  
     end
+
     % Create data from structure for both detectors
     h.PsiFileTableDataDet1 = DiffractionLinestmp(1).PsiFileTableData;
     h.PsidataDet1 = DiffractionLinestmp(1).Psidata;
     h.PsiFileTableDataDet2 = DiffractionLinestmp(2).PsiFileTableData;
     h.PsidataDet2 = DiffractionLinestmp(2).Psidata;
+    
 % Prepare diffraction line data for table in the case where LEDDI or any 
 % other diffractometer was used (data from both detectors was fitted
 % seperately)
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
+    if strcmp(h.Detsel,'Detector 1')
+        % Create psidata for PV, Lorentz and Gauss function
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+            [Psidata] = PsiDataPVGeneral(DiffractionLinesDet1,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet1 = [PsiFileTableData_tmp{:}];
+%             assignin('base','PsiFileTableData_tmp',PsiFileTableData_tmp)
+        % Create psidata for TCH function
+        elseif h.P.PopupValueFitFunc == 3 %TCH-Func
+            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet1,h.SpecFileCheck);        
+            % Adjust LinNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+            
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet1 = [PsiFileTableData_tmp{:}];
+        end
+        % Create data from structure for both detectors
+        h.PsidataDet1 = Psidata;
+    elseif strcmp(h.Detsel,'Detector 2')
+        % Create psidata for PV, Lorentz and Gauss function
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+            [Psidata] = PsiDataPVGeneral(DiffractionLinesDet2,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+            
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet2 = [PsiFileTableData_tmp{:}];
+%             assignin('base','PsiFileTableDataDet2Neu',h.PsiFileTableDataDet2)
+        % Create psidata for TCH function
+        elseif h.P.PopupValueFitFunc == 3 %TCH-Func
+            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet2,h.SpecFileCheck);        
+            % Adjust LinNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+            
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet2 = [PsiFileTableData_tmp{:}];
+        end
+        % Create data from structure for both detectors
+        h.PsidataDet2 = Psidata;
+    end
 else
     % Create psidata for PV, Lorentz and Gauss function
     if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
@@ -11908,10 +12892,17 @@ else
         % Adjust LineNumber in case peaks were deselected
         LineCnt = 1:size(Psidata.LineNumber,2);
         LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % create hkl data for psi file
+        h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+        k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+        l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
         % Replace Line number with ordered one
         for k = 1:size(Psidata.LineNumber,2)
             for l = 1:size(Psidata.LineNumber,1)
                 Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                Psidata.l{l,k} = num2str(l_hkltmp(l,k));
             end
         end
 
@@ -11936,11 +12927,17 @@ else
         % Adjust LinNumber in case peaks were deselected
         LineCnt = 1:size(Psidata.LineNumber,2);
         LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
-
+        % create hkl data for psi file
+        h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+        k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+        l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
         % Replace Line number with ordered one
         for k = 1:size(Psidata.LineNumber,2)
             for l = 1:size(Psidata.LineNumber,1)
                 Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                Psidata.l{l,k} = num2str(l_hkltmp(l,k));
             end
         end
         
@@ -11999,36 +12996,65 @@ else
 %         PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
 %         h.PsiFileTableData = [PsiFileTableData_tmp{:}];
 %     end
-    
-    % Create data for both detectors if LEDDI was used
-    if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
-        if strcmp(h.Detsel,'Detector 1')
-            h.PsiFileTableDataDet1 = h.PsiFileTableData;
-            h.PsiFileTableDataDet1Bkp = h.PsiFileTableData;
-            h.PsidataDet1 = Psidata;
-        elseif strcmp(h.Detsel,'Detector 2')
-            h.PsiFileTableDataDet2 = h.PsiFileTableData;
-            h.PsiFileTableDataDet2Bkp = h.PsiFileTableData;
-            h.PsidataDet2 = Psidata;
-        end
-    else
-        % Create data if EDDI or LIMAX-160 was used
-        % If phi filer was applied, keep only selected phi angles in
-        % psifiletabledata
+end  
+
+% Create data for both detectors if LEDDI was used
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
+    if strcmp(h.Detsel,'Detector 1')
         if ~ischar(h.FilterOptions.Phi)
-            a = cellfun(@str2num,h.PsiFileTableData(:,7),'un',0);
+            a = cellfun(@str2num,h.PsiFileTableDataDet1(:,7),'un',0);
             idx = ismember(cell2mat(a),h.FilterOptions.Phi);
-            h.PsiFileTableDataBkp = h.PsiFileTableData(idx,:);
+            h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1(idx,:);
         else
-            h.PsiFileTableDataBkp = h.PsiFileTableData;
+            h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1;
         end
-        h.Psidata = Psidata;
+%         h.PsidataDet1 = PsidataDet1;
+    elseif strcmp(h.Detsel,'Detector 2')
+        if ~ischar(h.FilterOptions.Phi)
+            a = cellfun(@str2num,h.PsiFileTableDataDet2(:,7),'un',0);
+            idx = ismember(cell2mat(a),h.FilterOptions.Phi);
+            h.PsiFileTableDataDet2Bkp = h.PsiFileTableDataDet2(idx,:);
+        else
+            h.PsiFileTableDataDet2Bkp = h.PsiFileTableDataDet2;
+        end
+%         h.PsidataDet2 = PsidataDet2;
     end
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
+    if ~ischar(h.FilterOptions.Phi)
+        a = cellfun(@str2num,h.PsiFileTableDataDet1(:,7),'un',0);
+        idx = ismember(cell2mat(a),h.FilterOptions.Phi);
+        h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1(idx,:);
+    else
+        h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1;
+    end
+%         h.PsidataDet1 = PsidataDet1;
+
+    if ~ischar(h.FilterOptions.Phi)
+        a = cellfun(@str2num,h.PsiFileTableDataDet2(:,7),'un',0);
+        idx = ismember(cell2mat(a),h.FilterOptions.Phi);
+        h.PsiFileTableDataDet2Bkp = h.PsiFileTableDataDet2(idx,:);
+    else
+        h.PsiFileTableDataDet2Bkp = h.PsiFileTableDataDet2;
+    end
+%         h.PsidataDet2 = PsidataDet2;
+else
+    % Create data if EDDI or LIMAX-160 was used
+    % If phi filer was applied, keep only selected phi angles in
+    % psifiletabledata
+    if ~ischar(h.FilterOptions.Phi)
+        a = cellfun(@str2num,h.PsiFileTableData(:,7),'un',0);
+        idx = ismember(cell2mat(a),h.FilterOptions.Phi);
+        h.PsiFileTableDataBkp = h.PsiFileTableData(idx,:);
+    else
+        h.PsiFileTableDataBkp = h.PsiFileTableData;
+    end
+    h.Psidata = Psidata;
 end
+
 
 % Delete Lines where energies are zero and delete data from peak numbers of
 % "dummy" peaks, i.e. from peaks that are from a diferent phase
-if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1')
         h.PsiFileTableDataDet1(strcmp(h.PsiFileTableDataDet1(:, 2), '0.0000'), :) = [];
 %         h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1;
@@ -12040,7 +13066,7 @@ if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
         % Set table data
         set(h.tablepsifile,'data',h.PsiFileTableDataDet2);
     end
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     if strcmp(h.Detsel,'Detector 1')
         h.PsiFileTableDataDet1(strcmp(h.PsiFileTableDataDet1(:, 2), '0.0000'), :) = [];
 %         h.PsiFileTableDataDet1Bkp = h.PsiFileTableDataDet1;
@@ -12057,44 +13083,49 @@ else
 %     h.PsiFileTableDataBkp = h.PsiFileTableData;
     % Set table data
     set(h.tablepsifile,'data',h.PsiFileTableData);
-    if h.SpecFileCheck == 1
-        set(h.tablepsifile,'ColumnName', {'LNr     ',...
-        'Emax   ',...
-        'dEmax    ',...
-        'Iint      ',...
-        'Ib      ',...
-        'tth     ',...
-        'phiP   ',...
-        'psiP   ',...
-        'etaP  ',...
-        'xdiff   ',...
-        'ydiff   ',...
-        'zdiff   ',...
-        'RT  ',...
-        'DT   ',...
-        'temp1   ',...
-        'temp2   ',...
-        'heatrate   ',...
-        'Time   ',...
-        'PeakCount   ',...
-        });
-    else
-        set(h.tablepsifile,'ColumnName', {'LNr     ',...
-        'Emax   ',...
-        'dEmax    ',...
-        'Iint      ',...
-        'Ib      ',...
-        'tth     ',...
-        'phiP   ',...
-        'psiP   ',...
-        'etaP  ',...
-        'xdiff   ',...
-        'ydiff   ',...
-        'zdiff   ',...
-        'PeakCount   ',...
-        });
-
-    end
+%     if h.SpecFileCheck == 1
+%         set(h.tablepsifile,'ColumnName', {'LNr',...
+%         'Emax',...
+%         'dEmax',...
+%         'Iint',...
+%         'Ib',...
+%         'tth',...
+%         'phiP',...
+%         'psiP',...
+%         'etaP',...
+%         'h',...
+%         'k',...
+%         'l',...
+%         'xdiff',...
+%         'ydiff',...
+%         'zdiff',...
+%         'RT',...
+%         'DT',...
+%         'temp1',...
+%         'temp2',...
+%         'heatrate',...
+%         'Time',...
+%         'PeakCount',...
+%         });
+%     else
+%         set(h.tablepsifile,'ColumnName', {'LNr',...
+%         'Emax',...
+%         'dEmax',...
+%         'Iint',...
+%         'Ib',...
+%         'tth',...
+%         'phiP',...
+%         'psiP',...
+%         'etaP',...
+%         'h',...
+%         'k',...
+%         'l',...
+%         'xdiff',...
+%         'ydiff',...
+%         'zdiff',...
+%         'PeakCount',...
+%         });
+%     end
 end
 
 % Messagebox
@@ -12102,8 +13133,8 @@ msgbox('Diffraction Peaks created.');
 
 % f = fieldnames(h);
 % assignin('base','fieldnamesLoadPsi',f)
-
-% assignin('base','PsiFileTableData',h.PsiFileTableData)
+assignin('base','h',h)
+% assignin('base','PsiFileTableData',h.PsiFileTableDataDet2)
 % set(h.SliderPlotfitdata1,'callback',{@SliderCallbackPlotfitdata1, h})
 % set(h.popupmenuXData1,'callback',{@CallbackpopupmenuXData1, h})
 % set(h.popupmenuYData1,'callback',{@CallbackpopupmenuYData1, h})
@@ -12146,7 +13177,7 @@ if exist(Path,'dir') ~= 7
     mkdir(Path);
 end
 
-if strcmp(h.Diffsel,'LEDDI') %&& FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') %&& FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1') 
         [FileName,PathName] = uiputfile('*.psi','Save Psi file',[Path,...
                           strtrim(h.Measurement(1).MeasurementSeries),'_',h.Sample.Materials.Name,'_','Det1']);
@@ -12174,7 +13205,8 @@ set(hObj,'str','Saving','backg',[1 .6 .6]) % Change color of button.
 pause(.01)
                   
 PsiFileTableData = get(h.tablepsifile,'data');
-% assignin('base','tablepsifile',h.tablepsifile)
+% assignin('base','htablepsifile',h.tablepsifile)
+% assignin('base','PsiFileTableData',PsiFileTableData)
 % Convert cell to array (datestr converts to NaN)
 DiffractionLines = str2double(PsiFileTableData);
 if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
@@ -12182,7 +13214,7 @@ if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFit
     % Convert date string to date number
     % Find column with date
     if h.SpecFileCheck == 1
-        Index_date = find(strcmp('Time   ',h.tablepsifile.ColumnName)==1);
+        Index_date = find(strcmp('Time',h.tablepsifile.ColumnName)==1);
         date = zeros(1,size(PsiFileTableData,1));
         for i = 1:size(PsiFileTableData,1)
             date(:,i) = datenum(PsiFileTableData{i,Index_date},'dd-mm-yyyy-HH-MM-SS');
@@ -12196,7 +13228,7 @@ elseif h.P.PopupValueFitFunc == 3
     %TCH-Func
     if h.SpecFileCheck == 1
         % Find column with date
-        Index_date = find(strcmp('Time   ',h.tablepsifile.ColumnName)==1);
+        Index_date = find(strcmp('Time',h.tablepsifile.ColumnName)==1);
         date = zeros(1,size(PsiFileTableData,1));
         % Convert date string to date number
         for i = 1:size(PsiFileTableData,1)
@@ -12251,6 +13283,12 @@ function buttoncreatepsi3(hObj, ~)
 % Callback for open table to select peaks 
 h = guidata(hObj);
 
+Detstr = get(h.popupmenuselectmeas1,'String');
+Detval = get(h.popupmenuselectmeas1,'Value');
+Detsel = Detstr{Detval};
+h.Detsel = Detsel;
+
+
 % Check if peaks where already fitted (in case User clicks on this button
 % before peaks were fitted)
 if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'FittedPeaksDet2')
@@ -12258,47 +13296,60 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
     FitDatatmp = get(h.tablefitresults,'data');
     % Load energy positions
     EnergyPos = str2double(FitDatatmp(:,3));
-    % Check whether peaks where already selected
-    if ~isfield(h,'idxSelectPeaktable')
-        h.idxSelectPeaktable = logical(ones(length(EnergyPos),1));
-    end
 
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             a = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
-            PeaksTheo = h.TPeaksDet1.T.hkl_sort.*a;
+            PeaksTheo = h.TPeaksDet1.T.Peaks.*a;
             PeaksTheo( ~any(PeaksTheo,2), : ) = [];
             hkltmp = PeaksTheo(h.FitPeaksLogicalDet1(:,1),1:3);
+            if ~isfield(h,'idxSelectPeaktableDet1')
+                h.idxSelectPeaktableDet1 = logical(ones(length(EnergyPos),1));
+            end
+            if isfield(h,'idxSelectPeaktableDet1')
+                if size(h.idxSelectPeaktableDet1,2) ~= length(EnergyPos)
+                    h.idxSelectPeaktableDet1 = logical(ones(length(EnergyPos),1));
+                end
+            end
+
         elseif strcmp(h.Detsel,'Detector 2')
             a = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
-            PeaksTheo = h.TPeaksDet2.T.hkl_sort.*a;
+            PeaksTheo = h.TPeaksDet2.T.Peaks.*a;
             PeaksTheo( ~any(PeaksTheo,2), : ) = [];
             hkltmp = PeaksTheo(h.FitPeaksLogicalDet2(:,1),1:3);
+            if ~isfield(h,'idxSelectPeaktableDet2')
+                h.idxSelectPeaktableDet2 = logical(ones(length(EnergyPos),1));
+            end
+            if isfield(h,'idxSelectPeaktableDet2')
+                if size(h.idxSelectPeaktableDet2,2) ~= length(EnergyPos)
+                    h.idxSelectPeaktableDet2 = logical(ones(length(EnergyPos),1));
+                end
+            end
         end
+
     elseif strcmp(h.Diffsel,'ETA3000')
+        % Check whether peaks where already selected
+        if ~isfield(h,'idxSelectPeaktable')
+            h.idxSelectPeaktable = logical(ones(length(EnergyPos),1));
+        end
         a = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
         PeaksTheo = h.TPeaks.T.Peaks.*a;
-        PeaksTheo( ~any(PeaksTheo,2), : ) = [];
-%         assignin('base','PeaksTheo',PeaksTheo)
-        
+        PeaksTheo( ~any(PeaksTheo,2), : ) = [];        
         hkltmp = PeaksTheo(h.FitPeaksLogical(:,1),1:3);
     else
-%         assignin('base','hTPeaks',h.TPeaks)
-%         assignin('base','hFitPeaksLogical',h.FitPeaksLogical)
+        % Check whether peaks where already selected
+        if ~isfield(h,'idxSelectPeaktable')
+            h.idxSelectPeaktable = logical(ones(length(EnergyPos),1));
+        end
         a = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
-%         assignin('base','aind',a)
         PeaksTheo = h.TPeaks.T.Peaks.*a;
         PeaksTheo( ~any(PeaksTheo,2), : ) = [];
-%         assignin('base','PeaksTheo1',PeaksTheo)
         hkltmp = PeaksTheo(h.FitPeaksLogical(:,1),1:3);
-%         assignin('base','hkltmp',hkltmp)
     end
-%     assignin('base','EnergyPos',EnergyPos)
-%     assignin('base','hkltmp',hkltmp)
+
     n = 1;
     hkl_table = zeros(size(EnergyPos,1),3);
-    
-%     assignin('base','hMinVal',h.MinVal)
+
 %     for k = 1:size(EnergyPos,1)
 %         if h.MinVal(k) >= 0.5
 %             hkl_table(k,:) = [NaN NaN NaN];
@@ -12309,14 +13360,30 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
 %     end
 
     % Calculate differences between theoretical and user defined peaks.
-    for k = 1:size(h.Peaks{1},2)
-        for l = 1:size(PeaksTheo,1)
-            PeakDiff{k,l} = abs(h.Peaks{1}(k)-PeaksTheo(l,5));
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            for k = 1:size(h.PeaksDet1{1},2)
+                for l = 1:size(PeaksTheo,1)
+                    PeakDiff{k,l} = abs(h.PeaksDet1{1}(k)-PeaksTheo(l,5));
+                end
+            end
+        elseif strcmp(h.Detsel,'Detector 2')
+            for k = 1:size(h.PeaksDet2{1},2)
+                for l = 1:size(PeaksTheo,1)
+                    PeakDiff{k,l} = abs(h.PeaksDet2{1}(k)-PeaksTheo(l,5));
+                end
+            end
+        end
+    else
+        for k = 1:size(h.Peaks{1},2)
+            for l = 1:size(PeaksTheo,1)
+                PeakDiff{k,l} = abs(h.Peaks{1}(k)-PeaksTheo(l,5));
+            end
         end
     end
-%     assignin('base','PeakDiff',PeakDiff)
+
     [MinVal, IndVal] = min(cell2mat(PeakDiff)');
-%     assignin('base','MinVal',MinVal)
+
     if size(PeaksTheo,1) == 1
         MinVal = cell2mat(PeakDiff);
         MinValLimit_tmp = sort(cell2mat(PeakDiff));
@@ -12335,19 +13402,827 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
         end
     end
        
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 
-    h.hkltablepsifile = hkl_table;
-%     assignin('base','hkl_table',hkl_table)
-%     assignin('base','EnergyPos',EnergyPos)
-%     assignin('base','hidxSelectPeaktable',h.idxSelectPeaktable)
-    set(h.SelectPeaktable,'data',[num2cell(hkl_table(:,1)) num2cell(hkl_table(:,2)) num2cell(hkl_table(:,3)) num2cell(EnergyPos) num2cell(h.idxSelectPeaktable)])
+        if strcmp(h.Detsel,'Detector 1')
+            set(h.SelectPeaktable,'data',[num2cell(hkl_table(:,1)) num2cell(hkl_table(:,2)) num2cell(hkl_table(:,3)) num2cell(EnergyPos) num2cell(h.idxSelectPeaktableDet1)])
+        elseif strcmp(h.Detsel,'Detector 2')
+            set(h.SelectPeaktable,'data',[num2cell(hkl_table(:,1)) num2cell(hkl_table(:,2)) num2cell(hkl_table(:,3)) num2cell(EnergyPos) num2cell(h.idxSelectPeaktableDet2)])
+        end
+    else
+        set(h.SelectPeaktable,'data',[num2cell(hkl_table(:,1)) num2cell(hkl_table(:,2)) num2cell(hkl_table(:,3)) num2cell(EnergyPos) num2cell(h.idxSelectPeaktable)])
+    end
 end    
+
 % Make figure visible
 set(h.figSelectPeaktable,'Visible','on')
 
 guidata(hObj, h);
 
-function buttonSelectPeaktableok(hObj, ~, ~)
+function buttonTextureAnalysis(hObj, ~)
+% Callback for open table to select peaks 
+h = guidata(hObj);
+
+% Make figure visible
+set(h.figTextureAnalysis,'Visible','on')
+
+% Load table data with theoretical peak positions
+data = get(h.tablephasehkl,'data');
+set(h.tablephasehklTexture,'data',data)
+
+guidata(hObj, h);
+
+function SelectDetectorCallbackTex(hObj,~)
+% Callback for "Select detector menu" in select measurement panel that
+% allows to switch between data of the two detectors
+% h = guidata(hObj);
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data);
+% Determine the selected detector
+val = get(hObj, 'Value');
+DetectorLEDDIselected = val;
+
+set(h.checkboxFilterTheoPeaks,'Value',0)
+
+% If detector 1 has been selected
+if DetectorLEDDIselected == 2
+    Slidersteps = 2:2:length(h.Measurement);
+    % Set plot data
+    if ~isfield(h,'XDataDet1')
+        for k = 1:size(Slidersteps,2)
+            XDataDet1tmp{k} = h.DataTmp{Slidersteps(k)}(:,1);
+            YDataDet1tmp{k} = h.DataTmp{Slidersteps(k)}(:,2);
+        end
+    
+        h.XDataDet1 = cell2mat(XDataDet1tmp);
+        h.YDataDet1 = cell2mat(YDataDet1tmp);
+    end
+
+    set(h.plotTexturedata,'xdata',h.XDataDet1(:))
+    set(h.plotTexturedata,'ydata',h.YDataDet1(:))
+    % Set XLim and YLim, depending whether an energy range has been defined
+    % by the user
+    if isfield(h,'EminDet1')
+        h.axesplotRawDataTexture.XLim = [h.EminDet1, h.EmaxDet1];
+        h.axesplotPeakDataTextureDet1.XLim = [h.EminDet1, h.EmaxDet1];
+    else    
+        h.axesplotRawDataTexture.XLim = [ceil(min(h.DataTmp{Slidersteps(1)}(:,1))) 60];
+        h.axesplotPeakDataTextureDet1.XLim = [ceil(min(h.DataTmp{Slidersteps(1)}(:,1))) 60];
+    end
+    h.axesplotRawDataTexture.YLim = [0 round(max(h.YDataDet1, [], 'all'),-1)];
+
+    % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
+    h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+
+    if isfield(h, 'EminDet1')
+        a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+    else
+        a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
+    end
+    
+    X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+    Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+%     assignin('base','TPeaksDet1',h.TPeaksDet1)
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    set(h.plotEtheoTexture, 'Color', 'red');
+
+    TableBkgColor = [1 1 1];
+    TableBkgColorArrayDet1 = repmat(TableBkgColor,size(a,1),1);
+    set(h.tablephasehklTexture,'BackgroundColor',TableBkgColorArrayDet1)
+    if isfield(h,'TableBkgColorArrayDet1')
+        set(h.tablephasehklTexture,'BackgroundColor',h.TableBkgColorArrayDet1)
+    end
+
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet1.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet1.T.Peaks(a,:)),1),1))])
+    % Set YLim of theoretical peaks and set user defined energy range in
+    % the GUI, depending whether an energy range has been defined by the
+    % user
+    if isfield(h, 'EminDet1')
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet1, [], 'all'),-1)/max(Y3Limit(:,1))))
+        h.axesplotRawDataTexture.YLim =[-Inf round(max(h.YDataDet1, [], 'all'),-1)];
+        h.axesplotPeakDataTextureDet1.YLim =[-Inf round(max(h.YDataDet1, [], 'all'),-1)];
+        % Set GUI fields for energy range
+        set(h.SelectEmin,'String',num2str(floor(h.EminDet1)))
+        set(h.SelectEmax,'String',num2str(floor(h.EmaxDet1)))
+    else
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet1, [], 'all'),-1)/max(h.TPeaksDet1.T.Y3(:,1))*0.9))
+        h.axesplotRawDataTexture.YLim =[-Inf round(max(h.YDataDet1, [], 'all'),-1)];
+        h.axesplotPeakDataTextureDet1.YLim =[-Inf round(max(h.YDataDet1, [], 'all'),-1)];
+    end
+    assignin('base','axesplotPeakDataTextureDet1',h.axesplotPeakDataTextureDet1)
+    assignin('base','axesplotRawDataTexture',h.axesplotRawDataTexture)
+    set(h.editchangetwothetaTex,'String',num2str(h.Measurement(Slidersteps(1)).twotheta));
+
+    % Rohdaten sichtbar machen, falls noch nicht gefittet wurde
+    if length(h.axesplotPeakDataTextureDet1.Children) > 1
+        % Achse Det1 unsichtbar machen (da sonst doppelte Achsen)
+        set(h.axesplotPeakDataTextureDet1,'Visible','off')
+        % Alle Plots sichtbar machen, falls vorher unsichtbar gemacht
+        set(findall(h.axesplotPeakDataTextureDet1, 'type', 'line'), 'visible', 'on')
+        % Achse von Det2 unsichtbar machen
+        set(h.axesplotPeakDataTextureDet2,'Visible','off')
+        % Alle Plots von Det2 unsichtbar machen, falls vorher sichtbar gemacht
+        set(findall(h.axesplotPeakDataTextureDet2, 'type', 'line'), 'visible', 'off')
+        % Rohdaten sichtbar machen
+        set(h.axesplotRawDataTexture,'Visible','on')
+        set(h.plotTexturedata,'Visible','on')
+    else
+        set(h.axesplotPeakDataTextureDet1,'Visible','off')
+        set(findall(h.axesplotPeakDataTextureDet1, 'type', 'line'), 'visible', 'off')
+        set(h.axesplotPeakDataTextureDet2,'Visible','off')
+        set(findall(h.axesplotPeakDataTextureDet2, 'type', 'line'), 'visible', 'off')
+        set(h.axesplotRawDataTexture,'Visible','on')
+        set(h.plotTexturedata,'Visible','on')
+    end
+% If detector 2 has been selected
+elseif DetectorLEDDIselected == 3
+    Slidersteps = 1:2:length(h.Measurement);
+    % Set plot data
+    if ~isfield(h,'XDataDet2')
+        for k = 1:size(Slidersteps,2)
+            XDataDet2tmp{k} = h.DataTmp{Slidersteps(k)}(:,1);
+            YDataDet2tmp{k} = h.DataTmp{Slidersteps(k)}(:,2);
+        end
+    
+        h.XDataDet2 = cell2mat(XDataDet2tmp);
+        h.YDataDet2 = cell2mat(YDataDet2tmp);
+    end
+    set(h.plotTexturedata,'xdata',h.XDataDet2(:))
+    set(h.plotTexturedata,'ydata',h.YDataDet2(:))
+    % Set XLim and YLim, depending whether an energy range has been defined
+    % by the user
+    if isfield(h,'EminDet2')
+        h.axesplotRawDataTexture.XLim = [h.EminDet2, h.EmaxDet2];
+        h.axesplotPeakDataTextureDet2.XLim = [h.EminDet2, h.EmaxDet2];
+    else  
+        h.axesplotRawDataTexture.XLim = [ceil(min(h.DataTmp{Slidersteps(1)}(:,1))) 60];
+        h.axesplotPeakDataTextureDet2.XLim = [ceil(min(h.DataTmp{Slidersteps(1)}(:,1))) 60];
+    end
+    h.axesplotRawDataTexture.YLim = [0 round(max(h.YDataDet2, [], 'all'),-1)];
+    h.axesplotPeakDataTextureDet2.YLim = [0 round(max(h.YDataDet2, [], 'all'),-1)];
+
+    % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
+    h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+
+    if isfield(h, 'EminDet2')
+        a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+    else
+        a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+    end
+    
+    X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+    Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    set(h.plotEtheoTexture, 'Color', 'red');
+
+    TableBkgColor = [1 1 1];
+    TableBkgColorArrayDet2 = repmat(TableBkgColor,size(a,1),1);
+    set(h.tablephasehklTexture,'BackgroundColor',TableBkgColorArrayDet2)
+    if isfield(h,'TableBkgColorArrayDet2')
+        set(h.tablephasehklTexture,'BackgroundColor',h.TableBkgColorArrayDet2)
+    end
+
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet2.T.Peaks(a,:)),1),1))])
+    % Set YLim of theoretical peaks and set user defined energy range in
+    % the GUI, depending whether an energy range has been defined by the
+    % user
+    if isfield(h, 'EminDet2')
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet2, [], 'all'),-1)/max(Y3Limit(:,1))))
+        h.axesplotRawDataTexture.YLim =[-Inf round(max(h.YDataDet2, [], 'all'),-1)];
+        h.axesplotPeakDataTextureDet2.YLim =[-Inf round(max(h.YDataDet2, [], 'all'),-1)];
+        % Set GUI fields for energy range
+        set(h.SelectEmin,'String',num2str(floor(h.EminDet2)))
+        set(h.SelectEmax,'String',num2str(floor(h.EmaxDet2)))
+    else
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet2, [], 'all'),-1)/max(h.TPeaksDet2.T.Y3(:,1))*0.9))
+        h.axesplotRawDataTexture.YLim =[-Inf round(max(h.YDataDet2, [], 'all'),-1)];
+        h.axesplotPeakDataTextureDet2.YLim =[-Inf round(max(h.YDataDet2, [], 'all'),-1)];
+    end
+
+    set(h.editchangetwothetaTex,'String',num2str(h.Measurement(Slidersteps(1)).twotheta));
+
+    % Rohdaten sichtbar machen, falls noch nicht gefittet wurde
+    if length(h.axesplotPeakDataTextureDet2.Children) > 1
+        % Achse Det1 unsichtbar machen (da sonst doppelte Achsen)
+        set(h.axesplotPeakDataTextureDet2,'Visible','off')
+        % Alle Plots sichtbar machen, falls vorher unsichtbar gemacht
+        set(findall(h.axesplotPeakDataTextureDet2, 'type', 'line'), 'visible', 'on')
+        % Achse von Det2 unsichtbar machen
+        set(h.axesplotPeakDataTextureDet1,'Visible','off')
+        % Alle Plots von Det2 unsichtbar machen, falls vorher sichtbar gemacht
+        set(findall(h.axesplotPeakDataTextureDet1, 'type', 'line'), 'visible', 'off')
+        % Rohdaten sichtbar machen
+        set(h.axesplotRawDataTexture,'Visible','on')
+        set(h.plotTexturedata,'Visible','on')
+    else
+        set(h.axesplotPeakDataTextureDet1,'Visible','off')
+        set(findall(h.axesplotPeakDataTextureDet1, 'type', 'line'), 'visible', 'off')
+        set(h.axesplotPeakDataTextureDet2,'Visible','off')
+        set(findall(h.axesplotPeakDataTextureDet2, 'type', 'line'), 'visible', 'off')
+        set(h.axesplotRawDataTexture,'Visible','on')
+        set(h.plotTexturedata,'Visible','on')
+    end
+end
+
+guidata(h1data,h);
+
+function buttonSelectERange(~, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data);
+
+Emin = str2double(get(h.SelectEmin,'String'));
+Emax = str2double(get(h.SelectEmax,'String'));
+
+% Determine the selected detector
+val = get(h.PopupMenuSelectDetTexture, 'Value');
+DetectorLEDDIselected = val;
+
+if DetectorLEDDIselected == 2
+    EminXdataDet1 = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{1}(:,1),[Emin,Emax]);
+    Slidersteps = 2:2:length(h.Measurement);
+    % Set plot data
+    for k = 1:size(Slidersteps,2)
+        XDataDet1tmp{k} = h.DataTmp{Slidersteps(k)}(EminXdataDet1(1):EminXdataDet1(2),1);
+        YDataDet1tmp{k} = h.DataTmp{Slidersteps(k)}(EminXdataDet1(1):EminXdataDet1(2),2);
+    end
+
+    h.XDataDet1 = cell2mat(XDataDet1tmp);
+    h.YDataDet1 = cell2mat(YDataDet1tmp);
+
+    set(h.plotTexturedata,'xdata',h.XDataDet1(:))
+    set(h.plotTexturedata,'ydata',h.YDataDet1(:))
+
+    h.EminDet1 = Emin;
+    h.EmaxDet1 = Emax;
+    h.axesplotRawDataTexture.XLim = [h.EminDet1, h.EmaxDet1];
+    h.axesplotPeakDataTextureDet1.XLim = [h.EminDet1, h.EmaxDet1];
+
+    a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet1.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet1.T.Peaks(a,:)),1),1))])
+
+elseif DetectorLEDDIselected == 3
+    EminXdataDet2 = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{1}(:,1),[Emin,Emax]);
+    Slidersteps = 1:2:length(h.Measurement);
+    % Set plot data
+    for k = 1:size(Slidersteps,2)
+        XDataDet2tmp{k} = h.DataTmp{Slidersteps(k)}(EminXdataDet2(1):EminXdataDet2(2),1);
+        YDataDet2tmp{k} = h.DataTmp{Slidersteps(k)}(EminXdataDet2(1):EminXdataDet2(2),2);
+    end
+
+    h.XDataDet2 = cell2mat(XDataDet2tmp);
+    h.YDataDet2 = cell2mat(YDataDet2tmp);
+    
+    set(h.plotTexturedata,'xdata',h.XDataDet2(:))
+    set(h.plotTexturedata,'ydata',h.YDataDet2(:))
+
+    h.EminDet2 = Emin;
+    h.EmaxDet2 = Emax;
+    h.axesplotRawDataTexture.XLim = [h.EminDet2, h.EmaxDet2];
+    h.axesplotPeakDataTextureDet2.XLim = [h.EminDet2, h.EmaxDet2];
+
+    a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+    
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet2.T.Peaks(a,:)),1),1))])
+    d = set(h.tablephasehklTexture,'data');
+end
+
+guidata(h1data, h);
+
+function buttonDefinePeaks(hObj, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data);
+
+k = msgbox('Please add the peaks you want to fit. Confirm by Enter.');
+% Wait for user to press ok
+uiwait(k);
+% Show explanatory text for definitioin of background points
+h.textbkg = text('Units','normalized','Position',[0.3 0.95 0],...
+    'BackgroundColor',[1 1 1],'EdgeColor', [0 0 0], ...
+    'String','Push \textbf{enter} to resume | \textbf{return} to undo',...
+    'interpreter','latex','FontSize', 16);
+
+% Determine the selected detector
+val = get(h.PopupMenuSelectDetTexture, 'Value');
+DetectorLEDDIselected = val;
+
+% Daten bereitstellen, je nachdem welcher Detektor ausgewaehlt wurde
+if DetectorLEDDIselected == 2
+    XDataMod = h.XDataDet1;
+    YDataMod = h.YDataDet1;
+elseif DetectorLEDDIselected == 3
+    XDataMod = h.XDataDet2;
+    YDataMod = h.YDataDet2;
+end
+% assignin('base','XDataMod',XDataMod)
+% assignin('base','YDataMod',YDataMod)
+
+[UserPeaks,~] = getpts(h.axesplotRawDataTexture);
+% assignin('base','UserPeaks',h.UserPeaks)
+
+col = get(hObj,'backg');  % Get the background color of the figure.
+set(hObj,'str','Peak fitting in progress...','backg',[1 .6 .6]) % Change color of button. 
+% The pause (or drawnow) is necessary to make button changes appear.
+pause(.01)
+
+% Set mouse pointer to loading symbol
+set(h.figTextureAnalysis,'Pointer','watch');
+drawnow()
+
+PeakPosXData = Tools.Data.DataSetOperations.FindNearestIndex(XDataMod(:,1),UserPeaks');
+
+% Um die Peakmaxima sicher zu erwischen, den bestimmten Max-Wert um 10 - 20 
+% x-Schritte erweitern
+
+for k = 1:length(PeakPosXData)
+	tmp = PeakPosXData(k)-15:PeakPosXData(k)+15;
+	PeakPosXDataMod_tmp(:,k) = tmp;
+end
+
+% Vektor erstellen
+% PeakPosXDataMod_tmp = reshape(PeakPosXDataMod_tmp,[],1);
+
+% Maximum in y-Daten des jeweiligen x-Wertebereichs finden und das als 
+% PeakPosXDataMod setzen
+
+for l = 1:size(YDataMod,2)
+    for k = 1:size(PeakPosXDataMod_tmp,2)
+        [YDataModMax(k,l) YDataModMaxInd(k,l)] = max(YDataMod(PeakPosXDataMod_tmp(:,k),l));
+        % Max Werte für jede einzelne Position in PeakPosXDataMod_tmp. Dient dazu, PeakMaxima besser zu filtern und nicht nur einen Untergrund Ausreißer zu erwischen.
+        YDataModMaxAll{k,l} = YDataMod(PeakPosXDataMod_tmp(:,k),l);
+    end
+end
+
+for k = 1:size(YDataModMaxAll,2)
+    for l = 1:size(YDataModMaxAll,1)
+        if YDataModMaxInd(l,k) > 26
+            YDataModMaxMeanLimit{l,k} = mean(YDataModMaxAll{l,k}(([YDataModMaxInd(l,k)-5:YDataModMaxInd(l,k),[YDataModMaxInd(l,k):YDataModMaxInd(l,k)+[size(YDataModMaxAll{1},1) - YDataModMaxInd(l,k)]]])));
+        elseif YDataModMaxInd(l,k) < 6 
+            YDataModMaxMeanLimit{l,k} = mean(YDataModMaxAll{l,k}(([YDataModMaxInd(l,k)-[YDataModMaxInd(l,k)-1]:YDataModMaxInd(l,k),[YDataModMaxInd(l,k):YDataModMaxInd(l,k)+5]])));
+        else
+            YDataModMaxMeanLimit{l,k} = mean(YDataModMaxAll{l,k}(([YDataModMaxInd(l,k)-5:YDataModMaxInd(l,k),[YDataModMaxInd(l,k):YDataModMaxInd(l,k)+5]])));
+        end
+    end
+end
+
+Peaks = UserPeaks; %cell2mat(hPeaks')';
+
+% User defined value for min. mean value of intensity in order to filter
+% peak maxima.
+
+Ymean = str2double(get(h.editYmeanInt,'String'));
+
+PeakHitsNeu = cell2mat(YDataModMaxMeanLimit) >= Ymean;
+
+PeaksForFit = Peaks.*PeakHitsNeu;
+
+for k = 1:size(PeaksForFit,2)
+    PeaksPosFit{k} = nonzeros(PeaksForFit(:,k));
+end
+
+if DetectorLEDDIselected == 2
+    h.UserPeaksDet1 = UserPeaks;
+    h.PeakHitsNeuDet1 = cell2mat(YDataModMaxMeanLimit) >= Ymean;
+    h.PeaksForFitDet1 = Peaks.*PeakHitsNeu;
+elseif DetectorLEDDIselected == 3
+    h.UserPeaksDet2 = UserPeaks;
+    h.PeakHitsNeuDet2 = cell2mat(YDataModMaxMeanLimit) >= Ymean;
+    h.PeaksForFitDet2 = Peaks.*PeakHitsNeu;
+end
+
+%Extract peaks for fitting
+for k = 1:size(PeaksPosFit,2)
+    for l = 1:size(PeaksPosFit{k},1)
+%         hold on
+        XDataPeaks{k}(:,l) = XDataMod([Tools.Data.DataSetOperations.FindNearestIndex(XDataMod(:,1),PeaksPosFit{k}(l))-100]:[Tools.Data.DataSetOperations.FindNearestIndex(XDataMod(:,1),PeaksPosFit{k}(l))+100],k);
+        YDataPeaks{k}(:,l) = YDataMod([Tools.Data.DataSetOperations.FindNearestIndex(XDataMod(:,1),PeaksPosFit{k}(l))-100]:[Tools.Data.DataSetOperations.FindNearestIndex(XDataMod(:,1),PeaksPosFit{k}(l))+100],k);
+        [FitParam{k}(:,l), ~, ~] = Tools.Data.Fitting.FP_PseudoVoigt(XDataPeaks{k}(:,l),YDataPeaks{k}(:,l),Tools.Data.DataSetOperations.FindNearestIndex(XDataPeaks{k}(:,l),PeaksPosFit{k}(l)),0.25);
+        SinglePlot{k}(:,l) = Tools.Science.Math.FF_PseudoVoigt(XDataPeaks{k}(:,l), FitParam{k}(1,l), FitParam{k}(2,l), FitParam{k}(3,l),FitParam{k}(4,l));
+        p = FitParam{k}(:,l);
+        fun = @(x)Tools.Science.Math.FF_PseudoVoigt(x,p(1),p(2),p(3),p(4));
+        if DetectorLEDDIselected == 2
+            plot(h.axesplotPeakDataTextureDet1,XDataPeaks{k}(:,l),YDataPeaks{k}(:,l),'o',XDataPeaks{k}(:,l),SinglePlot{k}(:,l))
+            hold(h.axesplotPeakDataTextureDet1,'on')
+            h.IntegralTextDataDet1{k}(:,l) = integral(@(x) fun(x),XDataPeaks{k}(1,l),XDataPeaks{k}(end,l));
+        elseif DetectorLEDDIselected == 3
+            plot(h.axesplotPeakDataTextureDet2,XDataPeaks{k}(:,l),YDataPeaks{k}(:,l),'o',XDataPeaks{k}(:,l),SinglePlot{k}(:,l))
+            hold(h.axesplotPeakDataTextureDet2,'on')
+            h.IntegralTextDataDet2{k}(:,l) = integral(@(x) fun(x),XDataPeaks{k}(1,l),XDataPeaks{k}(end,l));
+        end
+    end
+end
+
+% Compare user defined peaks and theoretical peak positons and
+% mark the respective peaks in the phase data table
+
+if DetectorLEDDIselected == 2
+    if isfield(h, 'EminDet1')
+        a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+    else
+        a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
+    end
+    PeaksTheo = h.TPeaksDet1.T.Peaks(:,5).*a;
+    PeaksTheo(PeaksTheo==0) = [];
+    
+    TableBkgColor = [1 0.6 0.6];
+    TableBkgColorArrayDet1 = repmat(TableBkgColor,size(PeaksTheo,1),1);
+    Peaks_tmp{1} = UserPeaks';
+    [CompareFitPeaksLogical,~,~,~] = ComparePeaks(Peaks_tmp,PeaksTheo);
+    CompareFitPeaksLogical = double(CompareFitPeaksLogical);
+    % Repmat of logical vector in order to match size of T.Peaks array
+    TableBkgColorArrayDet1 = TableBkgColorArrayDet1.*CompareFitPeaksLogical;
+    TableBkgColorArrayDet1(TableBkgColorArrayDet1==0) = 1;
+    h.TableBkgColorArrayDet1 = TableBkgColorArrayDet1; 
+    set(h.tablephasehklTexture,'BackgroundColor',h.TableBkgColorArrayDet1)
+    % Set hkl table data. Set checkboxes according to user selected peaks.
+    tabledata = get(h.tablephasehklTexture,'data');
+    tabledata(1:end,6) = num2cell(logical(CompareFitPeaksLogical(:,1)));
+    set(h.tablephasehklTexture,'data',tabledata)
+
+elseif DetectorLEDDIselected == 3
+    if isfield(h, 'EminDet2')
+        a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+    else
+        a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+    end
+    PeaksTheo = h.TPeaksDet2.T.Peaks(:,5).*a;
+    PeaksTheo(PeaksTheo==0) = [];
+    
+    TableBkgColor = [1 0.6 0.6];
+    TableBkgColorArrayDet2 = repmat(TableBkgColor,size(PeaksTheo,1),1);
+    % Erstelle cell array fuer Uebergabe an ComparePeaks
+    Peaks_tmp{1} = UserPeaks';
+    [CompareFitPeaksLogical,~,~,~] = ComparePeaks(Peaks_tmp,PeaksTheo);
+    CompareFitPeaksLogical = double(CompareFitPeaksLogical);
+    % Repmat of logical vector in order to match size of T.Peaks array
+    TableBkgColorArrayDet2 = TableBkgColorArrayDet2.*CompareFitPeaksLogical;
+    TableBkgColorArrayDet2(TableBkgColorArrayDet2==0) = 1;
+    h.TableBkgColorArrayDet2 = TableBkgColorArrayDet2; 
+    set(h.tablephasehklTexture,'BackgroundColor',h.TableBkgColorArrayDet2)
+    % Set hkl table data. Set checkboxes according to user selected peaks.
+    tabledata = get(h.tablephasehklTexture,'data');
+    assignin('base','tabledata',tabledata)
+    tabledata(1:end,6) = num2cell(logical(CompareFitPeaksLogical(:,1)));
+    set(h.tablephasehklTexture,'data',tabledata)
+end
+
+% Set explanatory text visible off
+set(h.textbkg,'Visible','off')
+
+% Set mouse pointer back to arrow
+set(h.figTextureAnalysis,'Pointer','arrow');
+
+% Reset the button color
+set(hObj,'str','Define Peaks and start fitting','backg',col)  % Now reset the button features.
+
+msgbox('Fitting of peaks finished.');
+
+guidata(h1data, h);
+
+function buttonExportNJAFiles(hObj, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data);
+
+col = get(hObj,'backg');  % Get the background color of the figure.
+set(hObj,'str','Exporting nja-files','backg',[1 .6 .6]) % Change color of button. 
+% The pause (or drawnow) is necessary to make button changes appear.
+pause(.01)
+
+% Set mouse pointer to loading symbol
+set(h.figTextureAnalysis,'Pointer','watch');
+drawnow()
+
+% Determine the selected detector
+val = get(h.PopupMenuSelectDetTexture, 'Value');
+DetectorLEDDIselected = val;
+
+% FolderName
+FolderName = strtrim(h.Measurement(1).MeasurementSeries);
+
+% Daten bereitstellen, je nachdem welcher Detektor ausgewaehlt wurde
+if DetectorLEDDIselected == 2
+    % Prepare results
+    % Slidersteps according to detector used
+    Slidersteps = 2:2:length(h.Measurement);
+    FileName = [strtrim(h.Measurement(1).MeasurementSeries),'-Det1-Textur'];
+    IntegralTextData = h.IntegralTextDataDet1;
+    UserPeaks = h.UserPeaksDet1;
+    PeakHitsNeu = h.PeakHitsNeuDet1;
+    PeaksForFit = h.PeaksForFitDet1;
+elseif DetectorLEDDIselected == 3
+    Slidersteps = 1:2:length(h.Measurement);
+    FileName = [strtrim(h.Measurement(1).MeasurementSeries),'-Det2-Textur'];
+    IntegralTextData = h.IntegralTextDataDet2;
+    UserPeaks = h.UserPeaksDet2;
+    PeakHitsNeu = h.PeakHitsNeuDet2;
+    PeaksForFit = h.PeaksForFitDet2;
+end
+
+for k = 1:length(Slidersteps)
+    phi(k) = h.Measurement(Slidersteps(k)).Motors_all.Phi;
+    psi(k) = h.Measurement(Slidersteps(k)).Motors_all.Chi;
+end
+
+psifordatafile = unique(psi);
+phifordatafile = unique(phi);
+
+psirepmat = reshape(repmat(psifordatafile,length(phifordatafile),1),[],1);
+phirepmat = reshape(repmat(phifordatafile,1,length(psifordatafile)),[],1);
+
+texturedatanja_tmp = [psirepmat phirepmat zeros(length(psirepmat),1) zeros(length(psirepmat),1)];
+%
+phirepmat1 = repmat(phi,length(UserPeaks),1);
+psirepmat1 = repmat(psi,length(UserPeaks),1);
+
+% Create matrix with phi-psi-PeakPosData
+TextureData_tmp = [psirepmat1(PeakHitsNeu) phirepmat1(PeakHitsNeu) [IntegralTextData{:}]' PeaksForFit(PeakHitsNeu)];
+TextureData_tmp = sortrows(TextureData_tmp,4);
+
+PeaksFromData = unique(TextureData_tmp(:,4));
+% assignin('base','PeaksFromData',PeaksFromData)
+% assignin('base','texturedatanja_tmp',texturedatanja_tmp)
+for k = 1:length(PeaksFromData)
+    TextureData{k} = TextureData_tmp(TextureData_tmp(:,4)==PeaksFromData(k),:);
+end
+% assignin('base','TextureData',TextureData)
+FinalTextureNja = repmat(mat2cell(texturedatanja_tmp,size(texturedatanja_tmp,1)),1,length(PeaksFromData));
+
+for l = 1:size(TextureData,2)
+    for k = 1:length(texturedatanja_tmp)
+        for m = 1:size(TextureData{l},1)
+            if all(texturedatanja_tmp(k,1:2) == TextureData{l}(m,1:2))
+                FinalTextureNja{l}(k,1:3) = TextureData{l}(m,1:3);
+            end
+        end
+    end
+end
+
+% 
+% Peaks_tmp{1} = UserPeaks';
+Peaks_tmp{1} = PeaksFromData';
+TPeaks = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+% assignin('base','TPeaks',TPeaks)
+[CompareFitPeaksLogical,~,~,~] = ComparePeaks(Peaks_tmp,TPeaks.T.Peaks(:,5));
+Peakshkl = TPeaks.T.Peaks.*CompareFitPeaksLogical(:,1);
+Peakshkl(~any(Peakshkl,2),:) = [];
+
+% Export nja files
+CreateTextureNjaFile_New(FolderName,FileName,Peakshkl(:,1:3),FinalTextureNja)
+
+% Reset the button color
+set(hObj,'str','Create and export nja-Files','backg',col)  % Now reset the button features.
+
+% Set mouse pointer back to arrow
+set(h.figTextureAnalysis,'Pointer','arrow');
+
+msgbox('Export completed.');
+
+guidata(h1data, h);
+
+function buttonchangetwothetaTex(~, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data);
+
+% Determine the selected detector
+val = get(h.PopupMenuSelectDetTexture, 'Value');
+DetectorLEDDIselected = val;
+
+% Change twotheta of current measurement using twotheta true
+h.twothetarealTex = str2double(get(h.editchangetwothetaTex,'String'));
+
+h.twothetabackupTex = h.Measurement(1).twotheta;
+
+if DetectorLEDDIselected == 2
+    Slidersteps = 2:2:length(h.Measurement);
+
+    for k = 1:length(Slidersteps)
+       h.Measurement(Slidersteps(k)).twotheta = round(h.twothetarealTex*1000)/1000;
+    end
+
+    h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+    if isfield(h, 'EminDet1')
+        a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+    else
+        a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
+    end
+
+    X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+    Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet1, [], 'all'),-1)/max(h.TPeaksDet1.T.Y3(:,1))*0.9))
+
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet1.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet1.T.Peaks(a,:)),1),1))])
+elseif DetectorLEDDIselected == 3
+    Slidersteps = 1:2:length(h.Measurement);
+
+    for k = 1:length(Slidersteps)
+       h.Measurement(Slidersteps(k)).twotheta = round(h.twothetarealTex*1000)/1000;
+    end
+
+    h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+
+    if isfield(h, 'EminDet2')
+        a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+    else
+        a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+    end
+
+    X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+    Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet2, [], 'all'),-1)/max(h.TPeaksDet2.T.Y3(:,1))*0.9))
+
+    % Set table data for theoretical peak positions
+    set(h.tablephasehklTexture,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(false(size(num2cell(h.TPeaksDet2.T.Peaks(a,:)),1),1))])
+end
+
+guidata(h1data, h);
+
+function checkboxFilteredPeaks(hObj, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data); 
+
+value = get(hObj, 'Value');
+
+% Determine the selected detector
+val = get(h.PopupMenuSelectDetTexture, 'Value');
+DetectorLEDDIselected = val;
+
+if DetectorLEDDIselected == 2
+    Slidersteps = 2:2:length(h.Measurement);
+elseif DetectorLEDDIselected == 3
+    Slidersteps = 1:2:length(h.Measurement);
+end
+
+if value == 1   
+    YminVal = str2double(get(h.editYminInt,'String'));
+    if DetectorLEDDIselected == 2
+        h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+        
+        if isfield(h, 'EminDet1')
+            a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+        else
+            a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
+        end
+
+        Etheo = h.TPeaksDet1.T.Etheo(a);
+        Peaks = h.TPeaksDet1.T.Peaks(a,:);
+%         h.TPeaksDet1.T.Etheo = h.TPeaksDet1.T.Etheo(a);
+%         h.TPeaksDet1.T.Peaks = h.TPeaksDet1.T.Peaks(a,:);
+
+        PeakIndex = Tools.Data.DataSetOperations.FindNearestIndex(h.XDataDet1(:,1),h.TPeaksDet1.T.Peaks(a,5));
+
+        for k = 1:length(PeakIndex)
+            tmp = PeakIndex(k)-5:PeakIndex(k)+5;
+            PeakIndex_tmp(:,k) = tmp;
+        end
+        
+        PeakIndexMod = reshape(PeakIndex_tmp,[],1);
+
+        DataYMax_tmp = max(h.YDataDet1(PeakIndexMod,:),[],2);
+        DataYMax_tmp = reshape(DataYMax_tmp,11,length(PeakIndex));
+        DataYMax = max(DataYMax_tmp);
+
+        idx = find(DataYMax >= YminVal);
+
+        Etheo = Etheo(idx);
+        Peaks = Peaks(idx,:);
+    elseif DetectorLEDDIselected == 3
+        h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+        
+        if isfield(h, 'EminDet2')
+            a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+        else
+            a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+        end
+
+        Etheo = h.TPeaksDet2.T.Etheo(a);
+        Peaks = h.TPeaksDet2.T.Peaks(a,:);
+%         h.TPeaksDet2.T.Etheo = h.TPeaksDet2.T.Etheo(a);
+%         h.TPeaksDet2.T.Peaks = h.TPeaksDet2.T.Peaks(a,:);    
+
+        PeakIndex = Tools.Data.DataSetOperations.FindNearestIndex(h.XDataDet2(:,1),h.TPeaksDet2.T.Peaks(a,5));
+        
+        for k = 1:length(PeakIndex)
+            tmp = PeakIndex(k)-5:PeakIndex(k)+5;
+            PeakIndex_tmp(:,k) = tmp;
+        end
+        
+        PeakIndexMod = reshape(PeakIndex_tmp,[],1);
+
+        DataYMax_tmp = max(h.YDataDet2(PeakIndexMod,:),[],2);
+        DataYMax_tmp = reshape(DataYMax_tmp,11,length(PeakIndex));
+        DataYMax = max(DataYMax_tmp);
+
+        idx = find(DataYMax >= YminVal);
+        
+        Etheo = Etheo(idx);
+        Peaks = Peaks(idx,:);
+%         Etheo = h.TPeaksDet2.T.Etheo(idx);
+%         Peaks = h.TPeaksDet2.T.Peaks(idx,:);
+    end
+    % Create matrix for the line plot of the peak positions (X values)
+    for i = 1:size(Peaks,1)
+        X1(i,:) = [Peaks(i,5) Peaks(i,5) nan];
+    end
+    % Adjust the size of matrix to the measurement
+    X2 = reshape(X1',size(Peaks,1).*3,1);
+    X2(size(Peaks,1).*3,:) = [];
+    X3 = repmat(X2,1,length(h.Measurement)/2);
+    % Adjust the size of matrix to the measurement
+    
+    Peaks_y = zeros(length(h.Measurement)/2,1);
+    % Find intensity maximum
+    for i = 1:length(h.Measurement)/2
+        Peaks_y(i,:) = max(h.DataTmp{Slidersteps(i)}(:, 2));
+    end
+    % Create matrix for the line plot of the peak positions (Y values)
+    for i = 1:length(h.Measurement)/2
+        Y1(i,:) = [0 Peaks_y(i) nan];
+    end    
+    
+    Y2 = reshape(Y1',3,length(h.Measurement)/2);
+    Y3 = repmat(Y2,size(Peaks,1),1);
+    Y3(size(Peaks,1).*3,:)= [];
+    
+    if isfield(h, 'EminDet1')
+        a = Etheo > h.EminDet1 & Etheo < h.EmaxDet1;
+    else
+        a = Etheo < h.TPeaksDet1.T.EMax;
+    end
+    
+    X3Limit = X3((1:(3*find(a, 1, 'last')-1)),:);
+    Y3Limit = Y3((1:(3*find(a, 1, 'last')-1)),:);
+    
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    if DetectorLEDDIselected == 2
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet1, [], 'all'),-1)/max(h.TPeaksDet1.T.Y3(:,1))*0.9))
+    elseif DetectorLEDDIselected == 3
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet2, [], 'all'),-1)/max(h.TPeaksDet2.T.Y3(:,1))*0.9))
+    end
+else
+    if DetectorLEDDIselected == 2
+        % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
+        h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+    
+        if isfield(h, 'EminDet1')
+            a = h.TPeaksDet1.T.Etheo > h.EminDet1 & h.TPeaksDet1.T.Etheo < h.EmaxDet1;
+        else
+            a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
+        end
+        
+        X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+        Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    elseif DetectorLEDDIselected == 3
+        % Set peak properties (Pos, Int etc.) of theoretical peaks, depending
+        h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+    
+        if isfield(h, 'EminDet2')
+            a = h.TPeaksDet2.T.Etheo > h.EminDet2 & h.TPeaksDet2.T.Etheo < h.EmaxDet2;
+        else
+            a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
+        end
+        
+        X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+        Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    end
+    set(h.plotEtheoTexture,'xdata',X3Limit(:,1))
+    if DetectorLEDDIselected == 2
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet1, [], 'all'),-1)/max(h.TPeaksDet1.T.Y3(:,1))*0.9))
+    elseif DetectorLEDDIselected == 3
+        set(h.plotEtheoTexture,'ydata',Y3Limit(:,1).*(round(max(h.YDataDet2, [], 'all'),-1)/max(h.TPeaksDet2.T.Y3(:,1))*0.9))
+    end
+end
+
+guidata(h1data, h);
+
+function checkboxShowFilteredPeaks(hObj, ~, ~)
+% Function used to apply noise cerrection to raw data
+h1data = findobj('Tag','MainGUI');
+h = guidata(h1data); 
+
+value = get(hObj, 'Value');
+
+if value == 0
+	set(h.plotEtheoTexture,'Visible','off')
+elseif value == 1
+	set(h.plotEtheoTexture,'Visible','on')
+end
+
+guidata(h1data, h);
+
+function buttonSelectPeaktableok(hObj, ~, handles)
 % Callback for ok click in select peak table figure
 h = findobj('Tag','MainGUI');
 h1data = guidata(h);
@@ -12355,13 +14230,35 @@ handles1 = guidata(hObj);
 
 % Create handle if it does not already exist in order to prevent error
 % message.
-if ~isfield(handles1, 'idxSelectPeaktable')
-    handles1.idxSelectPeaktable = true(size(h1data.SelectPeaktable.Data,1),1);
+if strcmp(h1data.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h1data.Detsel,'Detector 1')
+        if ~isfield(handles1, 'idxSelectPeaktable')
+            handles1.idxSelectPeaktable = true(size(h1data.SelectPeaktable.Data,1),1);
+        end
+
+        h1data.idxSelectPeaktableDet1 = handles1.idxSelectPeaktable;
+        h1data.idxkeepPeaksDet1 = find(handles1.idxSelectPeaktable == 1);
+        h1data.idxdeletePeaksDet1 = find(handles1.idxSelectPeaktable == 0);
+%         assignin('base','idxkeepPeaksDet1',h1data.idxkeepPeaksDet1)
+    elseif strcmp(h1data.Detsel,'Detector 2')
+        if ~isfield(handles1, 'idxSelectPeaktable')
+            handles1.idxSelectPeaktable = true(size(h1data.SelectPeaktable.Data,1),1);
+        end
+
+        h1data.idxSelectPeaktableDet2 = handles1.idxSelectPeaktable;
+        h1data.idxkeepPeaksDet2 = find(handles1.idxSelectPeaktable == 1);
+        h1data.idxdeletePeaksDet2 = find(handles1.idxSelectPeaktable == 0);
+    end
+else
+    if ~isfield(handles1, 'idxSelectPeaktable')
+        handles1.idxSelectPeaktable = true(size(h1data.SelectPeaktable.Data,1),1);
+    end
+
+    % assignin('base','handles1idxSelectPeaktable',handles1.idxSelectPeaktable)
+    h1data.idxSelectPeaktable = handles1.idxSelectPeaktable;
+    h1data.idxkeepPeaks = find(handles1.idxSelectPeaktable == 1);
+    h1data.idxdeletePeaks = find(handles1.idxSelectPeaktable == 0);
 end
-% assignin('base','handles1idxSelectPeaktable',handles1.idxSelectPeaktable)
-h1data.idxSelectPeaktable = handles1.idxSelectPeaktable;
-h1data.idxkeepPeaks = find(handles1.idxSelectPeaktable == 1);
-h1data.idxdeletePeaks = find(handles1.idxSelectPeaktable == 0);
 
 set(h1data.figSelectPeaktable, 'Visible', 'off')
 
@@ -12380,11 +14277,10 @@ guidata(hObj, h);
 
 function celleditcallbackSelectPeaktable(hObj, ~, handles)
 % Callback for uitable to select peaks to be used in analysis 
-h = handles;
+h = guidata(hObj);
 
 h.SelectPeaktabledata = get(hObj,'data');
-% a = get(hObj,'data');
-% assignin('base','SelectPeaktabledata',a)
+
 h.idxSelectPeaktable = cell2mat(h.SelectPeaktabledata(:,5));
 
 guidata(hObj, h);
@@ -12453,7 +14349,7 @@ FileRoot = 'DEKListe';
 DEKdatatmp = zeros(20,5);
 
 if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h,'FitPeaksLogicalDet2')
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             h.FitPeaksLogicalErangeDet1 = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
             PeaksTheo = h.TPeaksDet1.T.Peaks(h.FitPeaksLogicalErangeDet1,1:5);
@@ -12515,20 +14411,44 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
             FittedPeakstmp = h.FittedPeaks;
         end
     end
-%     assignin('base','FittedPeakstmp',FittedPeakstmp)
+    assignin('base','FittedPeakstmp',FittedPeakstmp)
     % Delete user selected lines from h.FittedPeaks
     % If peaks were deselected by the user, delete them from DiffractionLines
-    if isfield(h, 'idxkeepPeaks')
-        if size(FittedPeakstmp{1},1) ~= size(h.idxkeepPeaks,1)
-%             assignin('base','hidxkeepPeaks',h.idxkeepPeaks)
-            EPoskeeptmp = FittedPeakstmp{1}(h.idxkeepPeaks,2);
-            EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
-%             assignin('base','EPoskeep',EPoskeep)
+    if isfield(h, 'idxkeepPeaks') || isfield(h,'idxkeepPeaksDet1') || isfield(h,'idxkeepPeaksDet2')
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                if size(FittedPeakstmp{1},1) ~= size(h.idxkeepPeaksDet1,1)
+                    EPoskeeptmp = FittedPeakstmp{1}(h.idxkeepPeaksDet1,2);
+                    EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+                else
+                    % If user clicked on select peaks and did not change the
+                    % selected peaks
+                    EPoskeeptmp = FittedPeakstmp{1}(:,2);
+                    EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+                end
+            elseif strcmp(h.Detsel,'Detector 2')
+                if size(FittedPeakstmp{1},1) ~= size(h.idxkeepPeaksDet2,1)
+                    EPoskeeptmp = FittedPeakstmp{1}(h.idxkeepPeaksDet2,2);
+                    EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+                else
+                    % If user clicked on select peaks and did not change the
+                    % selected peaks
+                    EPoskeeptmp = FittedPeakstmp{1}(:,2);
+                    EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+                end
+            end
         else
-            % If user clicked on select peaks and did not change the
-            % selected peaks
-            EPoskeeptmp = FittedPeakstmp{1}(:,2);
-            EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+            if size(FittedPeakstmp{1},1) ~= size(h.idxkeepPeaks,1)
+    %             assignin('base','hidxkeepPeaks',h.idxkeepPeaks)
+                EPoskeeptmp = FittedPeakstmp{1}(h.idxkeepPeaks,2);
+                EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+    %             assignin('base','EPoskeep',EPoskeep)
+            else
+                % If user clicked on select peaks and did not change the
+                % selected peaks
+                EPoskeeptmp = FittedPeakstmp{1}(:,2);
+                EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
+            end
         end
         
     else
@@ -12537,23 +14457,40 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
         EPoskeeptmp = FittedPeakstmp{1}(:,2);
         EPoskeep = mat2cell(EPoskeeptmp',1,size(EPoskeeptmp,1));
     end
-%     EPoskeep
+
     % Compare energy positions of user selected peaks in order to update
     % DEK table
-    [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(EPoskeep,EPosTmp);
+    [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(FittedPeakstmp,EPosTmp);
+%     [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(EPoskeep,EPosTmp);
     h.KeepPeaksDEKLogical = CompareFitPeaksLogicalDEK;
-%     CompareFitPeaksLogicalDEK
+
     % Delete user deselected peaks from FittedPeaks
-    if isfield(h, 'idxdeletePeaks')
-        if ~isempty(h.idxdeletePeaks)
-            for k = 1:size(FittedPeakstmp,2)
-                FittedPeakstmp{1,k}(h.idxdeletePeaks,:) = [];
+    if isfield(h, 'idxdeletePeaks') || isfield(h,'idxdeletePeaksDet1') || isfield(h,'idxdeletePeaksDet2')
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                if ~isempty(h.idxdeletePeaksDet1)
+                    for k = 1:size(FittedPeakstmp,2)
+                        FittedPeakstmp{1,k}(h.idxdeletePeaksDet1,:) = [];
+                    end
+                end
+            elseif strcmp(h.Detsel,'Detector 2')
+                if ~isempty(h.idxdeletePeaksDet2)
+                    for k = 1:size(FittedPeakstmp,2)
+                        FittedPeakstmp{1,k}(h.idxdeletePeaksDet2,:) = [];
+                    end
+                end
+            end
+        else
+            if ~isempty(h.idxdeletePeaks)
+                for k = 1:size(FittedPeakstmp,2)
+                    FittedPeakstmp{1,k}(h.idxdeletePeaks,:) = [];
+                end
             end
         end
     end
 
     % Update FittedPeaks file  
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             h.FittedPeaksDet1 = FittedPeakstmp;
         elseif strcmp(h.Detsel,'Detector 2')
@@ -12567,20 +14504,21 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
 %     assignin('base','hhkltablepsifile',h.hkltablepsifile)
 %     assignin('base','hKeepPeaksDEKLogical',h.KeepPeaksDEKLogical)
 %     assignin('base','PeaksTmp',PeaksTmp)
-    if isfield(h,'idxSelectPeaktable') && size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1) ~= size(h.KeepPeaksDEKLogical(h.KeepPeaksDEKLogical==1),1)
-        PeaksTmpNew = [h.hkltablepsifile(h.idxSelectPeaktable,:) DEKdatatmp(1:size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1),4:5)];
-        PeaksTmpKeepPeaks = PeaksTmp(h.KeepPeaksDEKLogical(:,1),:);
-        idx = ismember(PeaksTmpKeepPeaks, PeaksTmpNew(:,1:3), 'rows');
-        DeletePeakhkl = PeaksTmpKeepPeaks(~idx,:);
-        DelPeakhklidx = ismember(PeaksTmp,DeletePeakhkl,'rows');
-        h.KeepPeaksDEKLogical(DelPeakhklidx,:) = 0;
-        PeaksTmp = PeaksTmpNew;
-%         set(h.loadDEKtable, 'Data', PeaksTmp)
-    else
+%     if isfield(h,'idxSelectPeaktable') && size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1) ~= size(h.KeepPeaksDEKLogical(h.KeepPeaksDEKLogical==1),1)
+%         PeaksTmpNew = [h.hkltablepsifile(h.idxSelectPeaktable,:) DEKdatatmp(1:size(h.idxSelectPeaktable(h.idxSelectPeaktable==1),1),4:5)];
+%         PeaksTmpKeepPeaks = PeaksTmp(h.KeepPeaksDEKLogical(:,1),:);
+%         idx = ismember(PeaksTmpKeepPeaks, PeaksTmpNew(:,1:3), 'rows');
+%         DeletePeakhkl = PeaksTmpKeepPeaks(~idx,:);
+%         DelPeakhklidx = ismember(PeaksTmp,DeletePeakhkl,'rows');
+%         h.KeepPeaksDEKLogical(DelPeakhklidx,:) = 0;
+%         PeaksTmp = PeaksTmpNew;
+% %         set(h.loadDEKtable, 'Data', PeaksTmp)
+%     else
         PeaksTmp = [PeaksTmp DEKdatatmp(1:size(PeaksTmp,1),4:5)];
         PeaksTmp = PeaksTmp(h.KeepPeaksDEKLogical(:,1),:);
 %         set(h.loadDEKtable, 'Data', PeaksTmp)
-    end
+%     end
+    
 %     assignin('base','PeaksTmp',PeaksTmp)
     set(h.loadDEKtable, 'Data', PeaksTmp)
 
@@ -12793,7 +14731,7 @@ set(h.SliderStressData, 'Value',1);
 valueSlider = get(h.SliderStressData, 'Value');
 
 % Load "DiffractionLines" variable, depending on diffractometer used  
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         DiffractionLinestmp = h.DiffractionLinesDet1;
     elseif strcmp(h.Detsel,'Detector 2')
@@ -12804,36 +14742,62 @@ else
 end
 
 % Get index from peaks to be kept
-if isfield(h, 'idxkeepPeaks')
-    idxkeepPeaks = h.idxkeepPeaks;
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        if isfield(h, 'idxkeepPeaksDet1')
+            idxkeepPeaks = h.idxkeepPeaksDet1;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+        end
+    elseif strcmp(h.Detsel,'Detector 2')
+        if isfield(h, 'idxkeepPeaksDet2')
+            idxkeepPeaks = h.idxkeepPeaksDet2;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+        end
+    end
 else
-    % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
-    % instead.
-    idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    if isfield(h, 'idxkeepPeaks')
+        idxkeepPeaks = h.idxkeepPeaks;
+    else
+        % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+        % instead.
+        idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    end
 end
- 
-if strcmp(h.Diffsel,'LEDDI')
+
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Change slider parameters according to number of FittedPeaksDet1
         if size(h.FittedPeaksDet1{1,1},1) == 1
             set(h.SliderStressData,'Min',0);
-            set(h.SliderStressData,'Max',size(h.FittedPeaksDet1{1,1},1));
+%             set(h.SliderStressData,'Max',size(h.FittedPeaksDet1{1,1},1));
+            set(h.SliderStressData,'Max',size(idxkeepPeaks,1));
             set(h.SliderStressData,'SliderStep',[1 1]);
         else
             set(h.SliderStressData,'Min',1);
-            set(h.SliderStressData,'Max',size(h.FittedPeaksDet1{1,1},1));
-            set(h.SliderStressData,'SliderStep',[1/(size(h.FittedPeaksDet1{1,1},1)-1) 1/(size(h.FittedPeaksDet1{1,1},1)-1)]);
+%             set(h.SliderStressData,'Max',size(h.FittedPeaksDet1{1,1},1));
+            set(h.SliderStressData,'Max',size(idxkeepPeaks,1));
+%             set(h.SliderStressData,'SliderStep',[1/(size(h.FittedPeaksDet1{1,1},1)-1) 1/(size(h.FittedPeaksDet1{1,1},1)-1)]);
+            set(h.SliderStressData,'SliderStep',[1/(size(idxkeepPeaks,1)-1) 1/(size(idxkeepPeaks,1)-1)]);
         end
     elseif strcmp(h.Detsel,'Detector 2')
         % Change slider parameters according to number of FittedPeaksDet2
         if size(h.FittedPeaksDet2{1,1},1) == 1
             set(h.SliderStressData,'Min',0);
-            set(h.SliderStressData,'Max',size(h.FittedPeaksDet2{1,1},1));
+%             set(h.SliderStressData,'Max',size(h.FittedPeaksDet2{1,1},1));
+            set(h.SliderStressData,'Max',size(idxkeepPeaks,1));
             set(h.SliderStressData,'SliderStep',[1 1]);
         else
             set(h.SliderStressData,'Min',1);
-            set(h.SliderStressData,'Max',size(h.FittedPeaksDet2{1,1},1));
-            set(h.SliderStressData,'SliderStep',[1/(size(h.FittedPeaksDet2{1,1},1)-1) 1/(size(h.FittedPeaksDet2{1,1},1)-1)]);
+%             set(h.SliderStressData,'Max',size(h.FittedPeaksDet2{1,1},1));
+            set(h.SliderStressData,'Max',size(idxkeepPeaks,1));
+%             set(h.SliderStressData,'SliderStep',[1/(size(h.FittedPeaksDet2{1,1},1)-1) 1/(size(h.FittedPeaksDet2{1,1},1)-1)]);
+            set(h.SliderStressData,'SliderStep',[1/(size(idxkeepPeaks,1)-1) 1/(size(idxkeepPeaks,1)-1)]);
         end
     end
 else
@@ -12864,6 +14828,7 @@ indexUniquePeak = cell(1);
 for k = 1:length(C)
     indexUniquePeak{k} = find(PsiFileTableDataArray(:,1) == C(k));
 end
+
 % Get index from peak to be kept during further analysis
 indexPeakToKeep = cell(1);
 for k = 1:length(C)
@@ -12902,9 +14867,28 @@ for m = 1:size(idxkeepPeaks,1)
         h.Params.Psi_Winkel{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).SCSAngles.psi;
         % Read in phi Winkel
         h.Params.Phi_Winkel{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).SCSAngles.phi;
+
+%         % Read in Emax
+%         h.Params.Energy_Max{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).Energy_Max;
+%         % Read in FWHM
+%         h.Params.FWHM{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).FWHM;
+%         % Read in IB
+%         h.Params.IntegralWidth{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).IntegralWidth;
+%         % Read in IntensityInt
+%         h.Params.Intensity_Int{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).Intensity_Int;
+%         % Read in IntensityMax
+%         h.Params.Intensity_Max{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).Intensity_Max;
+%         % Read in d-spacing
+%         h.Params.LatticeSpacing{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).LatticeSpacing;
+%         % Read in d-spacing error
+%         h.Params.LatticeSpacing_Delta{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).LatticeSpacing_Delta;
+%         % Read in psi Winkel
+%         h.Params.Psi_Winkel{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).SCSAngles.psi;
+%         % Read in phi Winkel
+%         h.Params.Phi_Winkel{m}(k,:) = DiffractionLinestmp{indexPeakToKeep{m}(k),1}(1,idxkeepPeaks(m)).SCSAngles.phi;
     end
 end
-assignin('base','DiffractionLinestmp',DiffractionLinestmp)
+% assignin('base','DiffractionLinestmp',DiffractionLinestmp)
 assignin('base','Params',h.Params)
 % If measured under more than one phi angle, rearrange data
 PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
@@ -13129,6 +15113,10 @@ end
 if length(ia{1}) ~= 1
     for j = 1:size(h.ParamsToFit,2)
         for k = 1:size(h.ParamsToFit(j).LatticeSpacing,2)
+                % linfit = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},1);
+                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = polyval(linfit,h.PsiforInterpol{k});
+                % linfit1 = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},1);
+                % h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = polyval(linfit1,h.PsiforInterpol{k});
                 h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
                 h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},h.PsiforInterpol{k},'linear','extrap');
         end
@@ -13514,7 +15502,21 @@ if length(ia{1}) == 1
     % Calculate absorbtion coefficient for Emax values
     if strcmp(h.Diffsel,'ETA3000')
         h.StressesMW.absorbcoeff = cell(1);
-        h.XRay_Energy = 6.9257;
+
+        if strcmp(h.Measurement(1).Anode,'Cu')
+            h.XRay_Energy = 8.048;
+        elseif strcmp(h.Measurement(1).Anode,'Co')
+            h.XRay_Energy = 6.9305;
+        elseif strcmp(h.Measurement(1).Anode,'Ag')
+            h.XRay_Energy = 22.1634;
+        elseif strcmp(h.Measurement(1).Anode,'Fe')
+            h.XRay_Energy = 6.40484;
+        elseif strcmp(h.Measurement(1).Anode,'Mo')
+            h.XRay_Energy = 17.4808;
+        elseif strcmp(h.Measurement(1).Anode,'Cr')    
+            h.XRay_Energy = 5.41506;
+        end
+
         eta = 90;
         for k = 1:size(h.Params.Energy_Max,2)
             h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
@@ -13525,7 +15527,6 @@ if length(ia{1}) == 1
                 (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)))./...
                 ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)).*...
                 (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)));
-            
         end
 
         for k = 1:size(h.Params.Energy_Max,2)
@@ -13556,7 +15557,21 @@ if length(ia{1}) == 1
 elseif length(ia{1}) ~= 1
     % Calculate absorbtion coefficient for Emax values
     if strcmp(h.Diffsel,'ETA3000')
-%         h.XRay_Energy = 6.9257;
+        
+        if strcmp(h.Measurement(1).Anode,'Cu')
+            h.XRay_Energy = 8.048;
+        elseif strcmp(h.Measurement(1).Anode,'Co')
+            h.XRay_Energy = 6.9305;
+        elseif strcmp(h.Measurement(1).Anode,'Ag')
+            h.XRay_Energy = 22.1634;
+        elseif strcmp(h.Measurement(1).Anode,'Fe')
+            h.XRay_Energy = 6.40484;
+        elseif strcmp(h.Measurement(1).Anode,'Mo')
+            h.XRay_Energy = 17.4808;
+        elseif strcmp(h.Measurement(1).Anode,'Cr')    
+            h.XRay_Energy = 5.41506;
+        end
+
         eta = 90;
         for j = 1:length(ia{1})
             h.StressesMW(j).absorbcoeff = cell(1);
@@ -13577,20 +15592,26 @@ elseif length(ia{1}) ~= 1
                     (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
             end
         end
-
+%         assignin('base','beampath',beampath)
+        % Variable beampath has to be sorted to increase
+%         beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
         for j = 1:length(ia{1})
             h.StressesMW(j).temptau = cell(1);
             for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
                 h.StressesMW(j).temptau{k} = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k});
+
                 h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
                 beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
                     (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
                     ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
                     (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
 %                 assignin('base','beampath1',beampath)
+                % Variable beampath has to be sorted to increase
+%                 beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
                 h.StressesMW(j).taupsizero(k) = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k}(1));
             end
         end
+%         assignin('base','StressesMW',h.StressesMW)
     else
         for j = 1:length(ia{1})
             h.StressesMW(j).absorbcoeff = cell(1);
@@ -13624,7 +15645,6 @@ for k = 1:size(h.sin2psi.tautmp,1)
     h.sin2psi.taupsizeromean(k) = mean(h.sin2psi.taupsizero(k,:));
 end
 
-
 % Load DEK data previously entered by user
 DEKdatatmp = get(h.loadDEKtable,'data');
 % Convert hkl to vector
@@ -13637,19 +15657,23 @@ hklDEKtmp = hklDEKtmp';
 % Set DEK values to Params structure
 h.Params.DEK = [hklDEKtmp DEKdatatmp(:,4:5)];
 % assignin('base','hParamsToFit',h.ParamsToFit)
-assignin('base','hParams',h.Params)
+% assignin('base','hParams',h.Params)
 % assignin('base','hsin2psi',h.sin2psi)
-assignin('base','PsiforInterpol',h.PsiforInterpol)
+% assignin('base','PsiforInterpol',h.PsiforInterpol)
 % Calculate dzero
 if length(ia{1}) == 1
     for k = 1:size(h.Params.LatticeSpacing,2)
         % Calculate dzero
-        h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
     end
 elseif length(ia{1}) ~= 1    
     for k = 1:size(h.ParamsToFit(1).LatticeSpacingInterpol,2)
         % Calculate dzero
-        h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
     end
 end
 % h.sin2psi.dzero = [0.262972618199912	0.237103587545019	0.154480224802823	0.142500376481118	0.131793508588701];
@@ -13900,7 +15924,7 @@ for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
 end
 
 % Get peak hkl and sort acording to tau value of peak
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % 
         FitPeaks = h.FitPeaksLogicalDet1(:,1);
@@ -13976,9 +16000,10 @@ StressPlotDatatmp = [h.sin2psi.sigmataulist h.PeaksforLabel h.ColorsUsedtmp];
 
 % Sort array according to tau values
 h.sin2psi.StressPlotDatatmpsorted = sortrows(StressPlotDatatmp, 1);
-assignin('base','sin2psi',h.sin2psi)
+% assignin('base','sin2psi',h.sin2psi)
 % Update hkl label order
 h.PeaksforLabel = h.sin2psi.StressPlotDatatmpsorted(:,(size(h.sin2psi.sigmataulist,2)+1:size(h.sin2psi.sigmataulist,2)+4));
+% assignin('base','PeaksforLabelLoadStressData',h.PeaksforLabel)
 % Update color order if deleting data point caused a considerable shift of
 % tau
 if strcmp(h.Diffsel,'ETA3000')
@@ -13990,6 +16015,7 @@ end
 h.ColorsUsedSorted = num2cell(h.ColorsUsedSorted,2);
 % Create hkl label for plot of d-spacings (sorted according to d-value)
 label = CreateHKLlabel(h);
+% assignin('base','label',label)
 % If only under one phi angle was measured, set ParamsToFit = Params
 if length(ia{1}) == 1 
     h.ParamsToFit = h.Params;
@@ -14241,7 +16267,7 @@ set(h.SliderFitData, 'Value', 1);
 valueSliderFit = get(h.SliderFitData, 'Value');
 
 % Load "DiffractionLines" variable, depending on diffractometer used   
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if length(h.Measurement) == 1
         set(h.SliderFitData,'Min',0);
         set(h.SliderFitData,'Max',length(h.Measurement));
@@ -14404,7 +16430,7 @@ else
     set(h.plotresiualdata1,'visible','off')
 end
 % Set plot properties   
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         set(h.axesplotfitdata.Title,'String',['Fitted peaks for ', h.Measurement(SliderstepsDet1(valueSliderFit)).Name])
     elseif strcmp(h.Detsel,'Detector 2')
@@ -14422,7 +16448,7 @@ end
 valueSliderStressData = get(h.SliderPlotStressData, 'Value');
 % Set axes limits
 h.axesplotfitdata.XLim = [min(h.Params.Energy_Max{valueSliderStressData}(valueSliderFit))-1.5,max(h.Params.Energy_Max{valueSliderStressData}(valueSliderFit))+1.5];
-h.axesplotfitdata.YLim = [-Inf Inf];
+% h.axesplotfitdata.YLim = [-Inf Inf];
 % Create text element with value of psi angle
 % Delete current text element and replace with new one when slider is
 % pushed
@@ -14562,7 +16588,7 @@ if valueSliderStress == 1
     if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
     else
-        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]')  
+        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]');
     end
 end
 % Set axis limits
@@ -14570,13 +16596,32 @@ if size(h.sin2psi.StressPlotDatatmpsorted,1) == 1
     h.axesplotstressdata.XLim = [0,(ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1 + (ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1)./2)];
     if min(h.sin2psi.StressPlotDatatmpsorted(:,2)) > 0
         if strcmp(h.Diffsel,'ETA3000')
-            h.axesplotstressdata.YLim = [-round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-1),round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-1)];
+            y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+            e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+            ymin = min(y - e);
+            ymax = max(y + e);
+            range = ymax - ymin;
+            h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
+            % h.axesplotstressdata.YLim = [-round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-1),round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-1)];
         else
             h.axesplotstressdata.YLim = [0,round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*0.1,-1)];
         end
     elseif min(h.sin2psi.StressPlotDatatmpsorted(:,2)) < 0
         if strcmp(h.Diffsel,'ETA3000')
-            h.axesplotstressdata.YLim = [-1*(round(abs(max(h.sin2psi.StressPlotDatatmpsorted(:,2)))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-2)),0];
+            y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+            e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+            ymin = min(y - e);
+            ymax = max(y + e);
+            range = ymax - ymin;
+            h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
+            % h.axesplotstressdata.YLim = [-20 20];
+            % if abs(min(h.sin2psi.StressPlotDatatmpsorted(:,2))) < 100
+            %     YLimtmp = ceil((abs(max(h.sin2psi.StressPlotDatatmpsorted(:,2)))+max(h.sin2psi.StressPlotDatatmpsorted(:,3)))/10)*10;
+            % elseif abs(min(h.sin2psi.StressPlotDatatmpsorted(:,2))) >= 100 && abs(min(h.sin2psi.StressPlotDatatmpsorted(:,2))) < 1000
+            %     YLimtmp = ceil((abs(max(h.sin2psi.StressPlotDatatmpsorted(:,2)))+max(h.sin2psi.StressPlotDatatmpsorted(:,3)))/100)*100;
+            % end
+            % h.axesplotstressdata.YLim = [-YLimtmp YLimtmp];
+            % h.axesplotstressdata.YLim = [-1*(round(abs(max(h.sin2psi.StressPlotDatatmpsorted(:,2)))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*2,-2)),0];
         else
             h.axesplotstressdata.YLim = [-1*abs(round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,3))*0.1)),0];
         end
@@ -14602,6 +16647,31 @@ yticks(h.axesplotstressdata,'auto')
 % Set title
 title(h.axesplotstressdata,['Residual stress data for ',strrep(h.Measurement(1).MeasurementSeries,' ','')], 'HorizontalAlignment', 'center', 'Interpreter', 'none')
 
+if strcmp(h.Diffsel,'ETA3000')
+    % Delete all existing annotations before plotting a new one
+    delete(findall(h.plotstresspanel,'type','annotation'))
+    dim = [.58 .2 0.37 0.08];
+    % Add calculated stress data to the plot
+    % if length(PhiWinkel{1}(1)) == 1 && isequal(0,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(180,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([0;180],PhiWinkel{1})
+    %     dim = [.57 .2 0.38 0.08];
+    %     annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+    % elseif length(PhiWinkel{1}) == 1 && isequal(90,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(270,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([90;270],PhiWinkel{1})
+    %     dim = [.6 .2 0.35 0.08];
+    %     annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');    
+    % end
+
+    if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+        ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
+    else
+        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
+    end
+end
 % Reset the button color
 set(hObj,'str','Load stress data','backg',col)  % Now reset the button features.
 % assignin('base','ParamsToFitLoadStress',h.ParamsToFit)
@@ -14615,7 +16685,8 @@ if size(h.axesplotdspacing.Children,1) == 9
     delete(h.axesplotdspacing.Children(1))
 end
 % assignin('base','axesplotdspacingloadstressdatamod',h.axesplotdspacing)
-assignin('base','sin2psi',h.sin2psi)
+% assignin('base','sin2psi',h.sin2psi)
+assignin('base','h',h)
 guidata(hObj, h);
 
 function buttonmodifystressdata(hObj, ~)
@@ -14956,6 +17027,8 @@ end
 if length(ia{1}) ~= 1
     for j = 1:size(h.ParamsToFit,2)
         for k = 1:size(h.ParamsToFit(j).LatticeSpacing,2)
+                % linfit = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},1);
+                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = polyval(linfit,h.PsiforInterpol{k});
                 h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
                 h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},h.PsiforInterpol{k},'linear','extrap');
         end
@@ -15366,17 +17439,22 @@ end
 hklDEKtmp = hklDEKtmp';
 % Set DEK values to Params structure
 h.Params.DEK = [hklDEKtmp DEKdatatmp(:,4:5)];
-
+% assignin('base','PsiforInterpol',h.PsiforInterpol)
+assignin('base','ParamsDEK',h.Params.DEK)
 % Calculate dzero
 if length(ia{1}) == 1
     for k = 1:size(h.Params.LatticeSpacing,2)
         % Calculate dzero
-        h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
     end
 elseif length(ia{1}) ~= 1    
     for k = 1:size(h.ParamsToFit(1).LatticeSpacingInterpol,2)
         % Calculate dzero
-        h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
     end
 end
 
@@ -15625,29 +17703,31 @@ for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
                            h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
     end
 end
-
-
+% assignin('base','sin2psiMod1',h.sin2psi)
 % Get peak hkl and sort acording to tau value of peak
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Check whether peaks where deselected by the user
-        if isfield(h, 'idxkeepPeaks')
+        if isfield(h, 'idxkeepPeaksDet1')
             idx = find(h.FitPeaksLogicalDet1(:,1) == 1);
-            if length(idx) == length(h.idxkeepPeaks)
+            if length(idx) == length(h.idxkeepPeaksDet1)
                 FitPeaks = h.FitPeaksLogicalDet1(:,1);
             else
-                % Load fit data from fit results table
-                FitDatatmp = get(h.tablefitresults,'data');
-                % Load energy positions
-                EnergyPos = str2double(FitDatatmp(:,3));
-                EPosToKeep = EnergyPos(h.idxkeepPeaks);
-                EPosKeepCell = mat2cell(EPosToKeep,size(EPosToKeep,1),1);
-                EPosKeepCell{1} = EPosKeepCell{1}';
-                PeakstmpLogical = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
-                EPosTheo = h.TPeaksDet1.T.Peaks(PeakstmpLogical,5);
-                [CompareFitPeaksLogical,~,~,~] = ComparePeaks(EPosKeepCell,EPosTheo);
-                FitPeaks = CompareFitPeaksLogical;
-                h.FitPeaksLogicalDet1User = CompareFitPeaksLogical;
+%                 % Load fit data from fit results table
+%                 FitDatatmp = get(h.tablefitresults,'data');
+%                 % Load energy positions
+%                 EnergyPos = str2double(FitDatatmp(:,3));
+%                 EPosToKeep = EnergyPos(h.idxkeepPeaksDet1);
+%                 EPosKeepCell = mat2cell(EPosToKeep,size(EPosToKeep,1),1);
+%                 EPosKeepCell{1} = EPosKeepCell{1}';
+%                 PeakstmpLogical = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
+%                 EPosTheo = h.TPeaksDet1.T.Peaks(PeakstmpLogical,5);
+%                 [CompareFitPeaksLogical,~,~,~] = ComparePeaks(EPosKeepCell,EPosTheo);
+%                 FitPeaks = CompareFitPeaksLogical;
+%                 h.FitPeaksLogicalDet1User = CompareFitPeaksLogical;
+                FitPeakslogical = zeros(size(h.FitPeaksLogicalDet1,1),1);
+                FitPeakslogical(h.idxkeepPeaksDet1) = 1;
+                FitPeaks = logical(FitPeakslogical);
             end
         else
             FitPeaks = h.FitPeaksLogicalDet1(:,1);
@@ -15660,33 +17740,44 @@ if strcmp(h.Diffsel,'LEDDI')
         else
             PeakstmpLogical = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
             PeaksforLabeltmp = h.TPeaksDet1.T.Peaks(PeakstmpLogical(:,1),1:5);
-            h.PeaksforLabel = PeaksforLabeltmp(FitPeaks(:,1),1:5);
+            h.PeaksforLabel = PeaksforLabeltmp(logical(FitPeaks),1:5);
+
+%             h.PeaksforLabel = h.PeaksforLabel(h.KeepPeaksDEKLogical(:,1),:);
+%             h.PeaksforLabel = PeaksforLabeltmp;
         end
                 
     elseif strcmp(h.Detsel,'Detector 2')
         % Check whether peaks where deselected by the user
-        if isfield(h, 'idxkeepPeaks')
+        if isfield(h, 'idxkeepPeaksDet2')
+%             assignin('base','FitPeaksLogicalDet2ModStress',h.FitPeaksLogicalDet2)
+%             assignin('base','TPeaksDet2',h.TPeaksDet2)
+%             assignin('base','idxkeepPeaksDet2',h.idxkeepPeaksDet2)
+%             assignin('base','KeepPeaksDEKLogical',h.KeepPeaksDEKLogical)
             idx = find(h.FitPeaksLogicalDet2(:,1) == 1);
-            if length(idx) == length(h.idxkeepPeaks)
+            if length(idx) == length(h.idxkeepPeaksDet2)
                 FitPeaks = h.FitPeaksLogicalDet2(:,1);
             else
-                % Load fit data from fit results table
-                FitDatatmp = get(h.tablefitresults,'data');
-                % Load energy positions
-                EnergyPos = str2double(FitDatatmp(:,3));
-                EPosToKeep = EnergyPos(h.idxkeepPeaks);
-                EPosKeepCell = mat2cell(EPosToKeep,size(EPosToKeep,1),1);
-                EPosKeepCell{1} = EPosKeepCell{1}';
-                PeakstmpLogical = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
-                EPosTheo = h.TPeaksDet2.T.Peaks(PeakstmpLogical,5);
-                [CompareFitPeaksLogical,~,~,~] = ComparePeaks(EPosKeepCell,EPosTheo);
-                FitPeaks = CompareFitPeaksLogical;
-                h.FitPeaksLogicalDet2User = CompareFitPeaksLogical;
+%                 % Load fit data from fit results table
+%                 FitDatatmp = get(h.tablefitresults,'data');
+%                 % Load energy positions
+%                 EnergyPos = str2double(FitDatatmp(:,3));
+%                 EPosToKeep = EnergyPos(h.idxkeepPeaksDet2);
+%                 EPosKeepCell = mat2cell(EPosToKeep,size(EPosToKeep,1),1);
+%                 EPosKeepCell{1} = EPosKeepCell{1}';
+%                 PeakstmpLogical = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
+%                 EPosTheo = h.TPeaksDet2.T.Peaks(PeakstmpLogical,5);
+%                 [CompareFitPeaksLogical,~,~,~] = ComparePeaks(EPosKeepCell,EPosTheo);
+%                 FitPeaks = CompareFitPeaksLogical;
+%                 h.FitPeaksLogicalDet2User = CompareFitPeaksLogical;
+                FitPeakslogical = zeros(size(h.FitPeaksLogicalDet2,1),1);
+                FitPeakslogical(h.idxkeepPeaksDet2) = 1;
+%                 assignin('base','FitPeakslogical',FitPeakslogical)
+                FitPeaks = logical(FitPeakslogical);
             end
         else
             FitPeaks = h.FitPeaksLogicalDet2(:,1);
         end
-                
+
         if size(FitPeaks,1) == 1
             Peakstmp = h.TPeaksDet2.T.Peaks;
             PeakstmpLogical = Peakstmp(:,5) > h.P.EnergyRangeDet2(1) & Peakstmp(:,5) < h.P.EnergyRangeDet2(2);
@@ -15694,7 +17785,19 @@ if strcmp(h.Diffsel,'LEDDI')
         else
             PeakstmpLogical = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
             PeaksforLabeltmp = h.TPeaksDet2.T.Peaks(PeakstmpLogical(:,1),1:5);
-            h.PeaksforLabel = PeaksforLabeltmp(FitPeaks(:,1),1:5);
+%             assignin('base','PeaksforLabeltmp',PeaksforLabeltmp)
+%             assignin('base','PeakstmpLogical',PeakstmpLogical)
+%             assignin('base','FitPeaks',FitPeaks)
+%             assignin('base','KeepPeaksDEKLogical',h.KeepPeaksDEKLogical)
+            h.PeaksforLabel = PeaksforLabeltmp(FitPeaks,1:5);
+            % nachfolgender Befehl wurde auskommentiert, da das h.KeepPeaksDEKLogical
+            % erstellt wird beim druecken des Knopfes "Enter/Load DEK".
+            % Dabei wird eine Matrix erzeugt, die die abgewaehlten hkl als
+            % 0 anzeigt. Hier an dieser Stelle sind die fehlenden hkl aber
+            % erst garnicht aufgefuehrt. Daher gab es an dieser Stelle eine
+            % Fehlermeldung, dass die Groeßen nicht passen.
+%             h.PeaksforLabel = h.PeaksforLabel(h.KeepPeaksDEKLogical(:,1),:);
+%             h.PeaksforLabel = PeaksforLabeltmp;
         end
     end
 else
@@ -15740,6 +17843,7 @@ else
 %     assignin('base','DEKtabledata',a)
 
 end
+
 % assignin('base','PeaksforLabel1',h.PeaksforLabel)
 % Sort Colors according to energy positions of peaks
 % Delete field if already present, in case of reloading stress data with
@@ -15757,7 +17861,8 @@ end
 for k = 1:size(h.Params.LatticeSpacing,2)
     h.ColorsUsedtmp(k,:) = h.ColorsUsed{1,k}(:);
 end
-% assignin('base','hPeaksforLabel',h.PeaksforLabel)
+
+% assignin('base','PeaksforLabelModStressData',h.PeaksforLabel)
 % assignin('base','hColorsUsedtmp',h.ColorsUsedtmp)
 % assignin('base','hsin2psisigmataulist',h.sin2psi.sigmataulist)
 % Create array with tau, sigma, label and color data
@@ -15969,11 +18074,12 @@ if valueSliderStress == 1
                     h.axesplotstressdata.XTick = h.XlimMinnew(valueSliderStress):h.XlimXTicknew(valueSliderStress):h.XlimMaxnew(valueSliderStress);
                 end
             else
-                if strcmp(h.Diffsel,'ETA3000')
-                    h.axesplotstressdata.XLim = [0,10];
-                else
+                % if strcmp(h.Diffsel,'ETA3000')
+                %     % h.axesplotstressdata.XLim = [0,10];
+                %     h.axesplotstressdata.XLim = [0,(ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1 + (ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1)./2)];
+                % else
                     h.axesplotstressdata.XLim = [0,(ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1 + (ceil(max(h.sin2psi.StressPlotDatatmpsorted(:,1))*0.1)/0.1)./2)];
-                end
+                % end
             end
             
             if isfield(h,'YlimChanged') && h.YlimChanged(valueSliderStress) == 1
@@ -15984,12 +18090,24 @@ if valueSliderStress == 1
             else
                 if min(h.sin2psi.StressPlotDatatmpsorted(:,2)) > 0
                     if strcmp(h.Diffsel,'ETA3000')
-                        h.axesplotstressdata.YLim = [0,100];
+                        y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+                        e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+                        ymin = min(y - e);
+                        ymax = max(y + e);
+                        range = ymax - ymin;
+                        h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
+                        % h.axesplotstressdata.YLim = [-Inf,Inf];
                     else
                         h.axesplotstressdata.YLim = [0,round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,2))*0.1,-1)];
                     end
                 elseif min(h.sin2psi.StressPlotDatatmpsorted(:,2)) < 0
-                    h.axesplotstressdata.YLim = [-1*abs(round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,2))*0.1)),0];
+                    y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+                    e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+                    ymin = min(y - e);
+                    ymax = max(y + e);
+                    range = ymax - ymin;
+                    h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
+                    % h.axesplotstressdata.YLim = [-1*abs(round(max(h.sin2psi.StressPlotDatatmpsorted(:,2))+max(h.sin2psi.StressPlotDatatmpsorted(:,2))*0.1)),0];
                 end
             end
         else
@@ -16008,22 +18126,29 @@ if valueSliderStress == 1
                     h.axesplotstressdata.YTick = h.YlimMinnew(valueSliderStress):h.YlimYTicknew(valueSliderStress):h.YlimMaxnew(valueSliderStress);
                 end
             else
-                YLimErr = [(min(h.sin2psi.StressPlotDatatmpsorted(:,2)) + max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
-                    (min(h.sin2psi.StressPlotDatatmpsorted(:,2)) - max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
-                    (max(h.sin2psi.StressPlotDatatmpsorted(:,2)) + max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
-                    (max(h.sin2psi.StressPlotDatatmpsorted(:,2)) - max(h.sin2psi.StressPlotDatatmpsorted(:,3)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(h.sin2psi.StressPlotDatatmpsorted(:,2)) + max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
+                %     (min(h.sin2psi.StressPlotDatatmpsorted(:,2)) - max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
+                %     (max(h.sin2psi.StressPlotDatatmpsorted(:,2)) + max(h.sin2psi.StressPlotDatatmpsorted(:,3))) ...
+                %     (max(h.sin2psi.StressPlotDatatmpsorted(:,2)) - max(h.sin2psi.StressPlotDatatmpsorted(:,3)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         end
         
 elseif valueSliderStress == 2
-    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],hkllabel);
+    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],h.LabelForPlot);
     
     if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
@@ -16069,11 +18194,18 @@ elseif valueSliderStress == 2
                     h.axesplotstressdata.YTick = h.YlimMinnew(valueSliderStress):h.YlimYTicknew(valueSliderStress):h.YlimMaxnew(valueSliderStress);
                 end
             else
-                if min(h.sin2psi.StressPlotDatatmpsorted(:,4)) > 0
-                    h.axesplotstressdata.YLim = [0,round(max(h.sin2psi.StressPlotDatatmpsorted(:,4))+max(h.sin2psi.StressPlotDatatmpsorted(:,4))*0.1,-1)];
-                elseif min(h.sin2psi.StressPlotDatatmpsorted(:,4)) < 0
-                    h.axesplotstressdata.YLim = [-1*abs(round(max(h.sin2psi.StressPlotDatatmpsorted(:,4))+max(h.sin2psi.StressPlotDatatmpsorted(:,4))*0.1)),0];
-                end
+                y = h.sin2psi.StressPlotDatatmpsorted(:,4);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,5);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
+
+                % if min(h.sin2psi.StressPlotDatatmpsorted(:,4)) > 0
+                %     h.axesplotstressdata.YLim = [0,round(max(h.sin2psi.StressPlotDatatmpsorted(:,4))+max(h.sin2psi.StressPlotDatatmpsorted(:,4))*0.1,-1)];
+                % elseif min(h.sin2psi.StressPlotDatatmpsorted(:,4)) < 0
+                %     h.axesplotstressdata.YLim = [-1*abs(round(max(h.sin2psi.StressPlotDatatmpsorted(:,4))+max(h.sin2psi.StressPlotDatatmpsorted(:,4))*0.1)),0];
+                % end
             end
         else
             if isfield(h,'XlimChanged') && h.XlimChanged(valueSliderStress) == 1
@@ -16091,21 +18223,28 @@ elseif valueSliderStress == 2
                     h.axesplotstressdata.YTick = h.YlimMinnew(valueSliderStress):h.YlimYTicknew(valueSliderStress):h.YlimMaxnew(valueSliderStress);
                 end
             else
-                YLimErr = [(min(h.sin2psi.StressPlotDatatmpsorted(:,4)) + max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
-                    (min(h.sin2psi.StressPlotDatatmpsorted(:,4)) - max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
-                    (max(h.sin2psi.StressPlotDatatmpsorted(:,4)) + max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
-                    (max(h.sin2psi.StressPlotDatatmpsorted(:,4)) - max(h.sin2psi.StressPlotDatatmpsorted(:,5)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,4);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,5);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(h.sin2psi.StressPlotDatatmpsorted(:,4)) + max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
+                %     (min(h.sin2psi.StressPlotDatatmpsorted(:,4)) - max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
+                %     (max(h.sin2psi.StressPlotDatatmpsorted(:,4)) + max(h.sin2psi.StressPlotDatatmpsorted(:,5))) ...
+                %     (max(h.sin2psi.StressPlotDatatmpsorted(:,4)) - max(h.sin2psi.StressPlotDatatmpsorted(:,5)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         end
 elseif valueSliderStress == 3
-    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],hkllabel);
+    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],h.LabelForPlot);
     
     if length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270 || length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{23}> [MPa]')
@@ -16170,7 +18309,7 @@ elseif valueSliderStress == 3
             end
         end
 elseif valueSliderStress == 4
-    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],hkllabel);
+    h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],h.LabelForPlot);
     
     ylabel(h.axesplotstressdata,'<\sigma_{23}> [MPa]')
     
@@ -16232,6 +18371,30 @@ elseif valueSliderStress == 4
         end
 end
 
+if strcmp(h.Diffsel,'ETA3000')
+    % Delete all existing annotations before plotting a new one
+    delete(findall(h.plotstresspanel,'type','annotation'))
+    % Add calculated stress data to the plot
+    dim = [.58 .2 0.37 0.08];
+    % if length(PhiWinkel{1}) == 1 && isequal(0,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(180,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([0;180],PhiWinkel{1})
+    %     annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+    % elseif length(PhiWinkel{1}) == 1 && isequal(90,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(270,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([90;270],PhiWinkel{1})
+    %     annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');    
+    % end
+
+    if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+        ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
+    else
+        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
+    end
+end
+
 assignin('base','sin2psimod',h.sin2psi)
 % assignin('base','Measurement',h.Measurement)
 % assignin('base','Sample',h.Sample)
@@ -16239,6 +18402,7 @@ assignin('base','sin2psimod',h.sin2psi)
 % assignin('base','sinpsisquare',h.sinpsisquare)
 % assignin('base','StressesMW',h.StressesMW)
 assignin('base','ParamsToFitMod',h.ParamsToFit)
+
 guidata(hObj, h);
 
 %% Export sin²psi plots button
@@ -16291,7 +18455,7 @@ else
     Params_tmp = h.Params;
     ParamsToFit_tmp = h.ParamsToFit;
 end
-assignin('base','sin2psi_tmp',sin2psi_tmp)
+% assignin('base','sin2psi_tmp',sin2psi_tmp)
 
 % Create hkl label
 Peaks = h.PeaksforLabel;
@@ -16533,8 +18697,7 @@ if ~isfield(h,'PathName')
     h.PathName = [General.ProgramInfo.Path,'\Data\Results\' h.Diffsel, '\',[name,'_','added_plots','_',d]];
 end
 
-Path = fullfile(h.PathName,Folder);
-							
+Path = fullfile(h.PathName,Folder);						
 
 if exist(Path,'dir') ~= 7
     mkdir(Path);
@@ -16652,15 +18815,33 @@ for k = 1:size(h.plotData.dataEmax{1,1},2)
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
-    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det1'],k);
+        elseif strcmp(h.Detsel,'Detector 2')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det2'],k);
+        end
+    else
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+    end
+    
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
 % Export data Emax to txt file
 if size(DatahklPsitmp{1},2) == 1
     for k = 1:size(DatahklPsitmp,2)
-    
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        end
+        
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
@@ -16675,11 +18856,18 @@ if size(DatahklPsitmp{1},2) == 1
             end
 
         fclose(fid);
-
     end   
 elseif size(DatahklPsitmp{1},2) == 2
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -16698,11 +18886,18 @@ elseif size(DatahklPsitmp{1},2) == 2
             end
 
         fclose(fid);
-
     end
 elseif size(DatahklPsitmp{1},2) == 3
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -16724,11 +18919,18 @@ elseif size(DatahklPsitmp{1},2) == 3
             end
 
         fclose(fid);
-
     end
 elseif size(DatahklPsitmp{1},2) == 4
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -16753,7 +18955,6 @@ elseif size(DatahklPsitmp{1},2) == 4
             end
 
         fclose(fid);
-
     end
 end
 
@@ -16858,14 +19059,33 @@ for k = 1:size(h.plotData.dataIB{1,1},2)
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
-    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+    
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det1'],k);
+        elseif strcmp(h.Detsel,'Detector 2')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det2'],k);
+        end
+    else
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+    end
+
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
 % Export data IB
 if size(DatahklPsitmp{1},2) == 1
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        end
+        
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
@@ -16884,7 +19104,15 @@ if size(DatahklPsitmp{1},2) == 1
     end   
 elseif size(DatahklPsitmp{1},2) == 2
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -16907,7 +19135,15 @@ elseif size(DatahklPsitmp{1},2) == 2
     end
 elseif size(DatahklPsitmp{1},2) == 3
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -16933,7 +19169,15 @@ elseif size(DatahklPsitmp{1},2) == 3
     end
 elseif size(DatahklPsitmp{1},2) == 4
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17055,15 +19299,33 @@ for k = 1:size(h.plotData.dataIntensity_Int{1,1},2)
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
-    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det1'],k);
+        elseif strcmp(h.Detsel,'Detector 2')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det2'],k);
+        end
+    else
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+    end
+    
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
 % Export data Int. Intensity
 if size(DatahklPsitmp{1},2) == 1
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
-
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        end
+        
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
@@ -17082,7 +19344,15 @@ if size(DatahklPsitmp{1},2) == 1
     end   
 elseif size(DatahklPsitmp{1},2) == 2
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17105,7 +19375,15 @@ elseif size(DatahklPsitmp{1},2) == 2
     end
 elseif size(DatahklPsitmp{1},2) == 3
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17131,7 +19409,15 @@ elseif size(DatahklPsitmp{1},2) == 3
     end
 elseif size(DatahklPsitmp{1},2) == 4
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Int_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17362,7 +19648,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
-    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
+        elseif strcmp(h.Detsel,'Detector 2')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det2'],k);
+        end
+    else
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+    end
+    
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
@@ -17372,8 +19667,16 @@ end
 % Export data d-spacing to txt file
 if size(DatahklPsitmp{1},2) == 1
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
-
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        end
+        
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
@@ -17410,7 +19713,15 @@ if size(DatahklPsitmp{1},2) == 1
     end   
 elseif size(DatahklPsitmp{1},2) == 2
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17455,7 +19766,15 @@ elseif size(DatahklPsitmp{1},2) == 2
     end
 elseif size(DatahklPsitmp{1},2) == 3
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17507,7 +19826,15 @@ elseif size(DatahklPsitmp{1},2) == 3
     end
 elseif size(DatahklPsitmp{1},2) == 4
     for k = 1:size(DatahklPsitmp,2)
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17668,7 +19995,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         LegLabelData = {['\phi = 0/180',char(176)]};
 
         % Export data to file
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+        end
+        
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17686,7 +20022,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fclose(fid);
         
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        end
+        
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
@@ -17717,7 +20062,15 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         LegLabelData = {['\phi = 90/270',char(176)]};
 
         % Export data to file
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17735,7 +20088,15 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fclose(fid);
         
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        end
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
@@ -17775,7 +20136,15 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         LegLabelData = {['\phi = 0/180',char(176)],['\phi = 90/270',char(176)]};
 
         % Export data to file
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phiavg_Line_','%d'],k);
+        end
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
@@ -17795,7 +20164,15 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fclose(fid);
         
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            if strcmp(h.Detsel,'Detector 1')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det1'],k);
+            elseif strcmp(h.Detsel,'Detector 2')
+                FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d','_Det2'],k);
+            end
+        else
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
+        end
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
@@ -17847,7 +20224,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
     set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
-    FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d','_Det1'],k);
+        elseif strcmp(h.Detsel,'Detector 2')
+            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d','_Det2'],k);
+        end
+    else
+        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d'],k);
+    end
+    
     print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 end
 
@@ -19452,7 +21838,7 @@ for k = 1:size(h.Params.Phi_Winkel,2)
 	[PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
 end
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Save taudata to file
         FileName = [strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1'];
@@ -19491,8 +21877,11 @@ end
 fid = fopen([[Path,'\'],FileName,'_phi',phianglesstr,'_',d,'.tau'],'w');
 
 fprintf(fid,'Filename: %s.\n\n',strrep(h.Measurement(1).MeasurementSeries,' ',''));
-
-fprintf(fid, ['2Theta [Degree]:', ' ', num2str(h.Measurement(1).twotheta),'\n']);
+if strcmp(h.Diffsel,'ETA3000')
+    fprintf(fid, ['2Theta range [Degree]:', ' ', num2str(h.Measurement(1).twotheta(1)),' - ', num2str(h.Measurement(1).twotheta(end)),'\n']);
+else
+    fprintf(fid, ['2Theta [Degree]:', ' ', num2str(h.Measurement(1).twotheta),'\n']);
+end
 fprintf(fid, ['Measured azimuths [Degree]:', ' ', '{',strrep(strrep(num2str(PhiWinkel{1}'),'  ',','),',,',','),'}','\n\n']);
 % Create table header, depending on the azimuths measured
 fprintf(fid, ['hkl   ', 'd0[nm]'  ,'    tau0    ','Sigma11  ','Error  ','Sigma22  ','Error  ','Sigma13  ','Error  ','Sigma23  ','Error  ','\n']);
@@ -19892,7 +22281,7 @@ for j = 1:(size(taudata,2)-5)/2
 
     title([strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name])
     
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
             FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_stress_barplot_','%d'],j);
@@ -20075,8 +22464,114 @@ for j = 1:(size(taudata,2)-5)/2
     end
     
     title([strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+
+    if strcmp(h.Diffsel,'ETA3000')
+        p=get(ax,'Position');
+        dim = [(p(1)+p(3)-0.35-0.01) (p(2)+0.01) 0.35 0.08];
+        dim2 = [(p(1)+p(3)-0.275) (p(2)+0.01) 0.35 0.08];
+        if length(PhiWinkel{1}) == 1
+            if PhiWinkel{1}(1) == 0 || PhiWinkel{1}(1) == 180
+                annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            elseif PhiWinkel{1}(1) == 90 || PhiWinkel{1}(1) == 270
+                annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            end
+        elseif length(PhiWinkel{1}) == 2
+            if j == 1
+                if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                end
+            elseif j == 2
+                if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
+                    annotation('textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                end
+            end
+        elseif length(PhiWinkel{1}) == 3
+            if j == 1
+                if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                end
+            elseif j == 2
+                if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                end
+            elseif j == 3
+                if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+                    annotation('textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+                    annotation('textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+                end
+            end
+        elseif length(PhiWinkel{1}) == 4
+             if j == 1
+                annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            elseif j == 2
+                annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            elseif j == 3
+                annotation('textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            elseif j == 4
+                annotation('textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,8))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,9))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+            end
+        end
+    end
+
+%     dim = [(p(1)+p(3)-0.35-0.01) (p(2)+0.01) 0.35 0.08];
+%     annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+%     % Delete all existing annotations before plotting a new one
+%     p=get(ax,'Position');
+%     % Add calculated stress data to the plot
+% %     if length(PhiWinkel{1}) == 1 && isequal(0,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(180,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([0;180],PhiWinkel{1})
+%     if length(PhiWinkel{1}) == 1
+% %         if length(num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2)))) == 4
+%             dim = [(p(1)+p(3)-0.35-0.01) (p(2)+0.01) 0.35 0.08];
+% %         elseif length(num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2)))) == 3
+% %             disp('ok')
+% %             dim = [(p(1)+p(3)-0.35) (p(2)+0.01) 0.35 0.08];
+% %         end
+% %         annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(200),' ',char(177),' ',num2str(40),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+%         annotation('textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',12,'BackgroundColor','w','FitBoxToText','on');
+%     elseif length(PhiWinkel{1}) == 1 && isequal(90,PhiWinkel{1}) || length(PhiWinkel{1}) == 1 && isequal(270,PhiWinkel{1}) || length(PhiWinkel{1}) == 2 && isequal([90;270],PhiWinkel{1})
+%         dim = [(p(1)+p(3)-0.35-0.01) (p(2)+0.01) 0.35 0.08];
+%         annotation('textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','on');    
+%     end
+
 %     if valuecheckboxTauData == 0
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
             FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_stressplot_','%d'],j);
@@ -20146,7 +22641,7 @@ if exist(Path,'dir') ~= 7
     mkdir(Path);
 end
 
-if strcmp(h.Diffsel,'LEDDI') %&& FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') %&& FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1') 
         [FileName,PathName] = uiputfile('*.psi','Save Psi file',[Path,...
                           strtrim(h.Measurement(1).MeasurementSeries),'_',h.Sample.Materials.Name,'_','Det1_corr','_',datestr(now, 'ddmmyyyy')]);
@@ -20169,7 +22664,15 @@ PsiFileName = fullfile(PathName, FileName);
 
 % Get PsiDataTmp from DiffractionLines data
 if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
-    PsiDataTmp = PsiDataPVGeneralSaveMod(h.DiffractionLines,h.SpecFileCheck);
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1') 
+            PsiDataTmp = PsiDataPVGeneralSaveMod(h.DiffractionLinesDet1,h.SpecFileCheck);
+        elseif strcmp(h.Detsel,'Detector 2')
+            PsiDataTmp = PsiDataPVGeneralSaveMod(h.DiffractionLinesDet2,h.SpecFileCheck);
+        end
+    else
+        PsiDataTmp = PsiDataPVGeneralSaveMod(h.DiffractionLines,h.SpecFileCheck);
+    end
 %     if h.P.DiffractometerType == 1 % EDDI
 %             PsiDataTmp = EDDIPsiDataPVSaveMod(h.DiffractionLines);
 %         elseif h.P.DiffractometerType == 2 % LEDDI
@@ -20199,7 +22702,7 @@ elseif h.P.PopupValueFitFunc == 3 %TCH-Func
 %             PsiDataTmp = LIMAX160PsiDataTCHSaveMod(h.DiffractionLines);    
 %     end
 end
-
+% assignin('base','PsiDataTmp',PsiDataTmp)
 % % Delete entries for phi-angles not chosen by user
 % % Get phi angles
 % PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
@@ -20236,10 +22739,17 @@ for k = 1:size(DeleteIdx,2)
 	DeleteLogicaltmp(:,k) = cell2mat([DeleteIdx(:,k)]);
 end
 
+% If the number of psi angles for the different phi angles is not equal
+% the logical "DeleteLogicaltmp" has to be adjusted by deleting rows that
+% are all zero.
+idxzeroentries = find(all(DeleteLogicaltmp == 0,2));
+DeleteLogicaltmp(idxzeroentries,:) =  [];
+
+% assignin('base','PsiFileTableDataDet2Bkp',h.PsiFileTableDataDet2Bkp)
 % Reshape logical
 DeleteLogical = reshape(DeleteLogicaltmp,numel(DeleteLogicaltmp),1);
 % Delete corresponding lines from PsiFileTableData
-if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1')
         PsiFileTableData = h.PsiFileTableDataDet1Bkp;
         PsiFileTableData(~DeleteLogical,:)=[];
@@ -20251,7 +22761,7 @@ if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
         % Set table data
         set(h.tablepsifile,'data',PsiFileTableData);
     end
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     if strcmp(h.Detsel,'Detector 1')
         PsiFileTableData = h.PsiFileTableDataDet1Bkp;
         PsiFileTableData(~DeleteLogical,:)=[];
@@ -20277,7 +22787,7 @@ PsiFileData = str2double(PsiFileTableData);
 if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
     % Convert date string to date number
     % Find column with date
-    Index_date = find(strcmp('Time   ',h.tablepsifile.ColumnName)==1);
+    Index_date = find(strcmp('Time',h.tablepsifile.ColumnName)==1);
     for i = 1:size(PsiFileTableData,1)
         date(:,i) = datenum(PsiFileTableData{i,Index_date},'dd-mm-yyyy-HH-MM-SS');
     end
@@ -20369,7 +22879,7 @@ end
 DeleteLogical = reshape(DeleteLogicaltmp,numel(DeleteLogicaltmp),1);
 % assignin('base','DeleteLogical',DeleteLogical)
 % Delete corresponding lines from PsiFileTableData
-if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1')
 %         if size(h.PsiFileTableDataDet1,1) == size(DeleteLogical,1)
             PsiFileTableData = h.PsiFileTableDataDet1Bkp;
@@ -20389,7 +22899,7 @@ if strcmp(h.Diffsel,'LEDDI') && FitBothDet == 0
         % Set table data
         set(h.tablepsifile,'data',PsiFileTableData);
     end
-elseif strcmp(h.Diffsel,'LEDDI') && FitBothDet == 1
+elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     if strcmp(h.Detsel,'Detector 1')
 %         if size(h.PsiFileTableDataDet1,1) == size(DeleteLogical,1)
             PsiFileTableData = h.PsiFileTableDataDet1Bkp;
@@ -20456,7 +22966,7 @@ s.measmode = h.measmode;
 s.Diffsel = h.Diffsel;
 s.Detsel = h.Detsel;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'EnergyRangeDet1')
         s.SelMeasE1Det1 = h.P.EnergyRangeDet1(1);
         s.SelMeasE2Det1 = h.P.EnergyRangeDet1(2);
@@ -20474,7 +22984,7 @@ else
     s.EnergyRange = h.EnergyRange;
 end
 % Create Background correction fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeakRegionsXDet1')
         s.PeakRegionsXDet1 = h.PeakRegionsXDet1;
         s.PeakRegionsXdataDet1 = h.PeakRegionsXdataDet1;
@@ -20493,7 +23003,7 @@ else
 end
 s.CheckBoxUseAllSpectra = get(h.checkboxBKG,'Value');
 % Create Fitting fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1')
         s.TPeaksDet1 = h.TPeaksDet1;
         s.PeaksDet1 = h.PeaksDet1;
@@ -20565,7 +23075,7 @@ if isfield(h, 'idxkeepPeaks')
 end
 s.DeleteLogical = DeleteLogical;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1')
         s.DiffractionLinesDet1 = h.DiffractionLinesDet1;
         if isfield(h,'FittedPeaksDet1bkp')
@@ -20602,7 +23112,7 @@ else
 end
 
 % Create Theoretical peak pos fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeakRegionsXDet1')
         s.PeakRegionsXDet1 = h.PeakRegionsXDet1;
         s.tablephasehklDet1 = h.tablephasehkl;
@@ -20900,7 +23410,7 @@ set(h.plotEtheoAdd4, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd5, {'xdata','ydata'},{0 0})
 set(h.axesplotRawData.Title,'String','No measurement data loaded')
 h.axesplotRawData.XLim = [0,100];
-h.axesplotRawData.YLim = [0,1];
+h.axesplotRawData.YLim = [0,Inf];
 set(h.checkboxtheopeaks1,{'Value','Visible'}, {1,'off'})
 set(h.checkboxshifttheopeaks1,{'Value','Visible'}, {0,'off'})
 set(h.editshiftEtheo1,{'String','Visible'}, {'delta E','off'})
@@ -20990,6 +23500,7 @@ set(h.plotreglinedspacingphi270,{'xdata','ydata','Visible'},{0,0,'off'})
 
 if isfield(h,'plotfits')
     set(h.plotfits,{'xdata','ydata','Visible'},{0,0,'off'})
+    set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
     set(h.plotfitresidual,{'xdata','ydata','Visible'},{0,0,'off'})
 end
 
@@ -21025,8 +23536,8 @@ end
 d = zeros(7,5);
 set(h.tablecalibangEpos1,'data',d)
 set(h.texteditfieldcalibangEpos1,'String','Lattice parameter')
-set(h.texteditfieldcalibangEpos2,'String','twotheta')
-set(h.texteditfieldcalibangEpos3,'String','deltaE')
+set(h.texteditfieldcalibangEpos2,'String',['2',char(952)])
+set(h.texteditfieldcalibangEpos3,'String',[char(916),'E'])
 set(h.checkboxcalibangEpos1,'value',1)
 set(h.checkboxcalibangEpos2,'value',1)
 set(h.checkboxcalibangEpos3,'value',1)
@@ -21145,7 +23656,65 @@ end
 
 % Remove all fields from structure not needed
 % tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Substrate';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'checkboxsubstrate1';'editfieldelement2';'textmpd2';'popupmenumpd2';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'checkboxtheopeaks2';'checkboxshifttheopeaks2';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'checkboxcorrEpos1';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270'};
-tokeep =  {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'checkboxnorm';'zoominbutton';'zoomoutbutton'};
+tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
+
+% tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';...
+% 'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';...
+% 'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';...
+% 'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';...
+% 'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';...
+% 'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';...
+% 'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';...
+% 'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';...
+% 'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';...
+% 'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';...
+% 'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';...
+% 'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';...
+% 'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';...
+% 'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';...
+% 'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';...
+% 'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';...
+% 'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';...
+% 'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';...
+% 'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';...
+% 'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';...
+% 'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';...
+% 'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';...
+% 'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';...
+% 'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';...
+% 'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';...
+% 'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';...
+% 'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';...
+% 'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';...
+% 'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';...
+% 'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';...
+% 'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';...
+% 'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';...
+% 'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';...
+% 'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';...
+% 'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';...
+% 'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';...
+% 'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';...
+% 'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';...
+% 'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';...
+% 'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';...
+% 'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';...
+% 'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';...
+% 'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';...
+% 'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';...
+% 'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';...
+% 'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';...
+% 'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';...
+% 'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';...
+% 'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';...
+% 'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';...
+% 'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';...
+% 'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';...
+% 'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';...
+% 'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'tablePDFDatabase';...
+% 'PDFDataInfoPanel';'tabledhklPDF';'popupmenulambda';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';...
+% 'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';...
+% 'textdataelementPDFData8';'axesplotPDFData';'axesplotPDFDataEnergy'};
 
 f = fieldnames(h);
 toRemove = f(~ismember(f,tokeep));
@@ -21167,8 +23736,18 @@ h = guidata(hObj);
 % Material
 material = h.P.PopupValueMpd1;
 
-[filename, filepath] = uiputfile('*.mat','Save GUIData',[General.ProgramInfo.Path,'\Data\GUIData\',...
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        [filename, filepath] = uiputfile('*.mat','Save GUIData',[General.ProgramInfo.Path,'\Data\GUIData\',...
+                      strtrim(h.Measurement(1).MeasurementSeries),'_',material,'_Det1_',datestr(now, 'ddmmyyyy')]);
+    elseif strcmp(h.Detsel,'Detector 2')
+        [filename, filepath] = uiputfile('*.mat','Save GUIData',[General.ProgramInfo.Path,'\Data\GUIData\',...
+                      strtrim(h.Measurement(1).MeasurementSeries),'_',material,'_Det2_',datestr(now, 'ddmmyyyy')]);
+    end
+else
+    [filename, filepath] = uiputfile('*.mat','Save GUIData',[General.ProgramInfo.Path,'\Data\GUIData\',...
                       strtrim(h.Measurement(1).MeasurementSeries),'_',material,'_',datestr(now, 'ddmmyyyy')]);
+end
 
 % If user pressed cancel, abort saving process
 if filename==0
@@ -21207,7 +23786,7 @@ s.measmode = h.measmode;
 s.Diffsel = h.Diffsel;
 s.Detsel = h.Detsel;
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'EnergyRangeDet1')
         s.SelMeasE1Det1 = h.P.EnergyRangeDet1(1);
         s.SelMeasE2Det1 = h.P.EnergyRangeDet1(2);
@@ -21225,7 +23804,7 @@ else
     s.EnergyRange = h.EnergyRange;
 end
 % Create Background correction fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeakRegionsXDet1')
         s.PeakRegionsXDet1 = h.PeakRegionsXDet1;
         s.PeakRegionsXdataDet1 = h.PeakRegionsXdataDet1;
@@ -21244,12 +23823,12 @@ else
 end
 s.CheckBoxUseAllSpectra = get(h.checkboxBKG,'Value');
 % Create Fitting fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1')
         s.TPeaksDet1 = h.TPeaksDet1;
         s.PeaksDet1 = h.PeaksDet1;
-        s.Peakslb = h.Peakslb;
-        s.Peaksub = h.Peaksub;
+        s.PeakslbDet1 = h.PeakslbDet1;
+        s.PeaksubDet1 = h.PeaksubDet1;
         s.xDataTmpCalcDet1 = h.xDataTmpCalcDet1;
         s.FittedPeaksDet1 = h.FittedPeaksDet1;
         s.FittedPeaksCalctmpDet1 =  h.FittedPeaksCalctmpDet1;
@@ -21259,13 +23838,14 @@ if strcmp(h.Diffsel,'LEDDI')
         s.YPlotDet1 = h.YPlotDet1;
         s.SEDet1 = h.SEDet1;
         s.CIDet1 = h.CIDet1;
+        s.SinglePlot_tmpDet1 = h.SinglePlot_tmp;
     end
     
     if isfield(h, 'PeaksDet2')
         s.TPeaksDet2 = h.TPeaksDet2;
         s.PeaksDet2 = h.PeaksDet2;
-        s.Peakslb = h.Peakslb;
-        s.Peaksub = h.Peaksub;
+        s.PeakslbDet2 = h.PeakslbDet2;
+        s.PeaksubDet2 = h.PeaksubDet2;
         s.xDataTmpCalcDet2 = h.xDataTmpCalcDet2;
         s.FittedPeaksDet2 = h.FittedPeaksDet2;
         s.FittedPeaksCalctmpDet2 =  h.FittedPeaksCalctmpDet2;
@@ -21275,6 +23855,7 @@ if strcmp(h.Diffsel,'LEDDI')
         s.YPlotDet2 = h.YPlotDet2;
         s.SEDet2 = h.SEDet2;
         s.CIDet2 = h.CIDet2;
+        s.SinglePlot_tmpDet2 = h.SinglePlot_tmp;
     end
 else
     s.TPeaks = h.TPeaks;
@@ -21290,6 +23871,7 @@ else
     s.YPlot = h.YPlot;
     s.SE = h.SE;
     s.CI = h.CI;
+    s.SinglePlot_tmp = h.SinglePlot_tmp;
 end
 
 s.PopupValueFitFunc = h.P.PopupValueFitFunc;
@@ -21313,7 +23895,7 @@ s.checkboxEditTableData = get(h.checkboxEditTableData,'Value');
 s.MinVal = h.MinVal;
 % end
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1')
         s.DiffractionLinesDet1 = h.DiffractionLinesDet1;
         if isfield(h,'FittedPeaksDet1bkp')
@@ -21347,7 +23929,7 @@ if strcmp(h.Diffsel,'ETA3000')
     s.XRay_Energy = h.XRay_Energy;
 end
 % Create Theoretical peak pos fields
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeakRegionsXDet1')
         s.PeakRegionsXDet1 = h.PeakRegionsXDet1;
         s.tablephasehklDet1 = h.tablephasehkl;
@@ -21419,7 +24001,7 @@ h.Diffsel = s.Diffsel;
 h.Detsel = s.Detsel;
 
 % Set slider parameters
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if length(s.Measurement) == 2
         set(h.Slider,'Min',0);
         set(h.Slider,'Max',length(s.Measurement)/2);
@@ -21462,7 +24044,7 @@ set(h.samplethickness,'String',s.CorrSampleThickness);
 % Set Select Measurement fields
 if strcmp(s.MeasDiffTypeName,'EDDI') || strcmp(s.MeasDiffTypeName,'LIMAX-160') || strcmp(h.Diffsel,'LIMAX-70')
     set(h.popupmenuselectmeas1,{'Value','Enable'}, {2,'off'})
-elseif strcmp(s.MeasDiffTypeName,'LEDDI')
+elseif strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     set(h.popupmenuselectmeas1,{'Value','Enable'},{s.SelMeasDetLEDDIVal,'on'});
 end
 
@@ -21470,7 +24052,7 @@ end
 set(h.checkboxFitBothDetectors, 'Value', s.checkboxFitBothDetectors);
 set(h.checkboxexportfits, 'Value', s.checkboxexportfits);
 
-if strcmp(s.MeasDiffTypeName,'LEDDI')
+if strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     if isfield(s, 'PeakRegionsXDet1')
         set(h.editfieldselectmeas1,'String',num2str(length(s.Measurement)/2));
         set(h.editfieldselectmeas2,'String',num2str(1));
@@ -21480,15 +24062,17 @@ if strcmp(s.MeasDiffTypeName,'LEDDI')
             set(h.editfieldselectmeas5,'String',num2str(s.SelMeasE2Det1))
         end
         h.PeaksDet1 = s.PeaksDet1;
-        h.Peakslb = s.Peakslb;
-        h.Peaksub = s.Peaksub;
-        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        h.PeakslbDet1 = s.PeakslbDet1;
+        h.PeaksubDet1 = s.PeaksubDet1;
+        set(h.tablepeakdata,'data',[h.PeaksDet1{valueSlider};h.PeakslbDet1{valueSlider};h.PeaksubDet1{valueSlider}])
         if strcmp(s.SelMeasDetLEDDIName,'Detector 1')
             set(h.tablebkgdata,'data',s.PeakRegionsXDet1{valueSlider})
         end
         h.PeakRegionsXDet1 = s.PeakRegionsXDet1;
-        h.PeakRegionsXdataDet1 = s.PeakRegionsXdataDet1;
-        h.PeakRegionsYdataDet1 = s.PeakRegionsYdataDet1;
+        if isfield(s, 'PeakRegionsXdataDet1')
+            h.PeakRegionsXdataDet1 = s.PeakRegionsXdataDet1;
+            h.PeakRegionsYdataDet1 = s.PeakRegionsYdataDet1;
+        end
     end
     
     if isfield(s, 'PeakRegionsXDet2')
@@ -21500,15 +24084,18 @@ if strcmp(s.MeasDiffTypeName,'LEDDI')
             set(h.editfieldselectmeas5,'String',num2str(s.SelMeasE2Det2))
         end
         h.PeaksDet2 = s.PeaksDet2;
-        h.Peakslb = s.Peakslb;
-        h.Peaksub = s.Peaksub;
-        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.Peakslb{valueSlider};h.Peaksub{valueSlider}])
+        h.PeakslbDet2 = s.PeakslbDet2;
+        h.PeaksubDet2 = s.PeaksubDet2;
+        set(h.tablepeakdata,'data',[h.PeaksDet2{valueSlider};h.PeakslbDet2{valueSlider};h.PeaksubDet2{valueSlider}])
         if strcmp(s.SelMeasDetLEDDIName,'Detector 2')
             set(h.tablebkgdata,'data',s.PeakRegionsXDet2{valueSlider})
         end
         h.PeakRegionsXDet2 = s.PeakRegionsXDet2;
-        h.PeakRegionsXdataDet2 = s.PeakRegionsXdataDet2;
-        h.PeakRegionsYdataDet2 = s.PeakRegionsYdataDet2;
+        if isfield(s, 'PeakRegionsXdataDet2')
+            h.PeakRegionsXdataDet2 = s.PeakRegionsXdataDet2;
+            h.PeakRegionsYdataDet2 = s.PeakRegionsYdataDet2;
+        end
+        
     end
 else
     set(h.editfieldselectmeas1,'String',num2str(length(s.Measurement)));
@@ -21528,7 +24115,7 @@ else
 end
 
 % Set plot data in order for the slider to work
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(s.SelMeasDetLEDDIName,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         % Interpolate RawData to get YData for PeakRegions
@@ -21551,7 +24138,7 @@ else
 end
 
 % Set plot data for plot window
-if strcmp(s.MeasDiffTypeName,'LEDDI')
+if strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     if isfield(s, 'EnergyRangeDet1')
         h.P.EnergyRangeDet1(1) = s.SelMeasE1Det1;
         h.P.EnergyRangeDet1(2) = s.SelMeasE2Det1;
@@ -21575,9 +24162,10 @@ if strcmp(s.MeasDiffTypeName,'LEDDI')
 %         EtheoLimit = h.TPeaksDet1.T.Etheo(a);
 %         X1Limit = h.TPeaksDet1.T.X1(a,:);
         X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-%         Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
 %         if strcmp(s.SelMeasDetLEDDIName,'Detector 1')
             set(h.plotEtheo,'xdata',X3Limit(:,1))
+            set(h.plotEtheo,'ydata',Y3Limit(:,1))
             % Set table data for theoretical peak positions
 %             set(h.tablephasehkl,'data',[num2cell(h.TPeaksDet1.T.Peaks(a,:)) num2cell(true(size(h.TPeaksDet1.T.Peaks(a,:),1)))])
 %         end
@@ -21601,7 +24189,55 @@ if strcmp(s.MeasDiffTypeName,'LEDDI')
         set(h.tablephasehkl,'data',get(s.tablephasehklDet1,'data'))
     end
     
-    if isfield(s, 'EnergyRangeDet2')
+    if isfield(s, 'EnergyRangeDet2') && isfield(s, 'EnergyRangeDet1')
+        h.P.EnergyRangeDet2(1) = s.SelMeasE1Det2;
+        h.P.EnergyRangeDet2(2) = s.SelMeasE2Det2;
+        h.EnergyRangeDet2 = s.EnergyRangeDet2;
+%         Slidersteps = 1:2:length(h.Measurement);
+        % Set measurement title
+%         set(h.axesplotRawData.Title,'String',['Measurement Data for ', s.Measurement(Slidersteps(valueSlider)).Name])
+        % Set plot data
+%         set(h.plotdata,'xdata',s.DataTmp{Slidersteps(valueSlider)}(:,1))
+%         set(h.plotdata,'ydata',s.DataTmp{Slidersteps(valueSlider)}(:,2))
+%         set(h.plotdataZoom,{'xdata','ydata'},{s.DataTmp{Slidersteps(valueSlider)}(:,1) s.DataTmp{Slidersteps(valueSlider)}(:,2)})
+%         set(h.plotdataZoomCH,{'xdata','ydata'},{0 0})
+%         h.axesplotRawData.XLim = h.P.EnergyRangeDet2;
+%         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
+        % Set peak properties (Pos, Int etc.) of theoretical peaks
+        h.TPeaksDet2 = s.TPeaksDet2;
+        a = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
+        h.FitPeaksLogicalErangeDet2 = a;
+%         EtheoLimit = h.TPeaksDet2.T.Etheo(a);
+%         X1Limit = h.TPeaksDet2.T.X1(a,:);
+%         X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+%         Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+%         if strcmp(s.SelMeasDetLEDDIName,'Detector 2')
+%             set(h.plotEtheo,'xdata',X3Limit(:,1))
+%             set(h.plotEtheo,'ydata',Y3Limit(:,1))
+            % Set table data for theoretical peak positions
+%             set(h.tablephasehkl,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(true(size(h.TPeaksDet2.T.Peaks(a,:),1)))])
+%         end
+        % Compare user defined peaks and theoretical peak positons and
+        % mark the respective peaks in the phase data table 
+        PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
+        PeaksTheo = PeaksTheo.*h.FitPeaksLogicalErangeDet2;
+        PeaksTheo(PeaksTheo==0) = [];
+        TableBkgColor = [1 0.6 0.6];
+        TableBkgColorArrayDet2 = repmat(TableBkgColor,size(PeaksTheo,1),1);
+        [CompareFitPeaksLogical,MinVal,IndVal,PeakHit] = ComparePeaks(s.PeaksDet2,PeaksTheo);
+        h.MinVal = MinVal;
+        h.FitPeaksLogicalDet2 = CompareFitPeaksLogical;
+        CompareFitPeaksLogical = double(CompareFitPeaksLogical);
+        h.IndValDet2 = IndVal;
+        % Repmat of logical vector in order to match size of T.Peaks array
+        TableBkgColorArrayDet2 = TableBkgColorArrayDet2.*CompareFitPeaksLogical;
+        TableBkgColorArrayDet2(TableBkgColorArrayDet2==0) = 1;
+        h.TableBkgColorArrayDet2 = TableBkgColorArrayDet2;
+%         set(h.tablephasehkl,'BackgroundColor',h.TableBkgColorArrayDet2)
+%         set(h.tablephasehkl,'data',get(s.tablephasehklDet2,'data'))
+    end
+
+    if isfield(s, 'EnergyRangeDet2') && ~isfield(s, 'EnergyRangeDet1')
         h.P.EnergyRangeDet2(1) = s.SelMeasE1Det2;
         h.P.EnergyRangeDet2(2) = s.SelMeasE2Det2;
         h.EnergyRangeDet2 = s.EnergyRangeDet2;
@@ -21622,12 +24258,13 @@ if strcmp(s.MeasDiffTypeName,'LEDDI')
 %         EtheoLimit = h.TPeaksDet2.T.Etheo(a);
 %         X1Limit = h.TPeaksDet2.T.X1(a,:);
         X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-%         Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
-%         if strcmp(s.SelMeasDetLEDDIName,'Detector 2')
+        Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        if strcmp(s.SelMeasDetLEDDIName,'Detector 2')
             set(h.plotEtheo,'xdata',X3Limit(:,1))
-            % Set table data for theoretical peak positions
-%             set(h.tablephasehkl,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(true(size(h.TPeaksDet2.T.Peaks(a,:),1)))])
-%         end
+            set(h.plotEtheo,'ydata',Y3Limit(:,1))
+            %Set table data for theoretical peak positions
+            set(h.tablephasehkl,'data',[num2cell(h.TPeaksDet2.T.Peaks(a,:)) num2cell(true(size(h.TPeaksDet2.T.Peaks(a,:),1)))])
+        end
         % Compare user defined peaks and theoretical peak positons and
         % mark the respective peaks in the phase data table 
         PeaksTheo = h.TPeaksDet2.T.Peaks(:,5);
@@ -21704,7 +24341,7 @@ else
 end
 
 % Set fitted plot data for plot of fitted peaks
-if strcmp(s.MeasDiffTypeName,'LEDDI')
+if strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     if isfield(s,'FittedPeaksDet1')
         h.DiffractionLinesDet1 = s.DiffractionLinesDet1;
         h.xDataTmpCalcDet1 = s.xDataTmpCalcDet1;
@@ -21777,7 +24414,7 @@ end
 h.plotfits = plot(h.axesplotRawData, XPlot, YPlot,'Color','red','LineWidth',1.5);
 h.plotfitresidual = plot(h.axesplotRawData,XFit,(YFit - interp1(XPlot,YPlot,XFit)) - (max(YFit) /4),'Color','k','LineWidth',0.5);
 % Change YLim
-if strcmp(s.MeasDiffTypeName,'LEDDI')
+if strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     if strcmp(s.SelMeasDetLEDDIName,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
@@ -21828,7 +24465,7 @@ if ~isfield(h, 'MinVal')
     h.MinVal = s.MinVal;
 end
 % Set psi file table data as originally saved
-if strcmp(s.MeasDiffTypeName,'LEDDI')
+if strcmp(s.MeasDiffTypeName,'LEDDI_KETEK_TWODET')
     if strcmp(s.SelMeasDetLEDDIName,'Detector 1')
         h.PsidataDet1 = s.PsidataDet1;
         h.PsiFileTableDataDet1 = s.PsiFileTableDataDet1;
@@ -21912,7 +24549,7 @@ delete(axesTextObjects)
 
 set(h.axesplotRawData.Title,'String','No measurement data loaded')
 h.axesplotRawData.XLim = [0,1];
-h.axesplotRawData.YLim = [0,1];
+h.axesplotRawData.YLim = [0,Inf];
 % children = get(h.axesplotdspacing, 'children');
 % delete(children)
 % assignin('base','axesplotdspacingnewfile',h.axesplotdspacing)
@@ -21927,7 +24564,7 @@ set(h.minusbuttonshiftEtheo1,'Visible', 'off')
 set(h.plusbuttonshiftEtheo2,'Visible', 'off')
 set(h.minusbuttonshiftEtheo2,'Visible', 'off')
 % Set Select Measurement fields
-if ~strcmp(h.Diffsel,'LEDDI')
+if ~strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     set(h.popupmenuselectmeas1,{'Value','Enable'}, {2,'off'})
 end
 set(h.editfieldselectmeas1,'String','')
@@ -22002,6 +24639,7 @@ set(h.plotreglinedspacingphi270,{'xdata','ydata','Visible'},{0,0,'off'})
 
 if isfield(h,'plotfits')
     set(h.plotfits,{'xdata','ydata','Visible'},{0,0,'off'})
+    set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
     set(h.plotfitresidual,{'xdata','ydata','Visible'},{0,0,'off'})
 end
 
@@ -22155,8 +24793,69 @@ if isfield(h,'legendplotfitdata4')
 end
 
 % Remove all fields from structure not needed
-% tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Substrate';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'checkboxsubstrate1';'editfieldelement2';'textmpd2';'popupmenumpd2';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'checkboxtheopeaks2';'checkboxshifttheopeaks2';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'checkboxcorrEpos1';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270'};
-tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'checkboxnorm';'zoominbutton';'zoomoutbutton'}; %'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'tableresultsSAMQA';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'checkboxnorm'};
+tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
+
+% tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';...
+% 'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';...
+% 'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';...
+% 'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';...
+% 'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';...
+% 'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';...
+% 'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';...
+% 'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';...
+% 'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';...
+% 'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';...
+% 'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';...
+% 'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';...
+% 'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';...
+% 'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';...
+% 'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';...
+% 'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';...
+% 'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';...
+% 'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';...
+% 'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';...
+% 'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';...
+% 'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';...
+% 'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';...
+% 'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';...
+% 'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';...
+% 'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';...
+% 'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';...
+% 'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';...
+% 'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';...
+% 'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';...
+% 'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';...
+% 'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';...
+% 'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';...
+% 'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';...
+% 'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';...
+% 'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';...
+% 'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';...
+% 'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';...
+% 'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';...
+% 'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';...
+% 'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';...
+% 'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';...
+% 'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';...
+% 'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';...
+% 'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';...
+% 'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';...
+% 'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';...
+% 'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';...
+% 'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';...
+% 'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';...
+% 'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';...
+% 'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';...
+% 'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';...
+% 'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';...
+% 'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';...
+% 'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';...
+% 'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'tablePDFDatabase';...
+% 'PDFDataInfoPanel';'tabledhklPDF';'popupmenulambda';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';...
+% 'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';...
+% 'textdataelementPDFData8';'axesplotPDFData';'axesplotPDFDataEnergy'};
+
+
 f = fieldnames(h);
 toRemove = f(~ismember(f,tokeep));
 h = rmfield(h,toRemove);
@@ -22184,14 +24883,13 @@ h = guidata(hObj);
 % Get slider value
 value = get(hObj, 'Value');
 value = round(value);
-
 Detstr = get(h.popupmenuselectmeas1,'String');
 Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 
 % Set plot data and plot ranges/limits for different diffractometers
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
     if strcmp(h.Detsel,'Detector 1')
         % In order to analyze the data measured with Det1, the following
@@ -22210,13 +24908,17 @@ if strcmp(h.Diffsel,'LEDDI')
             a = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
             EtheoLimit = h.TPeaksDet1.T.Etheo(a);
             Y3Limit = h.TPeaksDet1.T.Y3((1:(3*length(EtheoLimit)-1)),:);
+            X3Limit = h.TPeaksDet1.T.X3((1:(3*length(EtheoLimit)-1)),:);
+            set(h.plotEtheo,'xdata',X3Limit(:,value))
             set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,value))))
         else             
             a = h.TPeaksDet1.T.Etheo < h.TPeaksDet1.T.EMax;
             EtheoLimit = h.TPeaksDet1.T.Etheo(a);
             h.axesplotRawData.XLim = [0, 60];
-            Y3Limit = h.TPeaks.T.Y3((1:(3*length(EtheoLimit)-1)),:);
-            set(h.plotEtheo,'ydata',Y3Limit(:,Slidersteps(value)).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,Slidersteps(value)))))
+            Y3Limit = h.TPeaksDet1.T.Y3((1:(3*length(EtheoLimit)-1)),:);
+            X3Limit = h.TPeaksDet1.T.X3((1:(3*length(EtheoLimit)-1)),:);
+            set(h.plotEtheo,'xdata',X3Limit(:,value))
+            set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,value))))
         end
         % Set Ylim of the plot and the theoretical peak positions
         if round(max(h.DataTmp{Slidersteps(value)}(:,2)),-1) == 0
@@ -22224,6 +24926,7 @@ if strcmp(h.Diffsel,'LEDDI')
         else
             h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(value)}(:,2)),-1)];
         end
+        h.axesplotRawData.YLim = [0, Inf];
         % Set title according to current slider value
         set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(value)).Name])
     elseif strcmp(h.Detsel,'Detector 2')
@@ -22243,14 +24946,19 @@ if strcmp(h.Diffsel,'LEDDI')
             a = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
             EtheoLimit = h.TPeaksDet2.T.Etheo(a);
             Y3Limit = h.TPeaksDet2.T.Y3((1:(3*length(EtheoLimit)-1)),:);
+            X3Limit = h.TPeaksDet2.T.X3((1:(3*length(EtheoLimit)-1)),:);
+            set(h.plotEtheo,'xdata',X3Limit(:,value))
             set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,value))))
         else
             h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
             a = h.TPeaksDet2.T.Etheo < h.TPeaksDet2.T.EMax;
             EtheoLimit = h.TPeaksDet2.T.Etheo(a);
             h.axesplotRawData.XLim = [0, 60];
-            Y3Limit = h.TPeaks.T.Y3((1:(3*length(EtheoLimit)-1)),:);
-            set(h.plotEtheo,'ydata',Y3Limit(:,Slidersteps(value)).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,value))))
+            Y3Limit = h.TPeaksDet2.T.Y3((1:(3*length(EtheoLimit)-1)),:);
+            X3Limit = h.TPeaksDet2.T.X3((1:(3*length(EtheoLimit)-1)),:);
+            set(h.plotEtheo,'xdata',X3Limit(:,value))
+            set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{Slidersteps(value)}(:,2))/max(Y3Limit(:,value))))
+
         end
         % Set Ylim of the plot and the theoretical peak positions
         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(value)}(:,2)),-1)];
@@ -22258,7 +24966,7 @@ if strcmp(h.Diffsel,'LEDDI')
         set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(value)).Name])
     end
 elseif strcmp(h.Diffsel,'ETA3000')
-%     assignin('base','hTPeaks',h.TPeaks)
+    assignin('base','hTPeaks1',h.TPeaks)
     if isfield(h,'EnergyRange')
         aka1 = h.P.EnergyRange(1) < h.TPeaks.T.Etheoka1 & h.TPeaks.T.Etheoka1 < h.P.EnergyRange(2);
         aka2 = h.P.EnergyRange(1) < h.TPeaks.T.Etheoka2 & h.TPeaks.T.Etheoka2 < h.P.EnergyRange(2); 
@@ -22266,6 +24974,22 @@ elseif strcmp(h.Diffsel,'ETA3000')
         aka1 = h.TPeaks.T.Etheoka1 < h.TPeaks.T.EMax;
         aka2 = h.TPeaks.T.Etheoka2 < h.TPeaks.T.EMax;
     end
+
+    EtheoLimit_aka1 = h.TPeaks.T.Etheoka1(aka1);
+    EtheoLimit_aka2 = h.TPeaks.T.Etheoka2(aka2);
+    
+    X3Limitka1 = h.TPeaks.T.X3((1:(3*length(EtheoLimit_aka1)-1)),:);
+    Y3Limitka1 = h.TPeaks.T.Y3((1:(3*length(EtheoLimit_aka1)-1)),:);
+    X3Limitka2 = h.TPeaks.T.X3ka2((1:(3*length(EtheoLimit_aka2)-1)),:);
+    Y3Limitka2 = h.TPeaks.T.Y3((1:(3*length(EtheoLimit_aka2)-1)),:).*0.5;
+
+    assignin('base','Y3Limitka1',Y3Limitka1)
+    
+    % Set plot data for additional theoretical line positions
+    set(h.plotEtheo,'xdata',[X3Limitka1(:,value);NaN;X3Limitka2(:,value)])
+    % Check selected column for Y3Limit
+    set(h.plotEtheo,'ydata',[Y3Limitka1(:,value);NaN;Y3Limitka2(:,value)])
+
     set(h.plotdata,'xdata',h.DataTmp{value}(:,1))
     set(h.plotdata,'ydata',h.DataTmp{value}(:,2))
 %     set(h.plotdata,{'LineStyle','Marker','MarkerFaceColor'},{'none','o','blue'})
@@ -22287,7 +25011,7 @@ else
     h.FitPeaksLogicalErange = a;
 %     EtheoLimit = h.TPeaks.T.Etheo(a);
     if h.checkboxplotall == 1
-%         if strcmp(h.Diffsel,'LEDDI')
+%         if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 %         % If LEDDI has been used for the measurement
 %             if strcmp(h.Detsel,'Detector 1')
 %                 Slidersteps = 2:2:length(h.Measurement);
@@ -22333,7 +25057,7 @@ end
 
 % Set ydata for backgroundpoints according to current slider value
 if isfield(h, 'plotbkgpoints')
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             if isfield(h, 'PeakRegionsXDet1')
@@ -22363,7 +25087,7 @@ end
 
 % Set ydata for peak positions according to current slider value
 if isfield(h, 'plotpeakpoints')
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             if isfield(h, 'DataInterpPeaksDet1')
@@ -22374,7 +25098,7 @@ if isfield(h, 'plotpeakpoints')
                 set(h.plotpeakpoints,'XData',h.PeaksDet1{value})
                 set(h.plotpeakpoints,'YData',h.DataInterpPeaksDet1)
                 % Set peak table data according to current slider value
-                set(h.tablepeakdata,'data',[h.PeaksDet1{value};h.Peakslb{value};h.Peaksub{value}])
+                set(h.tablepeakdata,'data',[h.PeaksDet1{value};h.PeakslbDet1{value};h.PeaksubDet1{value}])
 %                 TablePeakData = get(h.tablepeakdata,'data');
 %                 TablePeakData(2,:) = h.Peakslb{value};
 %                 TablePeakData(3,:) = h.Peaksub{value};
@@ -22389,7 +25113,7 @@ if isfield(h, 'plotpeakpoints')
                 set(h.plotpeakpoints,'XData',h.PeaksDet2{value})
                 set(h.plotpeakpoints,'YData',h.DataInterpPeaksDet2)
                 % Set peak table data according to current slider value
-                set(h.tablepeakdata,'data',[h.PeaksDet2{value};h.Peakslb{value};h.Peaksub{value}])
+                set(h.tablepeakdata,'data',[h.PeaksDet2{value};h.PeakslbDet2{value};h.PeaksubDet2{value}])
 %                 TablePeakData = get(h.tablepeakdata,'data');
 %                 TablePeakData(2,:) = h.Peakslb{value};
 %                 TablePeakData(3,:) = h.Peaksub{value};
@@ -22413,7 +25137,7 @@ end
 
 % Show proposed background correction according to current slider value
 if isfield(h, 'plotBKG')
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             if isfield(h, 'DataTmpToAcceptDet1')
@@ -22447,7 +25171,7 @@ if isfield(h, 'DataTmpBackgroundCorrData')
         end
     end
 end
-
+assignin('base','hfit',h)
 % Set data of fitted plots according to current slider value
 if isfield(h, 'FittedPeaks')
     % Set RawData for current slider value
@@ -22479,16 +25203,20 @@ if isfield(h, 'FittedPeaks')
             else
                 SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
                     h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3),h.FittedPeaks{value}(d, 4));
+                SinglePlot_Tmp{d} = SinglePlot;
             end
         elseif h.P.PopupValueFitFunc == 3 %TCH-Func
             SinglePlot = Tools.Science.Math.FF_TCH(XPlot, ...
                 h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3),h.FittedPeaks{value}(d, 4));
+            SinglePlot_Tmp{d} = SinglePlot;
         elseif h.P.PopupValueFitFunc == 4 %Gauss-Func
             SinglePlot = Tools.Science.Math.FF_Gauss(XPlot, ...
                 h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3));
+            SinglePlot_Tmp{d} = SinglePlot;
         elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
             SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                 h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3)); 
+            SinglePlot_Tmp{d} = SinglePlot;
         end
             if strcmp(h.Diffsel,'ETA3000')
                 YPlot_tmp = YPlot_tmp + SinglePlot;
@@ -22499,6 +25227,7 @@ if isfield(h, 'FittedPeaks')
                 YPlot = YPlot + SinglePlot;
             end
     end
+
     % Add plots of fitted peaks and residual to axes according to current 
     % slider value
     if strcmp(h.Diffsel,'ETA3000')
@@ -22514,10 +25243,16 @@ if isfield(h, 'FittedPeaks')
         % Set data of plot residual according to current slider value
         set(h.plotfitresidual,'xdata',XFit)
         YDataResidual = (YFit - interp1(XPlot,YPlot(:,1),XFit)) - (max(YFit) /4);
+        set(h.plotfitresidual,'xdata', XPlot)
         set(h.plotfitresidual,'ydata', YDataResidual)
     else
         set(h.plotfits,'xdata',XPlot)
         set(h.plotfits,'ydata',YPlot)
+        ydata_tmp = cell2mat(SinglePlot_Tmp');
+        for k = 1:size(SinglePlot_Tmp,2)
+            set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+            set(h.plotfitsSinglePeaks(k),'xdata',XPlot)
+        end
         % Set data of plot residual according to current slider value
         set(h.plotfitresidual,'xdata',XFit)
         YDataResidual = (YFit - interp1(XPlot,YPlot,XFit)) - (max(YFit) /4);
@@ -22540,7 +25275,7 @@ if isfield(h, 'FittedPeaks')
 %     end
 end
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         if isfield(h, 'FittedPeaksDet1')
             Slidersteps = 2:2:length(h.Measurement);
@@ -22556,15 +25291,19 @@ if strcmp(h.Diffsel,'LEDDI')
                 if h.P.PopupValueFitFunc == 2 %PV-Func
                     SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
                         h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3),h.FittedPeaksDet1{value}(d, 4));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 3 %TCH-Func
                     SinglePlot = Tools.Science.Math.FF_TCH(XPlot, ...
                         h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3),h.FittedPeaksDet1{value}(d, 4));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 4 %Gauss-Func
                     SinglePlot = Tools.Science.Math.FF_Gauss(XPlot, ...
                         h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                     SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                         h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 end
                     YPlot = YPlot + SinglePlot;
             end
@@ -22572,6 +25311,10 @@ if strcmp(h.Diffsel,'LEDDI')
             % slider value
             set(h.plotfits,'xdata',XPlot)
             set(h.plotfits,'ydata',YPlot)
+            ydata_tmp = cell2mat(SinglePlot_Tmp');
+            for k = 1:size(SinglePlot_Tmp,2)
+                set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+            end
             % Set data of plot residual according to current slider value
             set(h.plotfitresidual,'xdata',XFit)
             YDataResidual = (YFit - interp1(XPlot,YPlot,XFit)) - (max(YFit) /4);
@@ -22606,15 +25349,19 @@ if strcmp(h.Diffsel,'LEDDI')
                 if h.P.PopupValueFitFunc == 2 %PV-Func
                     SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
                         h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3),h.FittedPeaksDet2{value}(d, 4));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 3 %TCH-Func
                     SinglePlot = Tools.Science.Math.FF_TCH(XPlot, ...
                         h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3),h.FittedPeaksDet2{value}(d, 4));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 4 %Gauss-Func
                     SinglePlot = Tools.Science.Math.FF_Gauss(XPlot, ...
                         h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                     SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                         h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 end
                     YPlot = YPlot + SinglePlot;
             end
@@ -22622,6 +25369,10 @@ if strcmp(h.Diffsel,'LEDDI')
             % slider value
             set(h.plotfits,'xdata',XPlot)
             set(h.plotfits,'ydata',YPlot)
+            ydata_tmp = cell2mat(SinglePlot_Tmp');
+            for k = 1:size(SinglePlot_Tmp,2)
+                set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+            end
             % Set data of plot residual according to current slider value
             set(h.plotfitresidual,'xdata',XFit)
             YDataResidual = (YFit - interp1(XPlot,YPlot,XFit)) - (max(YFit) /4);
@@ -22651,17 +25402,30 @@ end
 % end
 
 if isfield(h, 'PeaksTheoAdd')
-    Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
-    if strcmp(h.Diffsel,'LEDDI')
-        set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,Slidersteps(value)).*(max(h.DataTmp{1,Slidersteps(value)}(:,2))/max(Y3LimitAdd1(:,Slidersteps(value)))))
+    if strcmp(h.Diffsel,'ETA3000')
+        Y3Limitka1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAddka1)-1)),:);
+%         Y3Limitka1 = h.PeaksTheoAdd.T.Y3((1:(3*1-1)),:);
+%         assignin('base','Y3LimitAdd1',Y3Limitka1)
+%         assignin('base','EtheoLimitPeaksAddka1',h.EtheoLimitPeaksAddka1)
+%         assignin('base','PeaksTheoAddETA',h.PeaksTheoAdd)
+        set(h.plotEtheoAdd1,'ydata',[Y3Limitka1(:,value);NaN;Y3Limitka1(:,value).*0.5])
     else
-        set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,value).*(max(h.DataTmp{1,value}(:,2))/max(Y3LimitAdd1(:,value))))
+        Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
+        assignin('base','Y3LimitAdd1',Y3LimitAdd1)
+%         assignin('base','EtheoLimitPeaksAdd1',h.EtheoLimitPeaksAdd1)
+%         assignin('base','PeaksTheoAdd',h.PeaksTheoAdd)
+    %     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    %         set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,value).*(max(h.DataTmp{1,value}(:,2))/max(Y3LimitAdd1(:,value))))
+    %     else
+            % set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,value).*(max(h.DataTmp{1,value}(:,2))/max(Y3LimitAdd1(:,value))))
+    %     end
+        set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,value))
     end
 end
 
 if isfield(h, 'FluorPos')
     % Create array with y values for the fluorescence line plot.
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
@@ -23098,7 +25862,7 @@ if isfield(h,'idxhklPeaktable')
 
     % Set Ylim for plot of fitted data
     % Find index of Emax in DataTmp
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             % Find index of Emax in DataTmp
@@ -23423,7 +26187,7 @@ else
 
     % Set Ylim for plot of fitted data
     % Find index of Emax in DataTmp
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
             % Find index of Emax in DataTmp
@@ -23525,11 +26289,18 @@ end
 % Set plot properties depending on the slider value
 if valueSliderStress == 1
     h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],label);
-       
+    delete(findall(h.plotstresspanel,'type','annotation'))
+    dim = [.6 .2 0.35 0.08];   
     if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     else
-        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]')  
+        ylabel(h.axesplotstressdata,'<\sigma_{11} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{11}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     end
     
     % Set plot data and visibility
@@ -23567,17 +26338,24 @@ if valueSliderStress == 1
             if isfield(h,'YlimChanged') && h.YlimChanged(valueSliderStress) == 1
                 h.axesplotstressdata.YLim = ([h.YlimMinnew(valueSliderStress) h.YlimMaxnew(valueSliderStress)]);
             else
-                YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (min(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (min(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         % If more than one peak has been analyzed    
         else
@@ -23599,46 +26377,91 @@ if valueSliderStress == 1
             if isfield(h,'YlimChanged') && h.YlimChanged(valueSliderStress) == 1
                 h.axesplotstressdata.YLim = ([h.YlimMinnew(valueSliderStress) h.YlimMaxnew(valueSliderStress)]);
             else
-                YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (min(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,2);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,3);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (min(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,2)) + max(StressPlotDatatmpsorted_tmp(:,3))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,2)) - max(StressPlotDatatmpsorted_tmp(:,3)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         end
 elseif valueSliderStress == 2
     h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],label);
-    
+    % Delete all existing annotations before plotting a new one
+    delete(findall(h.plotstresspanel,'type','annotation'))
+    % Add calculated stress data to the plot
+    dim = [.6 .2 0.35 0.08];
+    dim2 = [.65 .2 0.3 0.08]; 
+
     if length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
         ylabel(h.axesplotstressdata,'<\sigma_{13}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{23}')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 2 && PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end    
     elseif length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270 
-        ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')    
+        ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180 
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270 
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,2))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,3))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     elseif length(PhiWinkel{1}) == 4
         ylabel(h.axesplotstressdata,'<\sigma_{22} - \sigma_{33}> [MPa]')    
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{22}-\sigma_{33}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,4))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,5))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     end
-    
+
     set(h.plotstressdata,{'xdata','visible'},{StressPlotDatatmpsorted_tmp(:,1),'on'})
     set(h.plotstressdata,{'ydata','visible'},{StressPlotDatatmpsorted_tmp(:,4),'on'})
     set(h.plotstressdata,{'YNegativeDelta','visible'},{StressPlotDatatmpsorted_tmp(:,5),'on'})
@@ -23663,17 +26486,24 @@ elseif valueSliderStress == 2
             if isfield(h,'YlimChanged') && h.YlimChanged(valueSliderStress) == 1
                 h.axesplotstressdata.YLim = ([h.YlimMinnew(valueSliderStress) h.YlimMaxnew(valueSliderStress)]);
             else
-                YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                (min(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                (max(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                (max(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,4);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,5);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                % (min(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                % (max(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                % (max(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         else
             if isfield(h,'XlimChanged') && h.XlimChanged(valueSliderStress) == 1
@@ -23694,26 +26524,39 @@ elseif valueSliderStress == 2
             if isfield(h,'YlimChanged') && h.YlimChanged(valueSliderStress) == 1
                 h.axesplotstressdata.YLim = ([h.YlimMinnew(valueSliderStress) h.YlimMaxnew(valueSliderStress)]);
             else
-                YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                    (min(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
-                    (max(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5)))];
+                y = h.sin2psi.StressPlotDatatmpsorted(:,4);
+                e = h.sin2psi.StressPlotDatatmpsorted(:,5);
+                ymin = min(y - e);
+                ymax = max(y + e);
+                range = ymax - ymin;
+                h.axesplotstressdata.YLim = ([floor(ymin - 0.05*range), ceil(ymax + 0.05*range)]);
 
-                YLimtmp = [min(YLimErr) max(YLimErr)];
-
-                YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
-                YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
-
-                h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
+                % YLimErr = [(min(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                %     (min(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,4)) + max(StressPlotDatatmpsorted_tmp(:,5))) ...
+                %     (max(StressPlotDatatmpsorted_tmp(:,4)) - max(StressPlotDatatmpsorted_tmp(:,5)))];
+                % 
+                % YLimtmp = [min(YLimErr) max(YLimErr)];
+                % 
+                % YLimMinExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(1)))))-1);
+                % YLimMaxExpFactor = 1*10^(numel(num2str(abs(round(YLimtmp(2)))))-1);
+                % 
+                % h.axesplotstressdata.YLim = [-(abs(floor(YLimtmp(1)/YLimMinExpFactor))*YLimMinExpFactor), ceil(YLimtmp(2)/YLimMaxExpFactor)*YLimMaxExpFactor];
             end
         end
 elseif valueSliderStress == 3
     h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],label);
-    
+    dim2 = [.65 .2 0.3 0.08];
     if length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270 || length(PhiWinkel{1}) == 3 && PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
         ylabel(h.axesplotstressdata,'<\sigma_{23}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim2,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     else
         ylabel(h.axesplotstressdata,'<\sigma_{13}> [MPa]')
+        if strcmp(h.Diffsel,'ETA3000')
+            annotation(h.plotstresspanel,'textbox',dim2,'String',['<\sigma_{13}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,6))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,7))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+        end
     end
     
     set(h.plotstressdata,{'xdata','visible'},{StressPlotDatatmpsorted_tmp(:,1),'on'})
@@ -23786,9 +26629,11 @@ elseif valueSliderStress == 3
         end
 elseif valueSliderStress == 4
     h.legstressdata = legend(h.axesplotstressdata,[h.ScatterData(valueSliderStress).StressesPhi],label);
-    
+    dim = [.6 .2 0.35 0.08];
     ylabel(h.axesplotstressdata,'<\sigma_{23}> [MPa]')
-    
+    if strcmp(h.Diffsel,'ETA3000')
+        annotation(h.plotstresspanel,'textbox',dim,'String',['<\sigma_{23}> ','= ',num2str(round(h.sin2psi.StressPlotDatatmpsorted(1,8))),' ',char(177),' ',num2str(ceil(h.sin2psi.StressPlotDatatmpsorted(1,9))),' MPa'],'LineStyle','-','FontSize',16,'BackgroundColor','w','FitBoxToText','off');
+    end
     set(h.plotstressdata,{'xdata','visible'},{StressPlotDatatmpsorted_tmp(:,1),'on'})
     set(h.plotstressdata,{'ydata','visible'},{StressPlotDatatmpsorted_tmp(:,8),'on'})
     set(h.plotstressdata,{'YNegativeDelta','visible'},{StressPlotDatatmpsorted_tmp(:,9),'on'})
@@ -23916,7 +26761,7 @@ else
     end
 end
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         % In order to plot the correct spectra in cases where measurements for
@@ -24006,6 +26851,8 @@ if strcmp(h.Diffsel,'LEDDI')
         % Get unique phi and psi angles of measurements
         NumberPhiAngles = unique(PhiWinkelMeas);
         NumberPsiAngles = unique(PsiWinkelMeas);
+%         assignin('base','PhiWinkelMeas',PhiWinkelMeas)
+%         assignin('base','NumberPhiAngles',NumberPhiAngles)
         % Get indices for each phi angle of the measurements. Those are used to 
         % find the correct spectra to be plotted.
         for k = 1:length(NumberPhiAngles)
@@ -24373,15 +27220,20 @@ h.P.Material.CrystalStructure = h.P.MaterialInfo.CrystalStructure;
 h.P.Material.MolecularWeight = h.P.MaterialInfo.MolecularWeight;
 h.P.Material.HKLdspacing = h.P.MaterialInfo.HKLdspacing;
 h.P.Material.Name = MPDFileName;
+
+Detstr = get(h.popupmenuselectmeas1,'String');
+Detval = get(h.popupmenuselectmeas1,'Value');
+Detsel = Detstr{Detval};
+
 % Default value for maximum energy.
-if strcmp(h.Diffsel,'LEDDI')
-    if strcmp(h.Detsel,'Detector 1')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(Detsel,'Detector 1')
         if isfield(h, 'P.EnergyRangeDet1')
             h.P.Material.EnergyMax = h.P.EnergyRangeDet1(2);
         else
             h.P.Material.EnergyMax = 60;
         end
-    elseif strcmp(h.Detsel,'Detector 2')
+    elseif strcmp(Detsel,'Detector 2')
         if isfield(h, 'P.EnergyRangeDet2')
             h.P.Material.EnergyMax = h.P.EnergyRangeDet2(2);
         else
@@ -24397,33 +27249,49 @@ else
 end
 
 % Properties needed from measurement object
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     h.P.LengthMeas = length(h.Measurement)/2;
+    if strcmp(Detsel,'Detector 1')
+%         assignin('base','hMeasurementa',h.Measurement)
+        h.P.twotheta = h.Measurement(2).twotheta;
+%         a = h.Measurement(2).twotheta;
+%         a
+    elseif strcmp(Detsel,'Detector 2')
+%         assignin('base','hMeasurementb',h.Measurement)
+        h.P.twotheta = h.Measurement(1).twotheta;
+%         b = h.Measurement(1).twotheta;
+%         b
+    end
 else
     h.P.LengthMeas = length(h.Measurement);
+    h.P.twotheta = h.Measurement(1).twotheta;
 end
-h.P.twotheta = h.Measurement(1).twotheta;
+
 % a = h.P.twotheta;
 % Calculate theoretical peak positions
-h.PeaksTheoAdd = TheoreticalPeakPositionsAdd(h.P.Material,h.Measurement,h.P.LengthMeas,h.P.twotheta,h.DataTmp,h.Diffsel);
+h.PeaksTheoAdd = TheoreticalPeakPositionsAdd(h.P.Material,h.Measurement,h.P.LengthMeas,h.P.twotheta,h.DataTmp,h.Diffsel,h);
 if strcmp(h.Diffsel,'ETA3000')
     aka1 = h.PeaksTheoAdd.T.Etheoka1 < h.PeaksTheoAdd.T.EMax;
     aka2 = h.PeaksTheoAdd.T.Etheoka2 < h.PeaksTheoAdd.T.EMax;
 
     EtheoLimit_aka1 = h.PeaksTheoAdd.T.Etheoka1(aka1);
     EtheoLimit_aka2 = h.PeaksTheoAdd.T.Etheoka2(aka2);
+    
+    h.EtheoLimitPeaksAddka1 = EtheoLimit_aka1;
+    h.EtheoLimitPeaksAddka2 = EtheoLimit_aka2;
 
     X3Limitka1 = h.PeaksTheoAdd.T.X3((1:(3*length(EtheoLimit_aka1)-1)),:);
     Y3Limitka1 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka1)-1)),:);
 
     X3Limitka2 = h.PeaksTheoAdd.T.X3ka2((1:(3*length(EtheoLimit_aka2)-1)),:);
-    Y3Limitka2 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka2)-1)),:);
+    Y3Limitka2 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka2)-1)),:).*0.5;
     set(h.tablephasehkl2,'data',[num2cell(h.PeaksTheoAdd.T.Peaks(aka1,1:5))])
 else
-    a = h.PeaksTheoAdd.T.Etheo < h.PeaksTheoAdd.T.EMax;
+    a = h.axesplotRawData.XLim(1) < h.PeaksTheoAdd.T.Etheo & h.PeaksTheoAdd.T.Etheo < h.axesplotRawData.XLim(2);
+    % a = h.PeaksTheoAdd.T.Etheo < h.PeaksTheoAdd.T.EMax;
 %     assignin('base','PeaksTheoAdd',h.PeaksTheoAdd)
     h.EtheoLimitPeaksAdd1 = h.PeaksTheoAdd.T.Etheo(a);
-    X1Limit = h.PeaksTheoAdd.T.X1(a,:);
+%     X1Limit = h.PeaksTheoAdd.T.X1(a,:);
     X3Limit = h.PeaksTheoAdd.T.X3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
     Y3Limit = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
     set(h.tablephasehkl2,'data',[num2cell(h.PeaksTheoAdd.T.Peaks(a,:))])
@@ -24524,7 +27392,7 @@ h = guidata(hObj);
 slidervalue = get(h.Slider, 'Value');
 
 % Default value for maximum energy.
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         if isfield(h, 'P.EnergyRangeDet1')
             h.P.Material.EnergyMax = h.P.EnergyRangeDet1(2);
@@ -24551,8 +27419,10 @@ Element = h.P.PopupLoadElement;
 % Load fluorescence data.
 FluorElements = h.FluorCellArray;
 % Find index of the selected element.
-IndexFE = strfind(FluorElements{1,2}, Element);
-Index = find(not(cellfun('isempty', IndexFE)));
+IndexFE = strcmp(FluorElements{1,2}, Element);
+Index = find(IndexFE==1);
+% IndexFE = strfind(FluorElements{1,2}, Element);
+% Index = find(not(cellfun('isempty', IndexFE)));
 % Selected fluorescence lines to plot, column names are:
 % No.;Element;Ka1;Ka2;Kb1;La1;La2;Lb1;Lb2;Lg1
 Ka1 = FluorElements{1,3}(Index);
@@ -24593,7 +27463,7 @@ else
 end
 
 % Create array with y values for the fluorescence line plot.
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
@@ -24647,7 +27517,7 @@ set(h.texteditfieldcalibangEpos1,'String',num2str(latticeparam));
 hklphasedata = get(h.tablephasehkl,'data');
 
 hklselecttable = get(h.SelectPeaktable,'data');
-% assignin('base','hklselecttable',hklselecttable)
+% assignin('base','hklphasedata',hklphasedata)
 % assignin('base','hidxSelectPeaktable',h.idxSelectPeaktable)
 
 % % Find scan number of psi = 0°
@@ -24656,27 +27526,43 @@ hklselecttable = get(h.SelectPeaktable,'data');
 % end
 % Index = find(psi==0);
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Use FitPeaksLogical to filter peaks that are actually fitted
         hklphasedata = hklphasedata(h.FitPeaksLogicalDet1(:,1),:);
+
+        a = cell2mat(hklselecttable(:,1:4));
+        a1 = a.*h.idxSelectPeaktableDet1;
+        a1( ~any(a1,2), : ) = [];
+        
+        hklphasedata1 = a1;
+
         % Only keep peaks selected by the user (discard e.g. dummy peaks)
-        if isfield(h, 'idxkeepPeaks')
-            FittedPeaks{1} = h.FittedPeaksDet1{1}(h.idxkeepPeaks,:);
-            tabledata = [cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1:3)) (cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),2)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),3)).^2) FittedPeaks{1}(:,2)];
-        else
-            tabledata = [cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),1:3)) (cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),1)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),2)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),3)).^2) h.FittedPeaksDet1{1}(:,2)];
-        end
+%         if isfield(h, 'idxkeepPeaks')
+%             FittedPeaks{1} = h.FittedPeaksDet1{1}(h.idxkeepPeaks,:);
+%             tabledata = [cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1:3)) (cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),2)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),3)).^2) FittedPeaks{1}(:,2)];
+%         else
+%             tabledata = [cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),1:3)) (cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),1)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),2)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet1{1},1),3)).^2) h.FittedPeaksDet1{1}(:,2)];
+%         end
+        tabledata1 = [hklphasedata1(:,1:3) (hklphasedata1(:,1).^2 + hklphasedata1(:,2).^2 + hklphasedata1(:,3).^2) hklphasedata1(:,4)];
     elseif strcmp(h.Detsel,'Detector 2')
         % Use FitPeaksLogical to filter peaks that are actually fitted
         hklphasedata = hklphasedata(h.FitPeaksLogicalDet2(:,1),:);
+
+        a = cell2mat(hklselecttable(:,1:4));
+        a1 = a.*h.idxSelectPeaktableDet2;
+        a1( ~any(a1,2), : ) = [];
+        
+        hklphasedata1 = a1;
+
         % Only keep peaks selected by the user (discard e.g. dummy peaks)
-        if isfield(h, 'idxkeepPeaks')
-            FittedPeaks{1} = h.FittedPeaksDet2{1}(h.idxkeepPeaks,:);
-            tabledata = [cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1:3)) (cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),2)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),3)).^2) FittedPeaks{1}(:,2)];
-        else
-            tabledata = [cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),1:3)) (cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),1)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),2)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),3)).^2) h.FittedPeaksDet2{1}(:,2)];
-        end
+%         if isfield(h, 'idxkeepPeaks')
+%             FittedPeaks{1} = h.FittedPeaksDet2{1}(h.idxkeepPeaks,:);
+%             tabledata = [cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1:3)) (cell2mat(hklphasedata(1:size(FittedPeaks{1},1),1)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),2)).^2 + cell2mat(hklphasedata(1:size(FittedPeaks{1},1),3)).^2) FittedPeaks{1}(:,2)];
+%         else
+%             tabledata = [cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),1:3)) (cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),1)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),2)).^2 + cell2mat(hklphasedata(1:size(h.FittedPeaksDet2{1},1),3)).^2) h.FittedPeaksDet2{1}(:,2)];
+%         end
+        tabledata1 = [hklphasedata1(:,1:3) (hklphasedata1(:,1).^2 + hklphasedata1(:,2).^2 + hklphasedata1(:,3).^2) hklphasedata1(:,4)];
     end
 else
     % Use FitPeaksLogical to filter peaks that are actually fitted
@@ -24711,17 +27597,29 @@ end
 set(h.tablecalibangEpos1,'data',tabledata1)
 % assignin('base','tabledata',tabledata)
 % Do calibration
-xplot = 6.199./latticeparam.*sqrt(tabledata1(:,4));
-yplot = tabledata1(:,5);
-Calib = fitlm(xplot,yplot,'linear');
-FitCoeffs = table2array(Calib.Coefficients);
-deltaEoffset = FitCoeffs(1,1);
-h.deltaEoffset = deltaEoffset;
-twothetareal = 2.*asind(1./FitCoeffs(2,1));
-h.twothetareal = twothetareal;
-set(h.texteditfieldcalibangEpos2,'String',num2str(round(h.twothetareal*1000)/1000));
-set(h.texteditfieldcalibangEpos3,'String',num2str(round(deltaEoffset*1000)/1000));
-
+if strcmp(h.Diffsel,'ETA3000')
+    hklphasedata1(:,4)
+    xplot = 1./(2.*latticeparam).*sqrt(tabledata(:,4));
+    yplot = sind(tabledata(:,5)./2);
+    Calib = fitlm(xplot,yplot);
+    deltatthoffset = 2*asind(Calib.Coefficients.Estimate(1));
+    h.deltaEoffset = deltatthoffset;
+    lambdareal = Calib.Coefficients.Estimate(2);
+    h.lambdareal = lambdareal;
+    set(h.texteditfieldcalibangEpos2,'String',num2str(h.lambdareal));
+    set(h.texteditfieldcalibangEpos3,'String',num2str(deltatthoffset));
+else
+    xplot = 6.199./latticeparam.*sqrt(tabledata1(:,4));
+    yplot = tabledata1(:,5);
+    Calib = fitlm(xplot,yplot,'linear');
+    FitCoeffs = table2array(Calib.Coefficients);
+    deltaEoffset = FitCoeffs(1,1);
+    h.deltaEoffset = deltaEoffset;
+    twothetareal = 2.*asind(1./FitCoeffs(2,1));
+    h.twothetareal = twothetareal;
+    set(h.texteditfieldcalibangEpos2,'String',num2str(round(h.twothetareal*1000)/1000));
+    set(h.texteditfieldcalibangEpos3,'String',num2str(round(deltaEoffset*1000)/1000));
+end
 guidata(hObj,h);
 
 function savecalib(hObj,~)
@@ -24810,8 +27708,8 @@ h = guidata(hObj);
 % Clear calibration data
 set(h.tablecalibangEpos1,'data',zeros(5,5))
 set(h.texteditfieldcalibangEpos1,'String','Lattice parameter');
-set(h.texteditfieldcalibangEpos2,'String','twotheta');
-set(h.texteditfieldcalibangEpos3,'String','deltaE');
+set(h.texteditfieldcalibangEpos2,'String',['2',char(952)]);
+set(h.texteditfieldcalibangEpos3,'String',[char(916),E']);
 
 guidata(hObj,h);
 
@@ -24826,7 +27724,7 @@ chkboxcorrEtheo = get(h.checkboxcalibangEpos3,'value');
 
 if chkboxcorrEtheo == 0
     % Correct the fitted peak positions and the psi file
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Get energy and twotheta values from psi file table data
             for k = 1:size(h.PsiFileTableDataDet1,1)
@@ -24920,16 +27818,18 @@ if chkboxcorrEtheo == 0
 elseif chkboxcorrEtheo == 1
     % Change twotheta of current measurement using twotheta true
     h.twothetareal = str2double(get(h.texteditfieldcalibangEpos2,'String'));
-    h.twothetabackup = h.Measurement(1).twotheta;
-    for k = 1:length(h.Measurement)
-       h.Measurement(k).twotheta = round(h.twothetareal*1000)/1000;
-    end
+    
     % Get theoretical peak positions
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
+            h.twothetabackup = h.Measurement(Slidersteps(1)).twotheta;
+            for k = 1:length(Slidersteps)
+               h.Measurement(Slidersteps(k)).twotheta = round(h.twothetareal*1000)/1000;
+            end
             if isfield(h, 'EnergyRangeDet1')
                 h.TPeaksDet1 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
+%                 assignin('base','hTPeaksDet1Corr',h.TPeaksDet1)
                 a = h.TPeaksDet1.T.Etheo > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Etheo < h.P.EnergyRangeDet1(2);
 %                 EtheoLimit = h.TPeaksDet1.T.Etheo(a);
             else
@@ -24939,6 +27839,10 @@ elseif chkboxcorrEtheo == 1
             end
         elseif strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
+            h.twothetabackup = h.Measurement(Slidersteps(1)).twotheta;
+            for k = 1:length(Slidersteps)
+               h.Measurement(Slidersteps(k)).twotheta = round(h.twothetareal*1000)/1000;
+            end
             if isfield(h, 'EnergyRangeDet2')
                 h.TPeaksDet2 = TheoreticalPeakPositions(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.P.Calibration,h.Diffsel);
                 a = h.TPeaksDet2.T.Etheo > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Etheo < h.P.EnergyRangeDet2(2);
@@ -24949,7 +27853,56 @@ elseif chkboxcorrEtheo == 1
 %                 EtheoLimit = h.TPeaksDet2.T.Etheo(a);
             end
         end
+    elseif strcmp(h.Diffsel,'ETA3000')
+%         assignin('base','TPeaks',h.TPeaks)
+%         a = h.TPeaks.T.Etheoka1 > h.P.EnergyRange(1) & h.TPeaks.T.Etheoka1 < h.P.EnergyRange(2);
+%         
+%         X3Limitka1 = h.TPeaks.T.X3((1:(3*find(a, 1, 'last')-1)),:);
+%         X3Limitka2 = h.TPeaks.T.X3ka2((1:(3*find(a, 1, 'last')-1)),:);
+%         Y3Limitka1 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+%         Y3Limitka2 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+%         
+%         X3Limitka1((3*find(a, 1, 'last')-2):(3*find(a, 1, 'last')-1),:) = h.twothetareal;
+%         % Calculate 2theta and d-spacing for ka-2
+%         d_twotheta_ka1 = (h.TPeaks.T.lambdaka1/2)*1/sind(h.twothetareal/2);
+%         twotheta_ka2 = asind(h.TPeaks.T.lambdaka2/(2*d_twotheta_ka1))*2;
+%         X3Limitka2((3*find(a, 1, 'last')-2):(3*find(a, 1, 'last')-1),:) = twotheta_ka2;  
+%         % Add changes to TPeaks
+%         h.TPeaks.T.Peaks(a,5) = h.twothetareal;
+%         h.TPeaks.T.Peaks(a,6) = twotheta_ka2;
+%         h.TPeaks.T.Peaks(a,4) = d_twotheta_ka1;
+%         set(h.texteditfieldcalibangEpos2,'String',num2str(h.TPeaks.T.lambdaka1));
+        h.lambdauser = str2double(get(h.texteditfieldcalibangEpos2,'String'));
+    
+        a = h.TPeaks.T.Etheoka1 > h.P.EnergyRange(1) & h.TPeaks.T.Etheoka1 < h.P.EnergyRange(2);
+        
+        % Calculate new twotheta positions
+        twothetaka1neu = asind(h.lambdauser./(2*10*h.TPeaks.T.Peaks(a,4)))*2;
+        twothetaka2neu = asind((h.lambdauser+0.0038)./(2*10*h.TPeaks.T.Peaks(a,4)))*2;
+        
+        % Create data for theoretical line pos
+        for i = 1:size(twothetaka1neu,1)
+            X1(i,:) = [twothetaka1neu(i) twothetaka1neu(i) nan];
+            X1ka2(i,:) = [twothetaka2neu(i) twothetaka2neu(i) nan];
+        end
+
+        % Adjust the size of matrix to the measurement
+        X2 = reshape(X1',size(twothetaka1neu,1).*3,1);
+        X2(size(twothetaka1neu,1).*3,:) = [];
+        X3Limitka1 = repmat(X2,1,length(h.Measurement));
+        % kalpha2
+        X2ka2 = reshape(X1ka2',size(twothetaka2neu,1).*3,1);
+        X2ka2(size(twothetaka2neu,1).*3,:) = [];
+        X3Limitka2 = repmat(X2ka2,1,length(h.Measurement));
+        Y3Limitka1 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        Y3Limitka1 = Y3Limitka1(1:size(X3Limitka1,1),:);
+        Y3Limitka2 = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        Y3Limitka2 = Y3Limitka2(1:size(X3Limitka1,1),:);
     else
+        h.twothetabackup = h.Measurement(1).twotheta;
+        for k = 1:length(h.Measurement)
+           h.Measurement(k).twotheta = round(h.twothetareal*1000)/1000;
+        end
         if isfield(h,'EnergyRange')
             h.TPeaks = TheoreticalPeakPositions(h.Measurement,h.DataTmp,h.P.Calibration,h.Diffsel);
             a = h.P.EnergyRange(1) < h.TPeaks.T.Etheo & h.TPeaks.T.Etheo < h.P.EnergyRange(2);
@@ -24961,7 +27914,7 @@ elseif chkboxcorrEtheo == 1
         end
     end
     
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
 %             X1Limit = h.TPeaksDet1.T.X1(a,:);
             X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
@@ -24971,9 +27924,16 @@ elseif chkboxcorrEtheo == 1
             X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
             Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
         end
+        set(h.plotEtheo,'xdata',X3Limit(:,1))
+        set(h.plotEtheo,'ydata',Y3Limit(:,1))
+    elseif strcmp(h.Diffsel,'ETA3000')
+        set(h.plotEtheo,'xdata',[X3Limitka1(:,1); nan; X3Limitka2(:,1)])
+        set(h.plotEtheo,'ydata',[Y3Limitka1(:,1).*(max(h.DataTmp{1}(:,2))/max(Y3Limitka1(:,1))); nan; 0.5.*(Y3Limitka2(:,1).*(max(h.DataTmp{1}(:,2))/max(Y3Limitka2(:,1))))])
     else
         X3Limit = h.TPeaks.T.X3((1:(3*find(a, 1, 'last')-1)),:);
         Y3Limit = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        set(h.plotEtheo,'xdata',X3Limit(:,1))
+        set(h.plotEtheo,'ydata',Y3Limit(:,1))
     end
     
 %     if h.P.ShowSubstratePeaks == 1
@@ -24984,15 +27944,14 @@ elseif chkboxcorrEtheo == 1
 %         SY3Limit = h.TPeaks.S.Y3((1:(3*length(SEtheoLimit)-1)),:);
 %     end
     % Set plot data for theoretical line positions
-    set(h.plotEtheo,'xdata',X3Limit(:,1))
-    set(h.plotEtheo,'ydata',Y3Limit(:,1))
+    
 %     if h.P.ShowSubstratePeaks == 1
 %         set(h.plotEtheoSub,'xdata',SX3Limit(:,1))
 %         set(h.plotEtheoSub,'ydata',SY3Limit(:,1))
 %     end
 
     % Set data for table with hkl, d-spacing and E[keV] values
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             set(h.tablephasehkl,'data',[num2cell(h.TPeaksDet1.T.Peaks(a,:)) num2cell(false(size(h.TPeaksDet1.T.Peaks(a,:),1),1))])
         elseif strcmp(h.Detsel,'Detector 2')
@@ -25015,7 +27974,15 @@ function startPWCorrEpos(hObj,~)
 h = guidata(hObj);
 % Create backup of FittedPeaks
 if ~isfield(h,'FittedPeaksBackupPWCorr')
-    h.FittedPeaksBackupPWCorr = h.FittedPeaks;
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            h.FittedPeaksBackupPWCorr = h.FittedPeaksDet1;
+        elseif strcmp(h.Detsel,'Detector 2')
+            h.FittedPeaksBackupPWCorr = h.FittedPeaksDet2;
+        end
+    else
+        h.FittedPeaksBackupPWCorr = h.FittedPeaks;
+    end
 end
 % Get params for polynomial
 a0 = str2double(get(h.texteditfieldpwparam1,'string'));
@@ -25023,6 +27990,13 @@ a1 = str2double(get(h.texteditfieldpwparam2,'string'));
 a2 = str2double(get(h.texteditfieldpwparam3,'string'));
 a3 = str2double(get(h.texteditfieldpwparam4,'string'));
 a4 = str2double(get(h.texteditfieldpwparam5,'string'));
+
+% a0 = 0;
+% a1 = -0.02133;
+% a2 = 0;
+% a3 = 0;
+% a4 = 0;
+
 % Calculate deltaE
 deltaE = zeros(1,1);
 for k = 1:length(h.Measurement)
@@ -25032,9 +28006,30 @@ for k = 1:length(h.Measurement)
             a4.*sind(h.Measurement(k).SCSAngles.psi).^4;
 end
 
+% for k = 1:length(h.Measurement)
+%     psi(k) = h.Measurement(k).Motors.Chi;
+% end
+% deltaE1 = 0.00276 + 0.13924*sind(psi).^2;
+% deltaE2 = -5.90981E-4 -0.02547*sind(psi).^2;
+% deltaE = [deltaE1(1:4) deltaE2(5:end)];
+
 % Correct energy positions
-for k = 1:length(h.Measurement)
-    h.FittedPeaks{k}(:,2) = h.FittedPeaks{k}(:,2) - deltaE(k);
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        Slidersteps = 2:2:length(h.Measurement);
+        for k = 1:length(Slidersteps)
+            h.FittedPeaksDet1{k}(:,2) = h.FittedPeaksDet1{k}(:,2) - deltaE(Slidersteps(k));
+        end
+    elseif strcmp(h.Detsel,'Detector 2')
+        Slidersteps = 1:2:length(h.Measurement);
+        for k = 1:length(Slidersteps)
+            h.FittedPeaksDet2{k}(:,2) = h.FittedPeaksDet2{k}(:,2) - deltaE(Slidersteps(k));
+        end
+    end
+else
+    for k = 1:length(h.Measurement)
+        h.FittedPeaks{k}(:,2) = h.FittedPeaks{k}(:,2) - deltaE(k);
+    end
 end
 h.PWcorrcheck = 1;
 % Save updated FittedPeaks
@@ -25086,7 +28081,7 @@ if any(hkl_l_length > 1)
 else
     hkllabel_tmp = char(zeros(size(Peaks,1),5));
 end
-assignin('base','Peaks',Peaks)
+% assignin('base','Peaks',Peaks)
 % % Read hkl values from array
 % for ii = 1:size(Peaks,1)
 % 	hkllabeltmp(ii,:) = mat2str(Peaks(ii,(1:3)));
@@ -25686,9 +28681,10 @@ handles1 = guidata(hObj);
 if ~isfield(handles1, 'idxhklPeaktable')
     handles1.idxhklPeaktable = true(size(h1data.sin2psi.StressPlotDatatmpsorted,1),1);
 end
-assignin('base','idxhklPeaktable',handles1.idxhklPeaktable)
+% assignin('base','idxhklPeaktable',handles1.idxhklPeaktable)
+% assignin('base','h1dataStressPlotDatatmpsorted',h1data.sin2psi.StressPlotDatatmpsorted)
 StressPlotDatatmpsorted_tmp = h1data.sin2psi.StressPlotDatatmpsorted(handles1.idxhklPeaktable,:);
-
+% assignin('base','StressPlotDatatmpsorted_tmp',StressPlotDatatmpsorted_tmp)
 % Save index variable of selected hkl peaks
 h1data.idxhklPeaktable = handles1.idxhklPeaktable;
 
@@ -25773,6 +28769,7 @@ end
 % Final output with hkl values
 hkllabel = hkllabeltmp2;
 h1data.LabelForPlot = hkllabel;
+% assignin('base','hkllabelplot',hkllabel)
 
 % Create legend for stress plot
 h1data.legstressdata = legend(h1data.axesplotstressdata, [h1data.ScatterData(valueSliderStress).StressesPhi], hkllabel);
@@ -26474,7 +29471,7 @@ h = guidata(hObj);
 hkldata = get(h.tablephasehkl,'data');
 % assignin('base','FitPeaksLogical',h.FitPeaksLogical)
 % Only use hkl from fitted peaks
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         hklindices = cell2mat(hkldata(h.FitPeaksLogicalDet1(:,1),1:3));
     elseif strcmp(h.Detsel,'Detector 2')
@@ -26637,10 +29634,10 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
         h.sigma11tmp{k} = h.UPlot.sigma11{k}(sin2psirange{1,k});
         h.sigma11deltatmp{k} = h.UPlot.sigma11delta{k}(sin2psirange{1,k});
     end
-    assignin('base','tausigma11tmp',h.tausigma11tmp)
-    assignin('base','sigma11tmp',h.sigma11tmp)   
-    assignin('base','sigma11deltatmp',h.sigma11deltatmp)
-    assignin('base','sin2psirange',h.sin2psirange)
+%     assignin('base','tausigma11tmp',h.tausigma11tmp)
+%     assignin('base','sigma11tmp',h.sigma11tmp)   
+%     assignin('base','sigma11deltatmp',h.sigma11deltatmp)
+%     assignin('base','sin2psirange',h.sin2psirange)
     if get(h.uplotplotfitscheckbox,'value') == 1    
         % Prepare fit data
         FitDatasigma11tmp = [[h.tausigma11tmp{1,:}];cell2mat(h.sigma11tmp);cell2mat(h.sigma11deltatmp)]';
@@ -26653,7 +29650,7 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
         [h.Paramssigma11,Rsigma11,Jsigma11,CovBsigma11] = nlinfit(h.FitDatasigma11(:,1),h.FitDatasigma11(:,2),h.funcsigma11,FitParams,opts,'Weights',1./h.FitDatasigma11(:,3));
 %         [h.Ypredsigma11,deltasigma11] = nlpredci(h.funcsigma11,h.FitDatasigma11(:,1),h.Paramssigma11,Rsigma11,'Jacobian',Jsigma11);
 %         [h.Ypredsigma11z,deltasigma11z] = nlpredci(h.funczsigma11,h.FitDatasigma11(:,1),h.Paramssigma11,Rsigma11,'Jacobian',Jsigma11);
-
+%         sqrt(diag(CovBsigma11))
         [h.Ypredsigma11,deltasigma11] = nlpredci(h.funcsigma11,linspace(0.001,100,1001),h.Paramssigma11,Rsigma11,'Jacobian',Jsigma11);
         [h.Ypredsigma11z,deltasigma11z] = nlpredci(h.funczsigma11,linspace(0.001,100,1001),h.Paramssigma11,Rsigma11,'Jacobian',Jsigma11);
         h.deltasigma11 = deltasigma11;
@@ -27268,7 +30265,7 @@ set(hObj,'str','Exporting','backg',[1 .6 .6]) % Change color of button.
 pause(.01)
 
 % Create folder and filename
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Save taudata to file
         FileName = [strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1'];
@@ -27501,7 +30498,7 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
     end
     % Set figure title
     title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save data to file
             FileNameUP = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_UPlot_sigma11','%d','_',d]);
@@ -27664,7 +30661,7 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
     end
 
     title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
             FileNameUP = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_UPlot_sigma22','%d','_',d]);
@@ -27815,7 +30812,7 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempt
     end
 
     title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
             FileNameUP = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_UPlot_sigma13','%d','_',d]);
@@ -27966,7 +30963,7 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempt
     end
 
     title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
             FileNameUP = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_UPlot_sigma23','%d','_',d]);
@@ -28054,8 +31051,13 @@ else
         isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270) || ...
         ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
         for k = 1:size(indkeeppeaks,1)
-            drecalcphi90{k} = (DEKdatatmp(indkeeppeaks(k),5).*(h.funcsigma22(h.Paramssigma22,h.UPlot.TauCalc.tauorg{k}').*(sind((0:1:89)).^2)'+h.funcsigma23(h.Paramssigma23,h.UPlot.TauCalc.tauorg{k}').*2.*sqrt((sind((0:1:89)).^2)'.*(1-(sind((0:1:89)).^2)'))) + ...
-                DEKdatatmp(indkeeppeaks(k),4).*(h.funcsigma11(h.Paramssigma11,h.UPlot.TauCalc.tauorg{k}')+h.funcsigma22(h.Paramssigma22,h.UPlot.TauCalc.tauorg{k}'))).*h.dzerofit(k)+h.dzerofit(k);
+            % assignin('base','h',h)
+            % h.Paramssigma23 = [0,0];
+            % h.Paramssigma11 = [0,0];
+            % h.funcsigma11 = @(a,x) a(1)./(x.*(1./x+a(2)).^2);
+            % h.funcsigma23 = @(a,x) a(1)./(x.*(1./x+a(2)).^2);
+            drecalcphi90{k} = (DEKdatatmp(indkeeppeaks(k),5).*(h.funcsigma22(h.Paramssigma22,h.UPlot.TauCalc.tauorg{k}{1}').*(sind((0:1:89)).^2)'+h.funcsigma23(h.Paramssigma23,h.UPlot.TauCalc.tauorg{k}{1}').*2.*sqrt((sind((0:1:89)).^2)'.*(1-(sind((0:1:89)).^2)'))) + ...
+                DEKdatatmp(indkeeppeaks(k),4).*(h.funcsigma11(h.Paramssigma11,h.UPlot.TauCalc.tauorg{k}{1}')+h.funcsigma22(h.Paramssigma22,h.UPlot.TauCalc.tauorg{k}{1}'))).*h.dzerofit(k)+h.dzerofit(k);
         end
     end
 
@@ -28495,7 +31497,7 @@ else
 %     [meas,~,DataTmp,~,Diffractometer,P,T] = SpecFileConversionGUI(h.P,h.Sample,h.T);
     [meas,~,DataTmp,Diffractometer,P,T] = SpecFileConversionGUI(h.P,h.Sample,h.T);
     % IF LEDDI measurements were conducted using only one detector
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         set(h.PopupMenuSelectDetQA,'Enable','on')
         if meas(1).NumberOfDetectors == 1
             meas = reshape(repmat(meas,2,1),size(meas,2)*2,[]);
@@ -28506,7 +31508,7 @@ else
     end
     assignin('base','meas',meas)
     % Change Emax according to diffractometer
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         
         for k = 1:length(meas)
             meas(k).Sample.Materials.EnergyMax = 60;
@@ -28528,7 +31530,7 @@ else
     h.T = T;
 % assignin('base','meas',meas)
     % Change slider parameters according to size of meas
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if length(meas) == 2
             set(h.SliderQA,'Min',1);
             set(h.SliderQA,'Max',length(meas));
@@ -28553,7 +31555,7 @@ else
     end
     
     % Set plot data and parameters
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.DetselQA,'Detector 1')
             set(h.plotdataQA,'xdata',DataTmp{2}(:,1))
             set(h.plotdataQA,'ydata',DataTmp{2}(:,2))
@@ -28570,7 +31572,7 @@ else
     end
     
     % Set initial parameters for panel "Select Measurements"
-    if strcmp(h.Diffsel,'LEDDI')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.axesplotMeasDataQA.XLim = [0, 60];
         h.axesplotMeasDataQA.YLim = [0, Inf];
     elseif strcmp(h.Diffsel,'ETA3000')
@@ -28599,7 +31601,7 @@ value = get(hObj, 'Value');
 value = round(value);
 
 % Set plot data and plot ranges/limits for different diffractometers
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % If LEDDI has been used for the measurement
     if strcmp(h.DetselQA,'Detector 1')
         % In order to analyze the data measured with Det1, the following
@@ -28650,7 +31652,7 @@ if strcmp(h.Diffsel,'LEDDI')
     end
 else
     if h.checkboxplotall == 1
-        if strcmp(h.Diffsel,'LEDDI')
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         % If LEDDI has been used for the measurement
             if strcmp(h.DetselQA,'Detector 1')
                 Slidersteps = 2:2:length(h.Measurement);
@@ -28789,7 +31791,7 @@ h.axesplotMeasDataQA.XLim(1) = Xmin;
 h.XminnewQA = Xmin;
 % YLim also needs to be recalculated
 % Find index of new Xmin
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         h.XLimMinInd = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{Slidersteps(value)}(:,1),Xmin);
@@ -28817,7 +31819,7 @@ h.axesplotMeasDataQA.XLim(2) = Xmax;
 h.XmaxnewQA = Xmax;
 % YLim also needs to be recalculated
 % Find index of new Xmax
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         h.XLimMaxInd = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{Slidersteps(value)}(:,1),Xmax);
@@ -28842,7 +31844,7 @@ valueSlider = round(get(h.SliderQA, 'Value'));
 % Disable slider
 set(h.SliderQA, 'enable', 'off')
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
     elseif strcmp(h.DetselQA,'Detector 2')
@@ -28871,7 +31873,7 @@ set(h.textbkg,'Visible','off')
 % Find closest point to user selected point
 indexUSP = Tools.Data.DataSetOperations.FindNearestIndex(h.DataTmp{Slidersteps(valueSlider)}(:,1),HT.x);
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % Get x and y data in the range of +/- 5 channels of user selected bkg point
     xBKG = cell(1,1);
     yBKG = cell(1,1);
@@ -28980,7 +31982,7 @@ else
 end
 
 % Correct background
-if strcmp(h.Diffsel,'LEDDI') 
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') 
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsX);
@@ -29026,7 +32028,7 @@ switch answer
             end
 			
             delete(h.plotdataCorrQA)
-%         elseif strcmp(h.Diffsel,'LEDDI')
+%         elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 %             if strcmp(h.DetselQA,'Detector 1')
 %                 set(h.plotdataQA,'xdata',DataTmp{1}(h.XLimMinInd:h.XLimMaxInd,1))
 %                 set(h.plotdataQA,'ydata',DataTmp{1}(h.XLimMinInd:h.XLimMaxInd,2))
@@ -29070,7 +32072,7 @@ valueSlider = round(get(h.SliderQA, 'Value'));
 % Get points selected from user
 [HT.x,~] = getpts(h.axesplotMeasDataQA);
 % assignin('base','HTx',HT.x)
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     % Set peak data
     for l = 1:size(h.DataTmp,2)/2
         h.PeaksQA{l} = HT.x';
@@ -29085,12 +32087,12 @@ else
         h.PeaksQAub{l} = 0.3*ones(size(HT.x,1));
     end
 end
-assignin('base','PeaksQA',h.PeaksQA)
+% assignin('base','PeaksQA',h.PeaksQA)
 % Set explanatory text visible off
 set(h.textbkg,'Visible','off')
 
 % Set table data
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         % Calculate d-spacing and add 2theta to table
@@ -29178,7 +32180,7 @@ pause(.01)
 valueSlider = round(get(h.SliderQA, 'Value'));
 % Run FittingGUI function in order to fit the user defined peaks. Depending
 % on the diffractometer used, different cases need to be considered
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         % Consider the following spectra
 %         Slidersteps = 2:2:length(h.Measurement);
@@ -29241,7 +32243,7 @@ set(h.plotpeakpoints,'Visible','off')
 % assignin('base','FittedPeaks',FittedPeaks)
 
 % Prepare data for plotting fit results
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.DetselQA,'Detector 1')
         Slidersteps = 2:2:length(h.Measurement);
         DataTmpCalc = h.DataTmp(Slidersteps);
@@ -29322,7 +32324,7 @@ end
 set(h.SliderQA, 'enable', 'on')
 set(h.SliderQA, 'Value',1)
 
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     h.DataTmp = h.DataTmpBackup;
     h.Measurement = h.MeasurementBackup;
     if strcmp(h.DetselQA,'Detector 1')
@@ -29486,8 +32488,7 @@ if strcmp(get(hObj,'tag'),get(h.openPeriodicTablebutton,'tag'))
     set(h.SelectedElementsQAedit1,'String',strjoin(h.UserSelElements,','))
 elseif strcmp(get(hObj,'tag'),get(h.openPeriodicTablePDFDatabase,'tag'))
     % Show selected elements in edit field
-    disp(strjoin(h.UserSelElements,','))
-%     set(h.SelectedElementsQAedit1,'String',strjoin(h.UserSelElements,','))
+    set(h.SelectedElementsPDFDatabase,'String',strjoin(h.UserSelElements,','))
 end
 
 guidata(hObj, h);
@@ -29520,7 +32521,7 @@ for g = 1:numel(h.DBPDF.PDFDataBasesorted)
     % Get lattice spacings of db entry "g"
     reflex_db = h.DBPDF.PDFDataBasesorted(g).dSpacing;
     % Get elemental formula of db entry "g"
-    elements_db = strsplit(char(regexprep(regexprep(h.DBPDF.PDFDataBasesorted(g).ElementSymbol, '\(|)|!', ''), '[+-]?\d+\.?\d*', '')));    
+    elements_db = strsplit(char(regexprep(regexprep(h.DBPDF.PDFDataBasesorted(g).ElementSymbol, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));    
     % Split elements into cell array
     NumElements_db = numel(elements_db);
     % Compare user selected elements with db
@@ -29602,7 +32603,7 @@ end
 % exist IndexHit
 % if exist(h,'')
 h.IndexHit = IndexHit;
-assignin('base','IndexHit',IndexHit)
+% assignin('base','IndexHit',IndexHit)
 % Reset the button color
 set(hObj,'str','Start peak matching','backg',col)  % Now reset the button features.
 
@@ -29644,8 +32645,8 @@ lsort.SpaceGroupNo = lsorttmp2(:,6)';
 lsort.dspacing = lsorttmp2(:,7)';
 
 
-assignin('base','lsort',lsort)
-assignin('base','IndexHit',IndexHit)
+% assignin('base','lsort',lsort)
+% assignin('base','IndexHit',IndexHit)
 % Rearrange IndexHit
 IndexHit = IndexHit(idx,:);
 
@@ -29671,8 +32672,8 @@ for k = 1:length(logical(zeros(size(IndexHit,1),1)))
     ydata{k} = y_tmp;
     clear EPosLinetmp
 end
-assignin('base','xdata',xdata)
-assignin('base','ydata',ydata)
+% assignin('base','xdata',xdata)
+% assignin('base','ydata',ydata)
 % Prepare plots
 % Get correct colors array
 if size(IndexHit,1) > size(h.Colors2,2)
@@ -29813,7 +32814,7 @@ end
 for k = 1:size(TransferData,1)
     h.plotEtheolinesUserSel(k) = line(h.axesplotMeasDataQA, xdata{k}, ydata{k},'LineStyle', '-', 'LineWidth', 2 ,'Color', ColorsPlot{k}, 'Visible', 'off', 'Clipping', 'on');
 end
-assignin('base','plotEtheolinesUserSel',h.plotEtheolinesUserSel)
+% assignin('base','plotEtheolinesUserSel',h.plotEtheolinesUserSel)
 % legend(h.axesplotMeasDataQA,legenddata,'Location','northeast')
 
 guidata(hObj, h);
@@ -29822,7 +32823,7 @@ function plotbuttonQA(hObj, ~)
 h = guidata(hObj);
 % Get data from table with SAM results
 PlotPDFdataQA = get(h.tableresultsSAMQAUserSel,'data');
-assignin('base','PlotPDFdataQA',PlotPDFdataQA)
+% assignin('base','PlotPDFdataQA',PlotPDFdataQA)
 plotselect = cell2mat(PlotPDFdataQA(:,1));
 
 PlotPDFdataQAUserSel = PlotPDFdataQA(plotselect,:);
@@ -29962,7 +32963,7 @@ h = guidata(hObj);
 % Load Table with results from SaM.
 ElementsSaMtmp = get(h.tableresultsSAMQA,'data');
 ElementsSaM = {ElementsSaMtmp{:,4}}';
-assignin('base','ElementsSaM',ElementsSaM)
+% assignin('base','ElementsSaM',ElementsSaM)
 % Load strings from edit field.
 strToFindtmp = get(h.FilterElementedit,'String');
 % List of strings that are searched for (comma separated).
@@ -30255,7 +33256,7 @@ for g = 1:numel(h.DBPDF.PDFDataBasesorted)
     % Get lattice spacings of db entry "g"
     reflex_db = h.DBPDF.PDFDataBasesorted(g).dSpacing;
     % Get elemental formula of db entry "g"
-    elements_db = strsplit(char(regexprep(regexprep(h.DBPDF.PDFDataBasesorted(g).ElementSymbol, '\(|)|!', ''), '[+-]?\d+\.?\d*', '')));    
+    elements_db = strsplit(char(regexprep(regexprep(h.DBPDF.PDFDataBasesorted(g).ElementSymbol, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));    
     % Split elements into cell array
     NumElements_db = numel(elements_db);
     % Compare user selected elements with db
@@ -30513,6 +33514,434 @@ guidata(hObj, h);
 
 guidata(hObj, h);
 
+%% PDF Databse callbacks
+function StartSearchButtonPDFDataCallback(hObj, ~)
+% Callback for Uplottabledata
+h = guidata(hObj);
+
+% Function to make "Start search" button blink in red during search process
+col = get(hObj,'backg');  % Get the background color of the figure.
+set(hObj,'str','Searching','backg',[1 .6 .6]) % Change color of button. 
+% The pause (or drawnow) is necessary to make button changes appear.
+pause(.01)
+
+if ~isfield(h,'DBPDF')
+    h.DBPDF = load(fullfile('Data','PCPDFdatabase','PCPDFDataBaseSorted.mat'));
+end
+
+for g = 1:numel(h.DBPDF.PDFDataBasesorted)
+    % Get elemental formula of db entry "g"
+    Elements{g} = strsplit(char(regexprep(regexprep(h.DBPDF.PDFDataBasesorted(g).ElementSymbol, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));
+end
+
+StrToFind_tmp = get(h.SelectedElementsPDFDatabase,'String');
+StrToFind = strsplit(StrToFind_tmp,',');
+if size(StrToFind,2) == 1
+    % Find string in cell arrays
+    ElementMatch = cellfun(@(S) strcmp(StrToFind{1},S),Elements,'UniformOutput',false);
+    % Create logical with matched data
+    ElementMatchResults_tmp1 = logical(cell2mat(cellfun(@any,ElementMatch,'UniformOutput',false)))';
+    % Find matches in cells
+    MatchStrToFind = find(ElementMatchResults_tmp1==1);
+    % Filter data base to show matched results
+    h.DataFiltered = h.DBPDF.PDFDataBasesorted(MatchStrToFind);
+        
+    for g = 1:size(h.DataFiltered,2)
+        % Get elemental formula of db entry "g"
+        ElementsDataFiltered{g} = strsplit(char(regexprep(regexprep(h.DataFiltered(g).ElementSymbol, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));
+    end
+%     assignin('base','MatchStrToFind',MatchStrToFind)
+
+    SizeElementArrays = cellfun('size',Elements(MatchStrToFind),2);
+    MatchStrToFind1 = find(SizeElementArrays==1);
+    h.DataFiltered1 = h.DataFiltered(MatchStrToFind1);
+%     assignin('base','DataFiltered1',h.DataFiltered1)
+%     assignin('base','DataFiltered',h.DataFiltered)
+else
+    % Search strings in cell arrays
+    for k = 1:length(StrToFind)
+	    ElementMatch{k} = cellfun(@(S) strcmp(StrToFind{k},S),Elements,'UniformOutput',false);
+    end
+    % Find cell arrays that are not empty, i.e. where a match was found
+    for k = 1:length(StrToFind)
+        ElementMatchResults_tmp1(:,k) = logical(cell2mat(cellfun(@any,ElementMatch{k},'UniformOutput',false)))';
+    end
+    % Find cell arrays where all string where found simultaneously
+    Resulttmp = ElementMatchResults_tmp1(:,1) & ElementMatchResults_tmp1(:,2);
+    
+    % Find matches in cells
+    MatchStrToFind = find(Resulttmp==1);
+%     assignin('base','MatchStrToFind',MatchStrToFind)
+%     assignin('base','Resulttmp',Resulttmp)
+    
+    % Get size of each cell array with matched result in order to filter for exact number of elements
+    SizeElementArrays = cellfun('size',Elements(MatchStrToFind),2);
+    % Filter data base to show matched results
+    h.DataFiltered = h.DBPDF.PDFDataBasesorted(MatchStrToFind);
+%     assignin('base','DataFiltered',h.DataFiltered)
+    for g = 1:size(h.DataFiltered,2)
+        % Get elemental formula of db entry "g"
+        ElementsDataFiltered{g} = strsplit(char(regexprep(regexprep(h.DataFiltered(g).ElementSymbol, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));
+    end
+%     assignin('base','ElementsDataFiltered',ElementsDataFiltered)
+    SizeElementArrays = cellfun('size',Elements(MatchStrToFind),2);
+    MatchStrToFind1 = find(SizeElementArrays==length(StrToFind)); % length(StrToFind) muss noch allgemein veraenderlich gemacht werden
+%     assignin('base','MatchStrToFind1',MatchStrToFind1)
+    h.DataFiltered1 = h.DataFiltered(MatchStrToFind1);
+end
+
+h.PDFCardNumbers = MatchStrToFind(MatchStrToFind1);
+
+% Reset the button color
+set(hObj,'str','Start Search','backg',col)  % Now reset the button features.
+
+a = struct2table(h.DataFiltered1);
+% assignin('base','tabledata',a)
+% assignin('base','PDFCardNumber',a.PDFCardNumber)
+% assignin('base','ElementName',a.ElementName)
+% assignin('base','ElementSymbol',a.ElementSymbol)
+% assignin('base','spaceGroupNumber',a.spaceGroupNumber)
+% b = [a.PDFCardNumber a.ElementName a.ElementSymbol a.spaceGroupNumber];
+% assignin('base','bdata',b)
+% b = [a.PDFCardNumber a.ElementName a.ElementSymbol a.spaceGroupNumber a.spaceGroupSymbol];
+% assignin('base','bdata',b)
+set(h.tablePDFDatabase,'data',[a.PDFCardNumber a.ElementName a.ElementSymbol cellfun(@cell2mat,a.spaceGroupSymbol,'UniformOutput',false) a.spaceGroupNumber])
+% set(h.tabledhklPDF,'data',[a.dSpacing{1} a.RelativeIntensity{1} a.h(1) a.k(1) a.l(1)])
+
+guidata(hObj, h);
+
+function PDFDataTable_CellEditCallback(hObj, eventdata, ~)
+% Callback for saving selected peaks
+h = guidata(hObj);
+
+set(h.textdataelementPDFData1, 'String', h.DataFiltered1(eventdata.Indices(1)).PDFCardNumber)
+set(h.textdataelementPDFData2, 'String', h.DataFiltered1(eventdata.Indices(1)).spaceGroupSymbol)
+set(h.textdataelementPDFData3, 'String', h.DataFiltered1(eventdata.Indices(1)).MolceularWeight)
+set(h.textdataelementPDFData4, 'String', h.DataFiltered1(eventdata.Indices(1)).Density)
+
+if size(h.DataFiltered1(eventdata.Indices(1)).LatticeParameter,1) == 1
+    set(h.textdataelementPDFData6, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter)
+    set(h.textdataelementPDFData7, 'String', '')
+    set(h.textdataelementPDFData8, 'String', '')
+elseif size(h.DataFiltered1(eventdata.Indices(1)).LatticeParameter,1) == 2
+    set(h.textdataelementPDFData6, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(1))
+    set(h.textdataelementPDFData7, 'String', '')
+    set(h.textdataelementPDFData8, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(2))
+elseif size(h.DataFiltered1(eventdata.Indices(1)).LatticeParameter,1) == 3
+    set(h.textdataelementPDFData6, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(1))
+    set(h.textdataelementPDFData7, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(2))
+    set(h.textdataelementPDFData8, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(3))
+elseif size(h.DataFiltered1(eventdata.Indices(1)).LatticeParameter,1) == 4
+    set(h.textdataelementPDFData6, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(1))
+    set(h.textdataelementPDFData7, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(2))
+    set(h.textdataelementPDFData8, 'String', h.DataFiltered1(eventdata.Indices(1)).LatticeParameter(3))
+end
+
+% Define wavelength. First defined as Cu
+% h.lambdaka1 = 1.54056;
+% h.lambdaka2 = 1.54433;
+% h.XRay_Energy = 8.04778;
+
+str = get(h.popupmenulambda, 'String');
+val = get(h.popupmenulambda, 'Value');
+
+if strcmp(str{val},'Cu')
+    h.lambdaka1 = 1.54056;
+    h.lambdaka2 = 1.54433;
+    h.XRay_Energy = 8.04778;
+elseif strcmp(str{val},'Co')
+    h.lambdaka1 = 1.78897;
+    h.lambdaka2 = 1.79278;
+    h.XRay_Energy = 6.93032;
+elseif strcmp(str{val},'Ag')
+    h.lambdaka1 = 0.55941;
+    h.lambdaka2 = 0.56380;
+    h.XRay_Energy = 22.16292;
+elseif strcmp(str{val},'Fe')
+    h.lambdaka1 = 1.93579;
+    h.lambdaka2 = 1.93991;
+    h.XRay_Energy = 6.40384;
+elseif strcmp(str{val},'Mo')
+    h.lambdaka1 = 0.70926;
+    h.lambdaka2 = 0.71354;
+    h.XRay_Energy = 17.47934;
+elseif strcmp(str{val},'Cr')    
+    h.lambdaka1 = 2.28962;
+    h.lambdaka2 = 2.29351;
+    h.XRay_Energy = 5.41472;
+end
+
+
+% Save index of chosen table row
+h.TableIndex = eventdata.Indices(1);
+
+for i = 1:size(h.DataFiltered1(eventdata.Indices(1)).dSpacing,1)
+    twotheta(i,:) = 2.*asind(h.lambdaka1./(2.*h.DataFiltered1(eventdata.Indices(1)).dSpacing(i)));
+end
+
+twothetauser = str2double(get(h.SelectTwothetaPDFDatabase,'String'));
+
+for i = 1:size(h.DataFiltered1(eventdata.Indices(1)).dSpacing,1)
+	Etheo(i,:) = (6.199/sind(twothetauser/2))/h.DataFiltered1(eventdata.Indices(1)).dSpacing(i);
+end
+
+xtwotheta = twotheta;
+xenergy = Etheo;
+ystart = zeros(size(xtwotheta,1),1);
+ystop = h.DataFiltered1(eventdata.Indices(1)).RelativeIntensity;
+tx1 = [xtwotheta';xtwotheta';nan(length(xtwotheta),1)'];
+ty1 = [ystart';ystop';nan(length(xtwotheta),1)'];
+tx2 = [xenergy';xenergy';nan(length(xenergy),1)'];
+ty2 = [ystart';ystop';nan(length(xenergy),1)'];
+
+
+h.plotPDFData = plot(h.axesplotPDFData,tx1(:),ty1(:));
+h.axesplotPDFData.XLim = [0,160];
+h.axesplotPDFData.YLim = [0,110];
+
+h.plotPDFDataEnergy = plot(h.axesplotPDFDataEnergy,tx2(:),ty2(:));
+h.axesplotPDFDataEnergy.XLim = [0,100];
+h.axesplotPDFDataEnergy.YLim = [0,110];
+
+xlabel(h.axesplotPDFData,'2\theta [°]');
+ylabel(h.axesplotPDFData,'rel. Intensity');
+xlabel(h.axesplotPDFDataEnergy,'Energy [keV]');
+ylabel(h.axesplotPDFDataEnergy,'rel. Intensity');
+
+a = struct2table(h.DataFiltered1);
+if isempty(a.h{eventdata.Indices(1)})
+    placeholder = zeros(size(Etheo));
+    set(h.tabledhklPDF,'data',[a.dSpacing{eventdata.Indices(1)} a.RelativeIntensity{eventdata.Indices(1)} placeholder placeholder placeholder twotheta Etheo])
+else
+    set(h.tabledhklPDF,'data',[a.dSpacing{eventdata.Indices(1)} a.RelativeIntensity{eventdata.Indices(1)} a.h{eventdata.Indices(1)} a.k{eventdata.Indices(1)} a.l{eventdata.Indices(1)} twotheta Etheo])
+end
+
+guidata(hObj, h);
+
+function popupmenulambdaCallback(hObj,~)
+% Callback for "pop up menu" in create sample panel
+h = guidata(hObj);
+% Determine the selected data set.
+str = get(hObj, 'String');
+val = get(hObj, 'Value');
+
+if strcmp(str{val},'Cu')
+    h.lambdaka1 = 1.54056;
+    h.lambdaka2 = 1.54433;
+    h.XRay_Energy = 8.04778;
+elseif strcmp(str{val},'Co')
+    h.lambdaka1 = 1.78897;
+    h.lambdaka2 = 1.79278;
+    h.XRay_Energy = 6.93032;
+elseif strcmp(str{val},'Ag')
+    h.lambdaka1 = 0.55941;
+    h.lambdaka2 = 0.56380;
+    h.XRay_Energy = 22.16292;
+elseif strcmp(str{val},'Fe')
+    h.lambdaka1 = 1.93579;
+    h.lambdaka2 = 1.93991;
+    h.XRay_Energy = 6.40384;
+elseif strcmp(str{val},'Mo')
+    h.lambdaka1 = 0.70926;
+    h.lambdaka2 = 0.71354;
+    h.XRay_Energy = 17.47934;
+elseif strcmp(str{val},'Cr')    
+    h.lambdaka1 = 2.28962;
+    h.lambdaka2 = 2.29351;
+    h.XRay_Energy = 5.41472;
+end
+
+for i = 1:size(h.DataFiltered1(h.TableIndex).dSpacing,1)
+    twotheta(i,:) = 2.*asind(h.lambdaka1./(2.*h.DataFiltered1(h.TableIndex).dSpacing(i)));
+end
+
+for k = 1:length(twotheta)
+    checkcomplex(k) = isreal(twotheta(k));
+end
+% assignin('base','twotheta',twotheta)
+% assignin('base','checkcomplex',checkcomplex)
+twotheta(~logical(checkcomplex)) = 0;
+% twotheta = twotheta(logical(checkcomplex));
+
+twothetauser = str2double(get(h.SelectTwothetaPDFDatabase,'String'));
+ 
+for i = 1:size(h.DataFiltered1(h.TableIndex).dSpacing,1)
+	Etheo(i,:) = (6.199/sind(twothetauser/2))/h.DataFiltered1(h.TableIndex).dSpacing(i);
+end
+
+xtwotheta = twotheta;
+xenergy = Etheo;
+ystart = zeros(size(xtwotheta,1),1);
+ystartE = zeros(size(xenergy,1),1);
+ystop = h.DataFiltered1(h.TableIndex).RelativeIntensity;
+ystop = ystop;
+ystopE = h.DataFiltered1(h.TableIndex).RelativeIntensity;
+tx1 = [xtwotheta';xtwotheta';nan(length(xtwotheta),1)'];
+ty1 = [ystart';ystop';nan(length(xtwotheta),1)'];
+
+
+h.plotPDFData = plot(h.axesplotPDFData,tx1(:),ty1(:));
+h.axesplotPDFData.XLim = [0,160];
+h.axesplotPDFData.YLim = [0,110];
+
+xlabel(h.axesplotPDFData,'2\theta [°]');
+ylabel(h.axesplotPDFData,'rel. Intensity');
+
+a = struct2table(h.DataFiltered1);
+set(h.tabledhklPDF,'data',[a.dSpacing{h.TableIndex} a.RelativeIntensity{h.TableIndex} a.h{h.TableIndex} a.k{h.TableIndex} a.l{h.TableIndex} twotheta Etheo])
+
+guidata(hObj,h);
+
+function SelectTwothetaPDFDatabaseCallback(hObj, ~)
+% Callback for saving selected peaks
+h = guidata(hObj);
+
+TwoThetaEnergy = str2double(get(hObj,'String'));
+
+for i = 1:size(h.DataFiltered1(h.TableIndex).dSpacing,1)
+	Etheo(i,:) = (6.199/sind(TwoThetaEnergy/2))/h.DataFiltered1(h.TableIndex).dSpacing(i);
+end
+
+xenergy = Etheo;
+ystartE = zeros(size(xenergy,1),1);
+ystopE = h.DataFiltered1(h.TableIndex).RelativeIntensity;
+
+tx2 = [xenergy';xenergy';nan(length(xenergy),1)'];
+ty2 = [ystartE';ystopE';nan(length(xenergy),1)'];
+
+h.plotPDFDataEnergy = plot(h.axesplotPDFDataEnergy,tx2(:),ty2(:));
+h.axesplotPDFDataEnergy.XLim = [0,100];
+h.axesplotPDFDataEnergy.YLim = [0,110];
+
+xlabel(h.axesplotPDFDataEnergy,'Energy [keV]');
+ylabel(h.axesplotPDFDataEnergy,'rel. Intensity');
+
+datanew = get(h.tabledhklPDF,'data');
+datanew(:,7) = Etheo;
+
+set(h.tabledhklPDF,'data',datanew)
+
+guidata(hObj, h);
+
+function CreateMPDFileCallback(hObj, ~)
+% Callback for saving selected peaks
+h = guidata(hObj);
+
+% Write results to mpd
+% h.PathName = [General.ProgramInfo.Path];
+% Path = fullfile(h.PathName,'Data','Materials');
+h.PathName = [General.ProgramInfo.Path,'\Data\Materials\'];
+
+% if exist(Path,'dir') ~= 7
+%     mkdir(Path);
+% end
+
+% Create matrix with material data
+a = struct2table(h.DataFiltered1);
+% assignin('base','data',a)
+
+filename = [strrep(a.ElementSymbol{h.TableIndex},' ',''),'_test.mpd'];
+Path = [h.PathName,filename];
+fid = fopen(Path, 'w');
+fprintf(fid, ['Dateiname: ',strrep(a.ElementSymbol{h.TableIndex},' ',''),'.mpd']);
+fprintf(fid, '\n');
+fprintf(fid, '\n');
+fprintf(fid, 'Elementliste: \n');
+% Element list
+Elements_tmp = strsplit(char(regexprep(regexprep(a.ElementSymbol{h.TableIndex}, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));
+sep = repmat(' ',size(Elements_tmp,1),3);
+datastr = '';
+for i = 1:size(Elements_tmp,2)
+    datastr = [datastr sep Elements_tmp{i}];
+end
+fprintf(fid, [datastr,'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'Stoechiometrieliste: \n');
+% Stochiometry list
+% Elements in formula
+Elements_tmp1 = strsplit(a.ElementSymbol{h.TableIndex});
+% Stochiometry of the respective element in the formula.
+StochiometryNumbers = regexp(Elements_tmp1,'\d+','match','once');
+
+% Check if empty cell present
+idxempty = cellfun(@isempty, StochiometryNumbers);
+% Replace empty cells with '1'
+% StochiometryNumbers{idxempty} = num2str(1);
+StochiometryNumbers(idxempty) = {[num2str(1)]};
+sep = repmat(' ',size(StochiometryNumbers,1),3);
+stochiometry = '';
+for i = 1:size(StochiometryNumbers,2)
+    stochiometry = [stochiometry sep StochiometryNumbers{i}];
+end
+fprintf(fid, [stochiometry,'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'Ordnungszahlliste: \n');
+Elements_tmp = strsplit(char(regexprep(regexprep(a.ElementSymbol{h.TableIndex}, '\(|)|!|,', ''), '[+-]?\d+\.?\d*', '')));
+assignin('base','Elements_tmp',Elements_tmp)
+sep = repmat(' ',size(Elements_tmp,1),3);
+dataatomnumber = '';
+   num2str(sym2an(Elements_tmp{i}))
+for i = 1:size(Elements_tmp,2)
+    dataatomnumber = [dataatomnumber sep num2str(sym2an(Elements_tmp{i}))];
+end
+
+fprintf(fid, [dataatomnumber,'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'Atomgewichtsliste (in g/mol): \n');
+
+for i = 1:size(Elements_tmp,2)
+    atomnumber = sym2an(Elements_tmp{i});
+    atomdata_tmp = pertable(atomnumber);
+    atomicmass(i) = str2double(atomdata_tmp.RAmass);
+end
+sep = repmat(' ',size(Elements_tmp,1),3);
+dataatommass = '';
+for i = 1:size(Elements_tmp,2)
+    dataatommass = [dataatommass sep num2str(atomicmass(i))];
+end
+
+fprintf(fid, [dataatommass,'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'Materialdichte (in g/cm^3): \n');
+fprintf(fid, ['  ',num2str(a.Density{h.TableIndex}),'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'Gittertyp: ');
+fprintf(fid, '\n');
+fprintf(fid, '\n');
+
+fprintf(fid, 'Gitterparameter (in nm): \n');
+latticeparams = a.LatticeParameter{h.TableIndex};
+sep = repmat(' ',size(latticeparams,2),3);
+datalatticeparam = '';
+for i = 1:size(latticeparams,1)
+    datalatticeparam = [datalatticeparam sep num2str(latticeparams(i)/10)];
+end
+
+fprintf(fid, [datalatticeparam,'\n']);
+fprintf(fid, '\n');
+
+fprintf(fid, 'hkl- und d-Wertliste: \n');
+
+% for i = 1:size(a.dSpacing{h.TableIndex},1)
+%     datadspacing = [a.h{h.TableIndex}(i) a.k{h.TableIndex}(i) a.l{h.TableIndex}(i) h.TableIndex}(i)/10];
+% end
+for i = 1:size(a.dSpacing{h.TableIndex},1)
+    if i ~= size(a.dSpacing{h.TableIndex},1)
+        fprintf(fid, [num2str(a.h{h.TableIndex}(i)) num2str(a.k{h.TableIndex}(i)) num2str(a.l{h.TableIndex}(i)) ' ' num2str(a.dSpacing{h.TableIndex}(i)/10),'\n']);
+    else
+        fprintf(fid, [num2str(a.h{h.TableIndex}(i)) num2str(a.k{h.TableIndex}(i)) num2str(a.l{h.TableIndex}(i)) ' ' num2str(a.dSpacing{h.TableIndex}(i)/10)]);
+    end
+end
+
+fclose(fid);
+
+
+guidata(hObj, h);
 %% Test -------------------------------
 
 % %% Rietveld analysis callbacks

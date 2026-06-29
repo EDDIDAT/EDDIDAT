@@ -12,6 +12,7 @@ for c = 1:length(Measurement)
     elseif PopupValueFitFunc == 5 %Lorentz-Func
         DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_Lorentz(FittedPeaks{c}, SE{c}, Measurement(c));    
     end
+    assignin('base','DiffractionLinesBeforeFilterDiffLine',DiffractionLines)
     % Apply filter
     if (FilterOptions.EvaluateFits)
         DiffractionLines_tmp = [];
@@ -121,6 +122,6 @@ if ~(FilterOptions.EvaluateFits)
     end
 end
 DiffractionLines = DiffractionLines';
-assignin('base','DiffractionLinesFilterDiffLine',DiffractionLines)
+
 end
 

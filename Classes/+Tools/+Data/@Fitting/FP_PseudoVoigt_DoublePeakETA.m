@@ -168,6 +168,8 @@ function [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakETA(X,Y,Index_Peaks,PeakP
         PeakPosBoundarys(2,:),... % ub
         optimset('Display','off'));
 %     assignin('base','FitParam',FitParam)
+%     assignin('base','residual',residual)
+%     assignin('base','jacobian',jacobian)
     %Confident Intervals
     CI = abs(nlparci(FitParam, residual, 'jacobian', jacobian) - [FitParam', FitParam']);
         % Aenderung 09.05.2016: CI hat vorher den gesamten Fehlerbereich

@@ -4,10 +4,10 @@ clear all
 % Please enter the elemental formula of the material/sample. When "E" ist
 % the shortname of the element and "n" its stoichiometry, the formula has
 % to look like this: "E1n1 E2n2 E3n3 ..." e.g. "Al2 O3, W1 C1, Ti1 C1 N1"
-P.ElementalFormula = 'La1B6';                                     % <--
+P.ElementalFormula = 'Si3N4';                                     % <--
 % Enter the name of the *.mpd file (without .mpd) which stores the material
 % information (e.g. LatticeParameter, crystal structure etc.)
-P.MPDFileName = 'LaB6';                                               % <--
+P.MPDFileName = 'Si3N4_alpha';                                               % <--
 % Additonally show the peaks of the substrate or any other second phase.
 % (if yes = true, if not = false)
 P.ShowSubstratePeaks = false;                                          % <--

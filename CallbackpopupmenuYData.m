@@ -1,6 +1,6 @@
 function [h] = CallbackpopupmenuYData(h, PlotWindow, YDataStr, valueSlider)
 % Load "DiffractionLines" variable, depending on diffractometer used
-if strcmp(h.Diffsel,'LEDDI')
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
         % Change slider parameters according to number of FittedPeaksDet1
         DiffractionLinestmp = h.DiffractionLinesDet1;
@@ -82,14 +82,33 @@ end
 % end
 
 % Get index from peaks to be kept
-if isfield(h, 'idxkeepPeaks')
-    idxkeepPeaks = h.idxkeepPeaks;
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        if isfield(h, 'idxkeepPeaksDet1')
+            idxkeepPeaks = h.idxkeepPeaksDet1;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmpDet1{1},2))';
+        end
+    elseif strcmp(h.Detsel,'Detector 2')
+        if isfield(h, 'idxkeepPeaksDet2')
+            idxkeepPeaks = h.idxkeepPeaksDet2;
+        else
+            % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+            % instead.
+            idxkeepPeaks = (1:size(DiffractionLinestmpDet2{1},2))';
+        end
+    end
 else
-    % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
-    % instead.
-    idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    if isfield(h, 'idxkeepPeaks')
+        idxkeepPeaks = h.idxkeepPeaks;
+    else
+        % If idxkeepPeaks does not exist, use size of "DiffractionLinestmp"
+        % instead.
+        idxkeepPeaks = (1:size(DiffractionLinestmp{1},2))';
+    end
 end
-
 % % Delete peaks that were deselected from the user
 % if isfield(h, 'idxkeepPeaks')
 %     if size(DiffractionLinestmp{1},2) ~= size(h.idxkeepPeaks,1)
@@ -114,6 +133,7 @@ for k = 1:length(h.Measurement)
 end
 
 Temperaturetmp = mat2cell(Temperaturetmp',length(Temperaturetmp),1);
+h.TemperatureForPlot = Temperaturetmp;
 
 % % Get Weight Factor
 % for k = 1:size(FittedPeakstmp{1},1)
@@ -374,37 +394,38 @@ for j = 1:length(ParamsToFit)
     end
 end
 
-% assignin('base','ParamsToFit',ParamsToFit)
-
-% % Create hkl label (needs to be executed here already
-% DataPeaksfromFit = get(h.tablephasehkl,'data');
-% assignin('base','DataPeaksfromFit',DataPeaksfromFit)
-% assignin('base','idxSelectPeaktable',h.idxSelectPeaktable)
-% Peakstmp = DataPeaksfromFit(repmat(FitPeaksLogical(1:size(DataPeaksfromFit,1),1),1,5));
-% 
-% if size(Peakstmp,1) ~= 1
-%     Peaks = reshape(Peakstmp,size(Peakstmp,1)/5,5);
-% else
-%     Peaks = Peakstmp;
-% end
-% 
-% Peaks = cell2mat(Peaks);
-% if length(idxkeepPeaks) ~= size(Peaks,1)
-%     Peaks = Peaks(idxkeepPeaks,:);
-% end
-% assignin('base','Peaks',Peaks)
-if isfield(h, 'idxSelectPeaktable')
-    Peaks = h.hkltablepsifile(h.idxSelectPeaktable,:);
-else
-    % Create hkl label (needs to be executed here already
-    DataPeaksfromFit = get(h.tablephasehkl,'data');
-    Peakstmp = DataPeaksfromFit(repmat(FitPeaksLogical(1:size(DataPeaksfromFit,1),1),1,5));
-
-    if size(Peakstmp,1) ~= 1
-        Peaks = reshape(Peakstmp,size(Peakstmp,1)/5,5);
-    else
-        Peaks = Peakstmp;
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+            % Create hkl label (needs to be executed here already
+            DataPeaksfromFit = get(h.tablephasehkl,'data');
+            Peakstmp = DataPeaksfromFit(repmat(FitPeaksLogical(1:size(DataPeaksfromFit,1),1),1,5));
+        
+            if size(Peakstmp,1) ~= 1
+                Peaks = reshape(Peakstmp,size(Peakstmp,1)/5,5);
+            else
+                Peaks = Peakstmp;
+            end
+    elseif strcmp(h.Detsel,'Detector 2')
+            % Create hkl label (needs to be executed here already
+            DataPeaksfromFit = get(h.tablephasehkl,'data');
+            Peakstmp = DataPeaksfromFit(repmat(FitPeaksLogical(1:size(DataPeaksfromFit,1),1),1,5));
+        
+            if size(Peakstmp,1) ~= 1
+                Peaks = reshape(Peakstmp,size(Peakstmp,1)/5,5);
+            else
+                Peaks = Peakstmp;
+            end
     end
+else
+        % Create hkl label (needs to be executed here already
+        DataPeaksfromFit = get(h.tablephasehkl,'data');
+        Peakstmp = DataPeaksfromFit(repmat(FitPeaksLogical(1:size(DataPeaksfromFit,1),1),1,5));
+    
+        if size(Peakstmp,1) ~= 1
+            Peaks = reshape(Peakstmp,size(Peakstmp,1)/5,5);
+        else
+            Peaks = Peakstmp;
+        end
 end
 % assignin('base','Peaks',Peaks)
 if iscell(Peaks)
@@ -435,8 +456,6 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                 YDataphi0 = YDataphi0new;
                 YDataphi0err = YDataphi0errnew;
                 ylabel(h.(Axes),'d [nm]')
-                assignin('base','YDataphi0new',YDataphi0new)
-                assignin('base','hklsquare',hklsquare)
                 for k = 1:length(ParamsToFit)
                     for l = 1:size(ParamsToFit(k).LatticeSpacing,2)
                         maxValtmp{l}(k,:) = max(ParamsToFit(k).LatticeSpacing{l}) + max(ParamsToFit(k).LatticeSpacing_Delta{l});
@@ -1174,7 +1193,8 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
     % Read hkl values from array
     for ii = 1:size(Peaks,1)
-        hkllabeltmp(ii,:) = mat2str(Peaks(ii,(1:3)));
+        hkllabeltmp{ii,:} = mat2str(Peaks(ii,(1:3)));
+%         hkllabeltmp(ii,:) = mat2str(Peaks(ii,(1:3)));
     end
     % Remove '[' and ']' from character array
     for ii = 1:size(hkllabeltmp,1)
@@ -1317,7 +1337,7 @@ else
                 
                 h.(phi).Tabledspacing = YDataphi0';
                 h.(phi).Tabledspacingdelta = YDataphi0err';
-                assignin('base','hphineu',h.(phi))
+%                 assignin('base','hphineu',h.(phi))
                 h.(dataforplotting).Y = YDataphi0;
                 h.(dataforplotting).Yerror = YDataphi0err;
                 

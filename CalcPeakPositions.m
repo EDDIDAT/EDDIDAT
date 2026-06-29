@@ -8,11 +8,20 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         [out, T] = CreateSampleEPostheo(P);
 
 %         if strcmp(Measurement.Anode,'Cu')
-%             T.lambdaka1 = 1.54056;
-%             T.lambdaka2 = 1.54433;
+            % T.lambdaka1 = 1.54056;
+            % T.lambdaka2 = 1.54433;
+            % Gallium
+            % T.lambdaka1 = 1.34023;
+            % T.lambdaka2 = 1.344037;
+            % Indium kalpha
+            % T.lambdaka1 = 0.512128;
+            % T.lambdaka2 = 0.51656;
+            % Indium kbeta
+            T.lambdaka1 = 0.454558;
+            T.lambdaka2 = 0.454558;
 %         elseif strcmp(Measurement.Anode,'Co')
-            T.lambdaka1 = 1.78897;
-            T.lambdaka2 = 1.79278;
+%             T.lambdaka1 = 1.78897;
+%             T.lambdaka2 = 1.79278;
 %         elseif strcmp(Measurement.Anode,'Ag')
 %             T.lambdaka1 = 0.55941;
 %             T.lambdaka2 = 0.56380;
@@ -37,7 +46,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         T.a0 = T.Material.LatticeParameter;
 
         % Info from material
-        T.dmin = 0.09;
+        T.dmin = 0.07;
         % Calculation of maximum hkl²
         if ~isempty(T.a0)
             T.hklquadratmax = (T.a0(1)/T.dmin)^2;
@@ -102,22 +111,32 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
             end
             
-            for k = 1:length(Etheoka1_tmp)
-                Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-            end
-            Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-            Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-            T.Etheoka1 = Etheoka1_tmp2;
+            IdxImaginary = ~imag(Etheoka2_tmp);
+            
+            T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+            T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+            T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
+
+%             for k = 1:length(Etheoka1_tmp)
+%                 Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%             end
+%             
+%             Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%             Etheoka2_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+% 
+%             Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%             Etheoka1_tmp2(Etheoka1_tmp2==0) = []
+%             T.Etheoka1 = Etheoka1_tmp2;
+%     
+%             for k = 1:length(Etheoka2_tmp)
+%                 Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%             end
+%             Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%             Etheoka2_tmp2(Etheoka2_tmp2==0) = []
+%             T.Etheoka2 = Etheoka2_tmp2;
     
-            for k = 1:length(Etheoka2_tmp)
-                Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-            end
-            Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-            Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-            T.Etheoka2 = Etheoka2_tmp2;
     
-    
-            T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%             T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
             assignin('base','TPeaks',T.Peaks)
         % Calculation of peak positions for bcc materials
         elseif strcmp(T.cs,'fcc')
@@ -188,22 +207,28 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
             end
             
-            for k = 1:length(Etheoka1_tmp)
-                Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-            end
-            Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-            Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-            T.Etheoka1 = Etheoka1_tmp2;
-    
-            for k = 1:length(Etheoka2_tmp)
-                Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-            end
-            Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-            Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-            T.Etheoka2 = Etheoka2_tmp2;
-    
-    
-            T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+            IdxImaginary = ~imag(Etheoka2_tmp);
+            
+            T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+            T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+            T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
+
+%             for k = 1:length(Etheoka1_tmp)
+%                 Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%             end
+%             Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%             Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%             T.Etheoka1 = Etheoka1_tmp2;
+%     
+%             for k = 1:length(Etheoka2_tmp)
+%                 Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%             end
+%             Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%             Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%             T.Etheoka2 = Etheoka2_tmp2;
+%     
+%     
+%             T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
     
         %--------------------------------------------------------------------------
         else
@@ -223,24 +248,30 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
             end
             
-            for k = 1:length(Etheoka1_tmp)
-                Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-            end
-            Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-            Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-            T.Etheoka1 = Etheoka1_tmp2;
-    
-            for k = 1:length(Etheoka2_tmp)
-                Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-            end
-            Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-            Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-            T.Etheoka2 = Etheoka2_tmp2;
-    
-    %         assignin('base','TEtheoka1',T.Etheoka1)
-    %         assignin('base','TEtheoka2',T.Etheoka2)
-    %         assignin('base','Thkl_sort',T.hkl_sort)
-            T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+            IdxImaginary = ~imag(Etheoka2_tmp);
+            
+            T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+            T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+            T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
+
+%             for k = 1:length(Etheoka1_tmp)
+%                 Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%             end
+%             Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%             Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%             T.Etheoka1 = Etheoka1_tmp2;
+%     
+%             for k = 1:length(Etheoka2_tmp)
+%                 Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%             end
+%             Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%             Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%             T.Etheoka2 = Etheoka2_tmp2;
+%     
+%             assignin('base','TEtheoka1',T.Etheoka1)
+%             assignin('base','TEtheoka2',T.Etheoka2)
+%             assignin('base','Thkl_sort',T.hkl_sort)
+%             T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
             
         end
     %     assignin('base','TPeaks',T)

@@ -44,6 +44,8 @@ classdef Measurement < General.MLRObject & General.ISaveLoad
         CountingTime = 0;
         % Scan mode MYTHEN Detector ETA
         MythenScanMode = 0;
+        % Measuremente scan mode (a-scan, d-sacn, mcaacq, mesh)
+        ScanMode = 0;
         
     %% (* Motoren bzw. Positionen *)
         %Relevante Motor-Positionen, in einer Struktur gespeichert, 
@@ -217,6 +219,7 @@ classdef Measurement < General.MLRObject & General.ISaveLoad
         obj = LoadFromSpecFile2(Filename,Diffractometer,Mode,Calibration)
         obj = LoadFromSpecFile_without_angles(Filename,Diffractometer,Mode)
         obj = LoadFromSpecFile_neu(Filename,Diffractometer,Mode,Calibration)
+        obj = LoadFromSpecFile_neu_ETA(Filename,Diffractometer,Mode,Calibration)
     end
     
 %% (* Objektversion *)

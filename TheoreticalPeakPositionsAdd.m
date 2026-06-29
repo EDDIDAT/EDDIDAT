@@ -1,4 +1,4 @@
-function Peakhandles1 = TheoreticalPeakPositionsAdd(Material,Measurement,LengthMeas,twotheta,DataTmp,Diffsel)
+function Peakhandles1 = TheoreticalPeakPositionsAdd(Material,Measurement,LengthMeas,twotheta,DataTmp,Diffsel,h)
 
 % Check if ETA3000 was used
 if strcmp(Diffsel,'ETA3000')
@@ -11,22 +11,22 @@ if strcmp(Diffsel,'ETA3000')
 %         lambdaka2 = 1.79278;
 %     end
 
-    if strcmp(Measurement.Anode,'Cu')
+    if strcmp(Measurement(1).Anode,'Cu')
         T.lambdaka1 = 1.54056;
         T.lambdaka2 = 1.54433;
-    elseif strcmp(Measurement.Anode,'Co')
+    elseif strcmp(Measurement(1).Anode,'Co')
         T.lambdaka1 = 1.78897;
         T.lambdaka2 = 1.79278;
-    elseif strcmp(Measurement.Anode,'Ag')
+    elseif strcmp(Measurement(1).Anode,'Ag')
         T.lambdaka1 = 0.55941;
         T.lambdaka2 = 0.56380;
-    elseif strcmp(Measurement.Anode,'Fe')
+    elseif strcmp(Measurement(1).Anode,'Fe')
         T.lambdaka1 = 1.93579;
         T.lambdaka2 = 1.93991;
-    elseif strcmp(Measurement.Anode,'Mo')
+    elseif strcmp(Measurement(1).Anode,'Mo')
         T.lambdaka1 = 0.70926;
         T.lambdaka2 = 0.71354;
-    elseif strcmp(Measurement.Anode,'Cr')    
+    elseif strcmp(Measurement(1).Anode,'Cr')    
         T.lambdaka1 = 2.28962;
         T.lambdaka2 = 2.29351;
     end
@@ -58,7 +58,7 @@ if strcmp(Diffsel,'ETA3000')
 %     dmin_tmp = TPeaks.T.Peaks(:,4).*twothetapos_tmpidx;
 %     dmin_tmp(dmin_tmp==0) = [];
 %     T.dmin = min(dmin_tmp);
-    T.dmin = 0.09;
+    T.dmin = 0.05;
     % Calculation of maximum hkl²
     if ~isempty(T.a0)
         T.hklquadratmax = (T.a0(1)/T.dmin)^2;
@@ -86,15 +86,16 @@ if strcmp(Diffsel,'ETA3000')
 %     end
     
     % Calculation of the maximum peak intensities of the respecive spectrum
-    T.Peaks_y = zeros(length(Material),1);
+    T.Peaks_y = zeros(length(Measurement),1);
     % Find intensity maximum
-    for i = 1:length(Material)
+    for i = 1:length(Measurement)
         T.Peaks_y(i,:) = max(DataTmp{i}(:, 2));
     end
     % Create matrix for the line plot of the peak positions (Y values)
-    for i = 1:length(Material)
+    for i = 1:length(Measurement)
         T.Y1(i,:) = [0 T.Peaks_y(i) nan];
     end
+    
 
     %% Plot diffraction lines from Material
     % Calculation of peak positions for bcc materials
@@ -138,23 +139,29 @@ if strcmp(Diffsel,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
-        assignin('base','TPeaks',T.Peaks)
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+% 
+% 
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         assignin('base','TPeaks',T.Peaks)
     % Calculation of peak positions for bcc materials
     elseif strcmp(T.cs,'fcc')
         % Calculation of all possible hkl combinations
@@ -224,22 +231,28 @@ if strcmp(Diffsel,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+% 
+% 
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
 
     %--------------------------------------------------------------------------
     else
@@ -259,24 +272,30 @@ if strcmp(Diffsel,'ETA3000')
     %         T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
         end
         
-        for k = 1:length(Etheoka1_tmp)
-            Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
-        end
-        Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
-        Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
-        T.Etheoka1 = Etheoka1_tmp2;
+        IdxImaginary = ~imag(Etheoka2_tmp);
+            
+        T.Etheoka1 = Etheoka1_tmp(IdxImaginary);
+        T.Etheoka2 = Etheoka2_tmp(IdxImaginary);
+        T.Peaks = [T.hkl_sort(IdxImaginary,:) T.Etheoka1 T.Etheoka2];
 
-        for k = 1:length(Etheoka2_tmp)
-            Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
-        end
-        Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
-        Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
-        T.Etheoka2 = Etheoka2_tmp2;
-
-%         assignin('base','TEtheoka1',T.Etheoka1)
-%         assignin('base','TEtheoka2',T.Etheoka2)
-%         assignin('base','Thkl_sort',T.hkl_sort)
-        T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
+%         for k = 1:length(Etheoka1_tmp)
+%             Etheoka1_tmp1(k,1) = isreal(Etheoka1_tmp(k));
+%         end
+%         Etheoka1_tmp2 = Etheoka1_tmp.*Etheoka1_tmp1;
+%         Etheoka1_tmp2(Etheoka1_tmp2==0) = [];
+%         T.Etheoka1 = Etheoka1_tmp2;
+% 
+%         for k = 1:length(Etheoka2_tmp)
+%             Etheoka2_tmp1(k,1) = isreal(Etheoka2_tmp(k));
+%         end
+%         Etheoka2_tmp2 = Etheoka2_tmp.*Etheoka2_tmp1;
+%         Etheoka2_tmp2(Etheoka2_tmp2==0) = [];
+%         T.Etheoka2 = Etheoka2_tmp2;
+% 
+% %         assignin('base','TEtheoka1',T.Etheoka1)
+% %         assignin('base','TEtheoka2',T.Etheoka2)
+% %         assignin('base','Thkl_sort',T.hkl_sort)
+%         T.Peaks = [T.hkl_sort(Etheoka1_tmp1,:) T.Etheoka1 T.Etheoka2];
         
     end
 %     assignin('base','TPeaks',T)
@@ -288,13 +307,13 @@ if strcmp(Diffsel,'ETA3000')
     % Adjust the size of matrix to the measurement
     T.X2 = reshape(T.X1',size(T.Peaks,1).*3,1);
     T.X2(size(T.Peaks,1).*3,:) = [];
-    T.X3 = repmat(T.X2,1,length(Material));
+    T.X3 = repmat(T.X2,1,length(Measurement));
     % kalpha2
     T.X2ka2 = reshape(T.X1ka2',size(T.Peaks,1).*3,1);
     T.X2ka2(size(T.Peaks,1).*3,:) = [];
-    T.X3ka2 = repmat(T.X2ka2,1,length(Material));
+    T.X3ka2 = repmat(T.X2ka2,1,length(Measurement));
     % Adjust the size of matrix to the measurement
-    T.Y2 = reshape(T.Y1',3,length(Material));
+    T.Y2 = reshape(T.Y1',3,length(Measurement));
     T.Y3 = repmat(T.Y2,size(T.Peaks,1),1);
     T.Y3(size(T.Peaks,1).*3,:)= [];
 %     assignin('base','TPeaksNeu',T)
@@ -320,18 +339,42 @@ else
     else
         T.hklquadratmax = [];
     end
-    
+
     % Calculation of the maximum peak intensities of the respecive spectrum
-    T.Peaks_y = zeros(LengthMeas,1);
-    % Find intensity maximum
-    for i = 1:LengthMeas
-        T.Peaks_y(i,:) = max(DataTmp{i}(:, 2));
+    if strcmp(Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel, 'Detector 1')
+            T.Peaks_y = zeros(length(Measurement)/2,1);
+            for i = 1:length(Measurement)/2
+                DataTmp_tmp = DataTmp(2:2:end);
+                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(1)+0.1):FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(2)-0.1), 2));
+            end
+            % Create matrix for the line plot of the peak positions (Y values)
+            for i = 1:length(Measurement)/2
+                T.Y1(i,:) = [0 T.Peaks_y(i) nan];
+            end
+        elseif strcmp(h.Detsel, 'Detector 2')
+            T.Peaks_y = zeros(length(Measurement)/2,1);
+            for i = 1:length(Measurement)/2
+                DataTmp_tmp = DataTmp(1:2:end);
+                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(1)+0.1):FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(2)-0.1), 2));
+            end
+            % Create matrix for the line plot of the peak positions (Y values)
+            for i = 1:length(Measurement)/2
+                T.Y1(i,:) = [0 T.Peaks_y(i) nan];
+            end
+        end
+
+    else
+        T.Peaks_y = zeros(LengthMeas,1);
+        % Find intensity maximum
+        for i = 1:LengthMeas
+            T.Peaks_y(i,:) = max(DataTmp{i}(:, 2));
+        end
+        % Create matrix for the line plot of the peak positions (Y values)
+        for i = 1:LengthMeas
+            T.Y1(i,:) = [0 T.Peaks_y(i) nan];
+        end
     end
-    % Create matrix for the line plot of the peak positions (Y values)
-    for i = 1:LengthMeas
-        T.Y1(i,:) = [0 T.Peaks_y(i) nan];
-    end
-    
     %% Plot diffraction lines from Material
     % Calculation of peak positions for bcc materials
     if strcmp(T.cs,'bcc')

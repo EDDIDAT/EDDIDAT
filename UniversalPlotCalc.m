@@ -1,21 +1,30 @@
 function [UPlot] = UniversalPlotCalc(h)
 %UNTITLED2 Summary of this function goes here
-
+assignin('base','h',h)
 indkeeppeaks = find(h.userpeaksuplot==1);
-
-TauCalc.absorbcoeff = cell(1);
-for k = 1:size(indkeeppeaks,1)
-    for l = 1:size(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)},1)
-        TauCalc.absorbcoeff{k}(:,l) = h.Sample.Materials(1).LAC((0.6199/sind(h.Measurement(1).twotheta./2))/h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(l,2));
-        TauCalc.absorbcoefforg{k} = h.Sample.Materials(1).LAC((0.6199/sind(h.Measurement(1).twotheta./2))/h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(1,2));
+if strcmp(h.Diffsel,'ETA3000')
+    TauCalc.tau = cell(1);
+    for k = 1:size(indkeeppeaks,1)
+        for l = 1:size(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)},1)
+            TauCalc.tau{k}(l) = h.StressesMW.temptau{k}(l);
+            TauCalc.tauorg{k} = h.StressesMW.temptau;
+        end
     end
-end
-
-TauCalc.tau = cell(1);
-for k = 1:size(indkeeppeaks,1)
-    for l = 1:size(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)},1)
-        TauCalc.tau{k}(l) = (sind(h.Measurement(1).twotheta./2).*cosd(asind(sqrt(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(l,1)))))./(2.*TauCalc.absorbcoeff{k}(l)./10000);
-        TauCalc.tauorg{k} = (sind(h.Measurement(1).twotheta./2).*cosd(asind(sqrt(sind((0:1:89)).^2))))./(2.*TauCalc.absorbcoefforg{k}./10000);
+else
+    TauCalc.absorbcoeff = cell(1);
+    for k = 1:size(indkeeppeaks,1)
+        for l = 1:size(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)},1)
+            TauCalc.absorbcoeff{k}(:,l) = h.Sample.Materials(1).LAC((0.6199/sind(h.Measurement(1).twotheta./2))/h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(l,2));
+            TauCalc.absorbcoefforg{k} = h.Sample.Materials(1).LAC((0.6199/sind(h.Measurement(1).twotheta./2))/h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(1,2));
+        end
+    end
+    
+    TauCalc.tau = cell(1);
+    for k = 1:size(indkeeppeaks,1)
+        for l = 1:size(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)},1)
+            TauCalc.tau{k}(l) = (sind(h.Measurement(1).twotheta./2).*cosd(asind(sqrt(h.sin2psi.dphi0p180sinquadratpsi{indkeeppeaks(k)}(l,1)))))./(2.*TauCalc.absorbcoeff{k}(l)./10000);
+            TauCalc.tauorg{k} = (sind(h.Measurement(1).twotheta./2).*cosd(asind(sqrt(sind((0:1:89)).^2))))./(2.*TauCalc.absorbcoefforg{k}./10000);
+        end
     end
 end
 
@@ -179,6 +188,8 @@ UPlot.sigma13 = sigma13;
 UPlot.sigma13delta = sigma13delta;
 UPlot.sigma23 = sigma23;
 UPlot.sigma23delta = sigma23delta;
+
+assignin('base','UPlot',UPlot)
 
 end
 

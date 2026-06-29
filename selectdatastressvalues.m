@@ -240,7 +240,7 @@ function [pointslist,xselect,yselect] = selectdatastressvalues(varargin)
 % Release date: 2/19/07
 
 % defaults for the parameters
-params.Axes = gca;
+params.Axes = 1;
 params.SelectionMode = 'lasso';
 params.Action = 'list';
 params.BrushShape = 'circle';
@@ -311,6 +311,7 @@ oldpointer = get(fighandle,'Pointer');
 % get the children of the axes
 % hc = get(params.Axes,'children');
 hc = get(params.Handle,'children');
+
 assignin('base','hc',hc)
 assignin('base','params',params)
 % if size(hc,1) == 2
@@ -324,6 +325,9 @@ assignin('base','params',params)
 if size(hc,1) == 2
     % One phi angle
     hcignore = params.Handle.Children(1);
+elseif size(hc,1) == 3
+    hcignore(1) = params.Handle.Children(1);
+    hcignore(2) = params.Handle.Children(2);
 elseif size(hc,1) == 4
     % Two phi angles
     if params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0
@@ -363,6 +367,11 @@ elseif size(hc,1) == 4
         hcignore(2) = params.Handle.Children(3);
         hcignore(3) = params.Handle.Children(4);
     end
+elseif size(hc,1) == 5
+    hcignore(1) = params.Handle.Children(1);
+    hcignore(2) = params.Handle.Children(2);
+    hcignore(3) = params.Handle.Children(3);
+    hcignore(4) = params.Handle.Children(4);
 elseif size(hc,1) == 6
     % Three phi angles
     if params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 180
@@ -693,6 +702,7 @@ while selectionflag
       end
 
       % button down detected
+      % cc = get(params.Axes,'CurrentPoint');
       cc = get(gca,'CurrentPoint');
       xlasso = cc(1,1);
       ylasso = cc(1,2);
@@ -986,7 +996,6 @@ end
 % =====================================================
 function rectmotion(src,evnt) %#ok
   % nested function for expansion or contraction of the rect
-  
   % get the new mouse position
   mousenew = get(params.Axes,'CurrentPoint');
   rectxy2 = mousenew(1,1:2);
@@ -1020,9 +1029,11 @@ end
 % =====================================================
 function lassomotion(src,evnt) %#ok
   % nested function for expansion of the lasso
-  
+  params.Axes.XLim = [-90 90];
+  params.Axes.YLim = [-Inf Inf];
   % get the new mouse position
-  mousenew = get(params.Axes,'CurrentPoint');
+  mousenew = get(gca,'CurrentPoint');
+  % mousenew = get(params.Axes,'CurrentPoint')
   mousenew = mousenew(1,1:2);
 
   % append the new point on the end of the last lasso

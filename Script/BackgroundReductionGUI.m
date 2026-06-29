@@ -9,9 +9,9 @@ R.PeakRegions = PeakRegions;
 if strcmp(calib,'Channel_scale')
     P.SmootFilterWidth = 0.5;
 else
-    P.SmootFilterWidth = 0.1;
+    P.SmootFilterWidth = 0.05;
 end
-P.SmootStepSize = 4;
+P.SmootStepSize = 1;
 % Choose this option, if you want to see the results
 P.PlotBackgroundLine = true;
 % Clean up all temporary variables
@@ -41,7 +41,7 @@ for c = 1:length(Measurement)
     DataTmp{c} = [T.X, T.Y];
 
 end
-
+assignin('base','T',T)
 
 if (P.CleanUpTemporaryVariables)
 %     clear('P');

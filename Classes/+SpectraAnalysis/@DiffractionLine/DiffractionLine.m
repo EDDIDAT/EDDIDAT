@@ -48,6 +48,7 @@ classdef DiffractionLine < General.MLRObject
         %aus 2theta und der Energie-Position berechnet, nm, double|va
         LatticeSpacing = 0;
         LatticeSpacing_Delta = 0;
+
     end
     
     %--> Abhängige Eigenschaften
@@ -153,8 +154,29 @@ classdef DiffractionLine < General.MLRObject
             %--> Falls man keine explizite Vorgabe gemacht hat
             if obj.LatticeSpacing == 0
                 if strcmp(obj.Measurement.Diffractometer.Name,'ETA3000')
+                    % Lambda
+                    Anode = obj.Measurement.Anode;
+                    if strcmp(Anode,'Cu')
+                        lambdaka1 = 1.54056;
+                        lambdaka2 = 1.54433;
+                    elseif strcmp(Anode,'Co')
+                        lambdaka1 = 1.78897;
+                        lambdaka2 = 1.79278;
+                    elseif strcmp(Anode,'Ag')
+                        lambdaka1 = 0.55941;
+                        lambdaka2 = 0.56380;
+                    elseif strcmp(Anode,'Fe')
+                        lambdaka1 = 1.93579;
+                        lambdaka2 = 1.93991;
+                    elseif strcmp(Anode,'Mo')
+                        lambdaka1 = 0.70926;
+                        lambdaka2 = 0.71354;
+                    elseif strcmp(Anode,'Cr')    
+                        lambdaka1 = 2.28962;
+                        lambdaka2 = 2.29351;
+                    end
                     % Lambda noch als Parameter aus Measurement einfuegen
-                    rtn = 0.178897./(2*sind(obj.Energy_Max/2));
+                    rtn = lambdaka1/10./(2*sind(obj.Energy_Max/2));
                 else
                     rtn = 0.6199./sind(obj.twotheta ./ 2)./ ...
                     obj.Energy_Max;
@@ -174,8 +196,30 @@ classdef DiffractionLine < General.MLRObject
             %--> Falls man keine explizite Vorgabe gemacht hat
             if obj.LatticeSpacing_Delta == 0
                 if strcmp(obj.Measurement.Diffractometer.Name,'ETA3000')
-                    rtn = 0.178897./(4.*cosd(obj.Energy_Max/2)./...
-                        sind(obj.Energy_Max/2).^2).*obj.Energy_Max_Delta;
+                    % Lambda
+                    Anode = obj.Measurement.Anode;
+                    if strcmp(Anode,'Cu')
+                        lambdaka1 = 1.54056;
+                        lambdaka2 = 1.54433;
+                    elseif strcmp(Anode,'Co')
+                        lambdaka1 = 1.78897;
+                        lambdaka2 = 1.79278;
+                    elseif strcmp(Anode,'Ag')
+                        lambdaka1 = 0.55941;
+                        lambdaka2 = 0.56380;
+                    elseif strcmp(Anode,'Fe')
+                        lambdaka1 = 1.93579;
+                        lambdaka2 = 1.93991;
+                    elseif strcmp(Anode,'Mo')
+                        lambdaka1 = 0.70926;
+                        lambdaka2 = 0.71354;
+                    elseif strcmp(Anode,'Cr')    
+                        lambdaka1 = 2.28962;
+                        lambdaka2 = 2.29351;
+                    end
+                    rtn = (lambdaka1/10./4.*cosd(obj.Energy_Max/2))./...
+                        (sind(obj.Energy_Max/2).^2).*...
+                        (obj.Energy_Max_Delta*pi/180);
                 else
                     if obj.Energy_Max_Delta == 0
                         % If fitting produces zero error Energy_Max_Delta, set
