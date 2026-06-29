@@ -1,27 +1,32 @@
-% Diese Funktion ließt einen Textfile ein und gibt ihn als 2D-CharArray 
+% Diese Funktion lieï¿½t einen Textfile ein und gibt ihn als 2D-CharArray 
 % aus.
 % Input: Filename, kompletter Dateipfad, string|va /
 %        Delimiter, Trennzeichen zwischen den Zeilen, string|va
 % Output: rtn, konvertiertes Char-Array, Text, char|2d
 function rtn = AsciiFile2Text(Filename,Delimiter)
 
-%% (* Stringenzprüfung *)
+%% (* Stringenzprï¿½fung *)
     validateattributes(Filename,{'char'},{'row'});
     validateattributes(Delimiter,{'char'},{'row'});
 
 %% (* Laden *)
-    %Datei öffnen, Ergebnis ist der File-Identifier
+    %Datei ï¿½ffnen, Ergebnis ist der File-Identifier
     fid = fopen(Filename);
+    if fid == -1
+        error('AsciiFile2Text:FileNotFound', ...
+            'Cannot open file:\n  %s\nProgram root is:\n  %s', ...
+            Filename, General.ProgramInfo.Path);
+    end
     %Anzahl der Zeilen ermitteln (NOL = NumberOfLines), hierbei kann es
-    %sein, dass die letzte Zeile nicht gezählt wird, was aber beim Einlesen
+    %sein, dass die letzte Zeile nicht gezï¿½hlt wird, was aber beim Einlesen
     %keinen Fehler hervorruft, da das Array einfach redimensioniert wird
     NOL = textscan(fid,'%s',NaN,'Delimiter',Delimiter);
     NOL = length(NOL{1});
-    %Zurücksetzen des FilePositioners
+    %Zurï¿½cksetzen des FilePositioners
     fseek(fid,0,'bof');
     %Prealloc des Cell-Arrays
     rtn = cell(NOL,1);
-    %Zähler für die Zeilen
+    %Zï¿½hler fï¿½r die Zeilen
     i_c = 0;
     %--> Durchlaufen der Files
     while ~feof(fid)
@@ -29,7 +34,7 @@ function rtn = AsciiFile2Text(Filename,Delimiter)
         %Zeile einlesen
         rtn{i_c} = fgetl(fid);
     end
-    %Datei schließen
+    %Datei schlieï¿½en
     fclose(fid);
     
 %% (* Konvertieren *)
