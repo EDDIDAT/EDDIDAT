@@ -23,11 +23,27 @@ s = warning('off', 'MATLAB:uitabgroup:OldVersion');
 h.TabGroup = uitabgroup('Parent',h.myfig,'units', 'normalized');
 warning(s);
 h.Tabs(1) = uitab('Parent',h.TabGroup, 'Title','Fitting');
-h.Tabs(2) = uitab('Parent',h.TabGroup, 'Title','Stress Analysis');
+h.Tabs(2) = uitab('Parent',h.TabGroup, 'Title',['Stress Analysis - sin',char(178),char(968),' method']);
+% Eigene Variable (nicht in h.Tabs einsortiert), damit die bestehende
+% Indizierung h.Tabs(3)..h.Tabs(6) unveraendert bleibt -- diese Indizes
+% werden an sehr vielen Stellen im Code direkt referenziert. Da dieser
+% Tab direkt nach 'Stress Analysis' erzeugt wird, erscheint er in der
+% Tab-Leiste trotzdem an der gewuenschten Position (Reihenfolge richtet
+% sich nach der Erzeugungsreihenfolge, nicht nach dem Index).
+h.TabPsiMethod = uitab('Parent',h.TabGroup, 'Title',['Stress Analysis - ',char(968),' method']);
 h.Tabs(3) = uitab('Parent',h.TabGroup, 'Title','Universal Plot');
 h.Tabs(4) = uitab('Parent',h.TabGroup, 'Title','Plot Fit Data');
 h.Tabs(5) = uitab('Parent',h.TabGroup, 'Title','Qualitative Phase Analysis');
 h.Tabs(6) = uitab('Parent',h.TabGroup, 'Title','PDF Database');
+% Tab zur Bearbeitung von BCF-Dateien (Bruker-Mappings): Spektrum eines Bereichs, Reflexsuche,
+% Intensitaetskarten, Export der Streifen-MAT-Dateien. Eigene Variable (nicht in h.Tabs), damit die
+% Indizes h.Tabs(1)..h.Tabs(6) unveraendert bleiben. Inhalt: Script\BCFTab.m (Python: Data\Tools\bcf_tool.py).
+h.TabBCF = uitab('Parent',h.TabGroup, 'Title','BCF import');
+BCFTab(h.TabBCF);
+% Tab zum Erzeugen und Vergleichen von Karten aus den psi-Dateien der Batch-Auswertung (ein Ordner je Binning).
+% Inhalt: Script\PsiMapTab.m (reines MATLAB). Eigene Variable, h.Tabs bleibt unveraendert.
+h.TabFitMaps = uitab('Parent',h.TabGroup, 'Title','Create fit maps');
+PsiMapTab(h.TabFitMaps);
 % h.Tabs(6) = uitab('Parent',h.TabGroup, 'Title','Rietveld Analysis');
 % Load mpd files from directory
 Files = dir(fullfile('Data','Materials','*.mpd'));
@@ -88,6 +104,7 @@ h.P.PopupValueMpd4 = 0;
 h.P.PopupValueMpd5 = 0;
 h.P.PopupValueMpd6 = 0;
 h.P.PopupValueFitFunc = 2;
+h.P.CoupleOverlapPeaks = false;
 % h.axesplot = 0;
 % h.Plots = 0;
 set(h.TabGroup,'SelectedTab',h.Tabs(1));
@@ -388,7 +405,7 @@ h.checkboxcorrections2 = uicontrol( ...
 'Position', [0.4 0.615 0.35 0.15], ...
 'Tag', 'checkboxcorrections2', ...
 'String', 'Absorption', ...
-'Value', 1 ...
+'Value', 0 ...
 );
 h.checkboxcorrections3 = uicontrol( ...
 'Parent', h.correctionspanel, ...
@@ -466,7 +483,7 @@ h.Slider = uicontrol(...
 'Value',1,...
 'Callback',{@SliderCallbackPlotRawData});
 
-% Slider für einzelne Peaks erzeugen
+% Slider fï¿½r einzelne Peaks erzeugen
 h.SliderSinglePeakData = uicontrol(...
 'Style','slider',...
 'Tag','SliderSinglePeakData',...
@@ -486,13 +503,22 @@ y = 0;
 h.axesplotRawData = axes('Parent', h.plotpanel, 'Position', [0.07 0.1125 0.9 0.85]);
 h.plotdata = plot(h.axesplotRawData, x,y); hold on;
 h.plotEtheo = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
+% hkl-Labels der Hauptlinie (theoretische Peaklagen nach Laden einer
+% Messdatei), siehe okbuttonloadmeasurement.
+h.EtheoMainLabelHandles = [];
 h.plotEtheoAdd1 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
 h.plotEtheoAdd2 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
 h.plotEtheoAdd3 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
 h.plotEtheoAdd4 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
 h.plotEtheoAdd5 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
 h.plotEtheoSub = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
-h.plotFluorAdd1 = line(h.axesplotRawData,x,y,'LineStyle',':','LineWidth',1.5);
+% Fluoreszenzlinien: eigene Linienart (Strichpunkt statt gepunktet) und
+% eigene Farbpalette, damit sie sich optisch von den Phasenlinien
+% (plotEtheoAdd1..5, gepunktet gruen/blau/cyan/magenta/gelb) abheben.
+h.plotFluorAdd1 = line(h.axesplotRawData,x,y,'LineStyle','-.','LineWidth',1.5);
+h.plotFluorAdd2 = line(h.axesplotRawData,x,y,'LineStyle','-.','LineWidth',1.5);
+h.plotFluorAdd3 = line(h.axesplotRawData,x,y,'LineStyle','-.','LineWidth',1.5);
+h.plotFluorAdd4 = line(h.axesplotRawData,x,y,'LineStyle','-.','LineWidth',1.5);
 
 h.axesplotRawData.XLim = [0,100];
 h.axesplotRawData.YLim = [0,1];
@@ -506,7 +532,17 @@ set(h.plotEtheoAdd3, 'Color', 'cyan');
 set(h.plotEtheoAdd4, 'Color', 'magenta');
 set(h.plotEtheoAdd5, 'Color', 'yellow');
 set(h.plotEtheoSub, 'Color', [0.5 0.5 0.5]);
-set(h.plotFluorAdd1, 'Color', 'cyan');
+set(h.plotFluorAdd1, 'Color', 'red');
+set(h.plotFluorAdd2, 'Color', [1 0.55 0]);
+set(h.plotFluorAdd3, 'Color', [0.55 0.27 0.07]);
+set(h.plotFluorAdd4, 'Color', 'black');
+
+% Beschriftung der Fluoreszenzlinien mit dem jeweiligen Elementnamen,
+% mittig auf Hoehe der Linie platziert (siehe okbuttonloadFluorescence).
+h.textFluorLabel1 = text(h.axesplotRawData,0,0,'','Color','red','HorizontalAlignment','center','FontWeight','bold','BackgroundColor','white','Margin',1,'Rotation',90,'Visible','off');
+h.textFluorLabel2 = text(h.axesplotRawData,0,0,'','Color',[1 0.55 0],'HorizontalAlignment','center','FontWeight','bold','BackgroundColor','white','Margin',1,'Rotation',90,'Visible','off');
+h.textFluorLabel3 = text(h.axesplotRawData,0,0,'','Color',[0.55 0.27 0.07],'HorizontalAlignment','center','FontWeight','bold','BackgroundColor','white','Margin',1,'Rotation',90,'Visible','off');
+h.textFluorLabel4 = text(h.axesplotRawData,0,0,'','Color','black','HorizontalAlignment','center','FontWeight','bold','BackgroundColor','white','Margin',1,'Rotation',90,'Visible','off');
 
 xlabel('Energy [keV]');
 ylabel('Intensity [cts]');
@@ -850,9 +886,27 @@ h.textselectmeas7 = uicontrol( ...
 'Parent', h.selectmeasurementpanel, ...
 'Style', 'text', ...
 'Units', 'Normalized', ...
-'Position', [0.1 0.4 0.9 0.15], ...
+'Position', [0.1 0.4 0.32 0.15], ...
 'HorizontalAlignment', 'left', ...
-'String', 'Integrate spectra - Select number of spectra to integrate' ...
+'String', 'Integrate spectra:' ...
+);
+% Integration mode: "Block" groups spectra into non-overlapping sets
+% (1:N, N+1:2N, ...); "Sliding window" instead sums every N consecutive
+% spectra with a step of 1 (1:N, 2:N+1, 3:N+2, ...), producing
+% overlapping, smoothed results at every scan position.
+h.popupmenuintegratemode = uicontrol( ...
+'Parent', h.selectmeasurementpanel, ...
+'Style', 'popupmenu', ...
+'Units', 'Normalized', ...
+'Position', [0.44 0.42 0.55 0.13], ...
+'Tag', 'popupmenuintegratemode', ...
+'String', {'Block (non-overlapping)','Sliding window (step 1)'}, ...
+'Value', 1, ...
+'TooltipString', sprintf(['Block: groups spectra into non-overlapping\n' ...
+    'sets, e.g. 1-5, 6-10, 11-15, ...\n\n' ...
+    'Sliding window: sums every N consecutive spectra\n' ...
+    'with a step of 1, e.g. 1-5, 2-6, 3-7, ... (overlapping,\n' ...
+    'one result per scan position, more smoothing).']) ...
 );
 
 h.textselectmeas8 = uicontrol( ...
@@ -966,7 +1020,7 @@ h.buttonselectbkg4 = uicontrol( ...
 'Parent', h.backgroundpanel, ...
 'Style', 'Pushbutton', ...
 'Units', 'Normalized', ...
-'Position', [0.025 0.031 0.3 0.128], ...
+'Position', [0.025 0.0151 0.3 0.128], ...
 'String', 'Fit Background', ...
 'Tag', 'buttonselectbkg4', ...
 'Callback', {@buttonselectbkg4} ...
@@ -975,7 +1029,7 @@ h.buttonselectbkg5 = uicontrol( ...
 'Parent', h.backgroundpanel, ...
 'Style', 'Pushbutton', ...
 'Units', 'Normalized', ...
-'Position', [0.35 0.031 0.225 0.128], ...
+'Position', [0.35 0.0151 0.225 0.128], ...
 'String', 'Accept Fit', ...
 'Tag', 'buttonselectbkg5', ...
 'Callback', {@buttonselectbkg5} ...
@@ -984,7 +1038,7 @@ h.buttonselectbkg6 = uicontrol( ...
 'Parent', h.backgroundpanel, ...
 'Style', 'Pushbutton', ...
 'Units', 'Normalized', ...
-'Position', [0.675 0.031 0.225 0.128], ...
+'Position', [0.675 0.0151 0.225 0.128], ...
 'String', 'Decline Fit', ...
 'Tag', 'buttonselectbkg6', ...
 'Callback', {@buttonselectbkg6} ...
@@ -993,10 +1047,61 @@ h.buttonselectbkg8 = uicontrol( ...
 'Parent', h.backgroundpanel, ...
 'Style', 'Pushbutton', ...
 'Units', 'Normalized', ...
-'Position', [1 0.031 0.15 0.128], ...
+'Position', [1 0.0151 0.15 0.128], ...
 'String', 'Undo', ...
 'Tag', 'buttonselectbkg8', ...
 'Callback', {@buttonselectbkg8} ...
+);
+% Separater, vorgeschalteter Schritt: automatische globale
+% Untergrundkorrektur mittels SNIP, unabhaengig von der Klick-Routine.
+% Nutzt Vorschau/Accept/Decline ueber dieselben Buttons wie "Fit
+% Background" (buttonselectbkg5/6), da SNIP keine manuell einzustellenden
+% Parameter hat.
+SNIPButtonTooltip = sprintf(['Automatic global background correction (SNIP\n' ...
+    'algorithm), applied to the whole spectrum -- no need to mark\n' ...
+    'peak regions first. Run this before the click-based routine\n' ...
+    'to remove the overall background trend; use "Accept"/"Decline"\n' ...
+    'to confirm the preview.']);
+h.buttonselectbkgSNIP = uicontrol( ...
+'Parent', h.backgroundpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.025 0.14 0.54 0.11], ...
+'String', 'SNIP Background (global)', ...
+'Tag', 'buttonselectbkgSNIP', ...
+'Callback', {@buttonselectbkgSNIP}, ...
+'TooltipString', SNIPButtonTooltip ...
+);
+% Fensterbreite fuer SNIP direkt einstellbar (in keV bei Energieachse,
+% in Kanaelen bei 'Channel_scale') -- muss je nach Instrument/Peakdichte
+% angepasst werden: zu schmal (< Peakbreite) erodiert Peaks von innen,
+% zu breit vermischt eng benachbarte Peaks. Default 2.0 (keV) passt zu
+% den bisher getesteten Faellen (P61A, LEDDI).
+SNIPWindowTooltip = sprintf(['Window width for the SNIP background correction\n' ...
+    '(in keV on an energy axis, in channels for "Channel_scale").\n\n' ...
+    'Too small (< peak width): peaks get eaten into (eroded) from\n' ...
+    'their edges.\n' ...
+    'Too large: broad background humps are no longer recognized as\n' ...
+    'background, and/or closely spaced peaks merge together.\n\n' ...
+    'Rule of thumb: larger than the width of the narrowest peaks,\n' ...
+    'but smaller than the spacing between neighboring peaks.']);
+h.textbkgSNIPWindow = uicontrol( ...
+'Parent', h.backgroundpanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.68 0.144 0.15 0.08], ...
+'HorizontalAlignment', 'left', ...
+'String', 'Fenster:', ...
+'TooltipString', SNIPWindowTooltip ...
+);
+h.editbkgSNIPWindow = uicontrol( ...
+'Parent', h.backgroundpanel, ...
+'Style', 'edit', ...
+'Units', 'Normalized', ...
+'Position', [0.83 0.148 0.13 0.08], ...
+'Tag', 'editbkgSNIPWindow', ...
+'String', '1.0', ...
+'TooltipString', SNIPWindowTooltip ...
 );
 align([h.buttonselectbkg1 h.buttonselectbkg2 h.buttonselectbkg3 h.buttonselectbkg7],'Fixed',4,'VerticalAlignment');
 align([h.buttonselectbkg4 h.buttonselectbkg5 h.buttonselectbkg6 h.buttonselectbkg8],'Fixed',4,'VerticalAlignment');
@@ -1004,14 +1109,14 @@ h.textbkg2 = uicontrol( ...
 'Parent', h.backgroundpanel, ...
 'Style', 'text', ...
 'Units', 'Normalized', ...
-'Position', [0.025 0.63 1 0.075], ...
+'Position', [0.025 0.66 1 0.075], ...
 'HorizontalAlignment', 'left', ...
 'String', 'Table of background data (points Left and Right of peak).' ...
 );
 d = [zeros(1,6);zeros(1,6)];
 h.tablebkgdata = uitable(h.backgroundpanel, ...
 'Units', 'Normalized', ...
-'Position', [0.025 0.225 0.91 0.39], ...
+'Position', [0.025 0.26 0.91 0.39], ...
 'Tag', 'tablebkgdata', ...
 'data', d, ...
 'RowName', {'L';'R'}, ...
@@ -1107,7 +1212,7 @@ h.popupmenuFitFunc = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.7 0.7425 0.28 0.12], ...
 'Tag', 'popupmenuFitFunc', ...
-'String', {'Select Fit Function', 'Pseudo-Voigt', 'TCH', 'Gauss', 'Lorentz'}, ...
+'String', {'Select Fit Function', 'Pseudo-Voigt', 'TCH', 'Gauss', 'Lorentz', 'Asym. Pseudo-Voigt', 'Split Pseudo-Voigt'}, ...
 'Value', 2, ...
 'Callback', {@popupmenuFitFunc} ...
 );
@@ -1119,6 +1224,25 @@ h.checkboxFitBothDetectors = uicontrol( ...
 'Tag', 'checkboxFitBothDetectors', ...
 'String', 'Fit data of both detectors (LEDDI)', ...
 'Value', 0 ...
+);
+h.textOverlapMode = uicontrol( ...
+'Parent', h.fittingpanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.58 0.905 0.13 0.06], ...
+'HorizontalAlignment', 'left', ...
+'FontSize', 7, ...
+'String', 'Overlap:' ...
+);
+h.popupmenuOverlapMode = uicontrol( ...
+'Parent', h.fittingpanel, ...
+'Style', 'popupmenu', ...
+'Units', 'Normalized', ...
+'Position', [0.7 0.965 0.28 0.033], ...
+'Tag', 'popupmenuOverlapMode', ...
+'String', {'None', 'Couple overlapping peaks (shared width/GL)', 'Martensite {200} split (shared width)', 'Martensite {200} split (free width)'}, ...
+'TooltipString', 'For a 2-peak region with Pseudo-Voigt only. "Couple": independent position/intensity, shared width/GL ratio (e.g. ferrite/austenite). "Martensite split": fits {002} and {200}/{020} with a fixed 1:2 intensity ratio (multiplicity); first peak marker = {002}, second = {200}/{020}. "Shared width" uses one width for both, "free width" fits each width independently.', ...
+'Value', 1 ...
 );
 h.textpeak2 = uicontrol( ...
 'Parent', h.fittingpanel, ...
@@ -1354,6 +1478,25 @@ h.buttoncreatepsi2 = uicontrol( ...
 'String', 'Save Psi file', ...
 'Tag', 'buttoncreatepsi2', ...
 'Callback', {@buttoncreatepsi2} ...
+);
+
+h.buttoncreatepsi4 = uicontrol( ...
+'Parent', h.createpsifilepanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.125 0.49 0.065 0.1], ...
+'String', 'Extract settings', ...
+'Tag', 'buttoncreatepsi4', ...
+'Callback', {@buttoncreatepsi4} ...
+);
+h.buttoncreatepsi5 = uicontrol( ...
+'Parent', h.createpsifilepanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.125 0.36 0.065 0.1], ...
+'String', 'Run batch', ...
+'Tag', 'buttoncreatepsi5', ...
+'Callback', {@buttoncreatepsi5} ...
 );
 
 % Neuer Button fuer Texturanalyse
@@ -1886,10 +2029,73 @@ h.textelementEtheo = uicontrol( ...
 'Parent', h.tablehklpanel, ...
 'Style', 'text', ...
 'Units', 'Normalized', ...
-'Position', [0.05 0.215 0.5 0.05], ...
+'Position', [0.05 0.215 0.28 0.05], ...
 'HorizontalAlignment', 'left', ...
 'String', 'Show peaks from another phase' ...
 );
+% Slot-Auswahl (1-4): waehlt aus, auf welche der bis zu vier gleichzeitig
+% darstellbaren Zusatzphasen (plotEtheoAdd1..4) sich Textfeld, mpd-Dropdown
+% und Show/Hide-Buttons unten beziehen. Gegenseitig exklusiv wie Radiobuttons.
+h.checkboxEtheoSlot1 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.335 0.215 0.045 0.05], ...
+'String', '1', ...
+'Tag', 'checkboxEtheoSlot1', ...
+'Value', 1, ...
+'Callback', {@selectEtheoSlot} ...
+);
+h.checkboxEtheoSlot2 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.38 0.215 0.045 0.05], ...
+'String', '2', ...
+'Tag', 'checkboxEtheoSlot2', ...
+'Value', 0, ...
+'Callback', {@selectEtheoSlot} ...
+);
+h.checkboxEtheoSlot3 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.425 0.215 0.045 0.05], ...
+'String', '3', ...
+'Tag', 'checkboxEtheoSlot3', ...
+'Value', 0, ...
+'Callback', {@selectEtheoSlot} ...
+);
+h.checkboxEtheoSlot4 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.47 0.215 0.045 0.05], ...
+'String', '4', ...
+'Tag', 'checkboxEtheoSlot4', ...
+'Value', 0, ...
+'Callback', {@selectEtheoSlot} ...
+);
+h.ActiveEtheoSlot = 1;
+h.P.EtheoSlot(1).ElementalFormula = '';
+h.P.EtheoSlot(1).MPDValue = 1;
+h.P.EtheoSlot(1).MPDFileName = '';
+h.P.EtheoSlot(1).TableData = [];
+h.P.EtheoSlot(2).ElementalFormula = '';
+h.P.EtheoSlot(2).MPDValue = 1;
+h.P.EtheoSlot(2).MPDFileName = '';
+h.P.EtheoSlot(2).TableData = [];
+h.P.EtheoSlot(3).ElementalFormula = '';
+h.P.EtheoSlot(3).MPDValue = 1;
+h.P.EtheoSlot(3).MPDFileName = '';
+h.P.EtheoSlot(3).TableData = [];
+h.P.EtheoSlot(4).ElementalFormula = '';
+h.P.EtheoSlot(4).MPDValue = 1;
+h.P.EtheoSlot(4).MPDFileName = '';
+h.P.EtheoSlot(4).TableData = [];
+% hkl-Beschriftungen pro Peak (dynamische Anzahl je Phase/Energiebereich),
+% getrennt pro Slot gespeichert, siehe okbuttonloadEtheo/buttonhideEtheo.
+h.EtheoLabelHandles = {[], [], [], []};
 h.texteditfieldEtheo = uicontrol( ...
 'Parent', h.tablehklpanel, ...
 'Style', 'edit', ...
@@ -1953,10 +2159,60 @@ h.textelementFluorescence = uicontrol( ...
 'Parent', h.tablehklpanel, ...
 'Style', 'text', ...
 'Units', 'Normalized', ...
-'Position', [0.05 0.06 0.5 0.05], ...
+'Position', [0.05 0.06 0.28 0.05], ...
 'HorizontalAlignment', 'left', ...
 'String', 'Show fluorescence lines' ...
 );
+% Slot-Auswahl (1-4), analog zu den Phasen-Checkboxen oben.
+h.checkboxFluorSlot1 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.335 0.06 0.045 0.05], ...
+'String', '1', ...
+'Tag', 'checkboxFluorSlot1', ...
+'Value', 1, ...
+'Callback', {@selectFluorSlot} ...
+);
+h.checkboxFluorSlot2 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.38 0.06 0.045 0.05], ...
+'String', '2', ...
+'Tag', 'checkboxFluorSlot2', ...
+'Value', 0, ...
+'Callback', {@selectFluorSlot} ...
+);
+h.checkboxFluorSlot3 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.425 0.06 0.045 0.05], ...
+'String', '3', ...
+'Tag', 'checkboxFluorSlot3', ...
+'Value', 0, ...
+'Callback', {@selectFluorSlot} ...
+);
+h.checkboxFluorSlot4 = uicontrol( ...
+'Parent', h.tablehklpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.47 0.06 0.045 0.05], ...
+'String', '4', ...
+'Tag', 'checkboxFluorSlot4', ...
+'Value', 0, ...
+'Callback', {@selectFluorSlot} ...
+);
+h.ActiveFluorSlot = 1;
+h.P.FluorSlot(1).Element = '';
+h.P.FluorSlot(1).PopupValue = 1;
+h.P.FluorSlot(2).Element = '';
+h.P.FluorSlot(2).PopupValue = 1;
+h.P.FluorSlot(3).Element = '';
+h.P.FluorSlot(3).PopupValue = 1;
+h.P.FluorSlot(4).Element = '';
+h.P.FluorSlot(4).PopupValue = 1;
 h.textdataFluorescence = uicontrol( ...
 'Parent', h.tablehklpanel, ...
 'Style', 'text', ...
@@ -2135,7 +2391,7 @@ h.buttonexportplots2 = uicontrol( ...
 'Callback', {@buttonaveraging} ...
 );
 
-% Button to switch plot mode for d-sin²psi plots
+% Button to switch plot mode for d-sinï¿½psi plots
 h.buttonswitchstressdata = uicontrol( ...
 'Parent', h.fitresultspanel, ...
 'Style', 'Pushbutton', ...
@@ -2189,6 +2445,17 @@ h.plotdatadspacingphi0phi180 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle',
 h.plotreglinedspacingphi0phi180 = line(h.axesplotdspacing, x,y,'LineWidth',2);
 h.plotdatadspacingphi90phi270 = errorbar(h.axesplotdspacing, x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',14,'Clipping','off');
 h.plotreglinedspacingphi90phi270 = line(h.axesplotdspacing, x,y,'LineWidth',2);
+% Markierung des d-Werts, der zu dem im Fit-Plot (h.axesplotfitdata,
+% SliderCallbackFitData) gerade angezeigten Peak gehoert -- wird beim
+% Durchscrollen der Messungen mit h.SliderFitData aktualisiert (siehe
+% dort). Tag dient dazu, dieses Objekt in selectdatastressvalues.m als
+% dekorativ auszuschliessen (wie xline/Text), da es sonst die dortige,
+% an der Kinderanzahl haengende Fallunterscheidung durcheinanderbringen
+% wuerde.
+h.plotdspacingHighlight = plot(h.axesplotdspacing, NaN, NaN, 'o', ...
+    'MarkerSize', 22, 'LineWidth', 2.5, 'MarkerEdgeColor', [0.85 0 0], ...
+    'MarkerFaceColor', 'none', 'Tag', 'DspacingHighlightMarker', ...
+    'HandleVisibility', 'off', 'Clipping', 'off', 'Visible', 'off');
 % Set plot properties
 set(h.plotdatadspacingphi0, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {h.Colors{valueslider},'k','off'});
 set(h.plotreglinedspacingphi0, {'Color','Visible'}, {'k','off'});
@@ -2286,10 +2553,13 @@ err = 0;
 % Create axes object to plot residual stress data
 h.axesplotstressdata = axes('Parent', h.plotstresspanel, 'Position', [0.1 0.16 0.875 0.8]);
 h.plotstressdata = errorbar(h.axesplotstressdata, x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',14,'Clipping','off','Visible','off');
+% Feste Linie bei sigma=0, nicht in der Legende (analog zum Sigma-tau0-Plot
+% der psi-Methode, h.axesplotpsitau).
+yline(h.axesplotstressdata, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
 grid on
 hold on
 % Set plot properties
-% xlabel('<\tau> [µm]')
+% xlabel('<\tau> [ï¿½m]')
 xlabel(['\tau_{0} [',char(181),'m]'])
 ylabel('<\sigma_{11} - \sigma_{33}> [MPa]')
 title(h.axesplotstressdata,'No measurement data loaded')
@@ -2619,7 +2889,7 @@ set(h.fighklstressplottable,'CloseRequestFcn',@my_Figclosereq)
 % 'Units', 'Normalized', ...
 % 'Position', [0.905 0.52 0.085 0.025], ...
 % 'Tag', 'checkboxTauData', ...
-% 'String', ['Plot stresses vs.' char(964) char(8320),' ','(' char(968) ' = 0°)'], ...
+% 'String', ['Plot stresses vs.' char(964) char(8320),' ','(' char(968) ' = 0ï¿½)'], ...
 % 'Value', 0, ...
 % 'Callback', {@ClickCheckboxTauData} ...
 % );
@@ -2745,6 +3015,588 @@ h.SelectPeaktable = uitable(h.panelSelectPeaktable, ...
 'ColumnName', {'h', 'k', 'l','Energy', 'Use'});
 
 % set(h.figSelectPeaktable,'CloseRequestFcn',@my_Figclosereq2)
+
+%% Stress analysis - psi method
+% Schlanke Erstversion: ein Plot (a_hkl vs. psi mit angepasster Kurve),
+% eine Ergebnistabelle (sigma11/sigma13 je Azimut), Laden/Loeschen mit
+% Live-Neuberechnung, Slider zum Wechseln der hkl-Linie. Nutzt dieselben
+% Rohdaten (h.Params/h.ParamsToFit) und dieselbe DEK-Tabelle wie der
+% sin2psi-Tab -- ein Laden/Loeschen wirkt sich auf beide Tabs aus.
+h.psimethodpanel = uipanel( ...
+'Parent', h.TabPsiMethod, ...
+'Units', 'Normalized', ...
+'Position', [0.00375 0.0025 0.995 0.995], ...
+'Title', 'Plot fit results (psi method)' ...
+);
+
+% Button-/Checkbox-Anordnung wie im sin2psi-Tab (h.buttonloadDEK1/
+% h.buttonloadstressdata1/h.checkboxphi*/h.buttonmodifystressdata1) --
+% ABER: die dortigen Position-Werte sind relativ zu h.fitresultspanel, das
+% dort nur 0.6 der Tab-Breite einnimmt (Position-Breite 0.6), waehrend
+% h.psimethodpanel hier fast die volle Tab-Breite (0.995) einnimmt.
+% Dieselben relativen Werte (z.B. Breite 0.1) wuerden in unserem breiteren
+% Panel daher optisch GROESSER wirken als im sin2psi-Tab. Mit PsiBtnScale =
+% 0.6/0.995 auf x-Position und Breite umgerechnet, damit die Buttons in
+% absoluten (Tab-bezogenen) Massen exakt gleich gross sind wie dort. Die
+% Hoehe/y-Position braucht keine Umrechnung, da beide Panels nahezu gleich
+% hoch sind (Position-Hoehe jeweils 0.995).
+PsiBtnScale = 0.6/0.995;
+% Fuer Elemente, die im sin2psi-Tab NICHT relativ zu h.fitresultspanel
+% sondern direkt relativ zum Tab liegen (z.B. h.modstressXlimbutton, Parent
+% h.Tabs(2)) -- deren Werte sind also schon "Tab-absolut" und muessen nur
+% auf unser Panel (Breite 0.995) bezogen werden, nicht mit PsiBtnScale
+% (0.6/0.995) skaliert werden.
+PsiPanelScale = 1/0.995;
+h.buttonloadpsiDEK1 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.01*PsiBtnScale 0.96 0.1*PsiBtnScale 0.035], ...
+'String', 'Enter/Load DEC', ...
+'Tag', 'buttonloadpsiDEK1', ...
+'Callback', {@buttonloadDEK} ...
+);
+h.buttonloadpsistressdata1 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.12*PsiBtnScale 0.96 0.1*PsiBtnScale 0.035], ...
+'String', 'Load stress data', ...
+'Tag', 'buttonloadpsistressdata1', ...
+'Callback', {@buttonloadpsistressdata} ...
+);
+
+h.textazimuthpsi = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.23*PsiBtnScale 0.9825 0.07*PsiBtnScale 0.0175], ...
+'HorizontalAlignment', 'left', ...
+'String', ['Azimuth angle ',char(966)] ...
+);
+h.checkboxpsiphi0 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.23*PsiBtnScale 0.96 0.06*PsiBtnScale 0.025], ...
+'Tag', 'checkboxpsiphi0', ...
+'String', ['0',char(176)], ...
+'Value', 0, ...
+'Callback', {@ClickPsiPhi0Callback} ...
+);
+h.checkboxpsiphi90 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.23*PsiBtnScale 0.94 0.06*PsiBtnScale 0.025], ...
+'Tag', 'checkboxpsiphi90', ...
+'String', ['90',char(176)], ...
+'Value', 0, ...
+'Callback', {@ClickPsiPhi90Callback} ...
+);
+h.checkboxpsiphi180 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.265*PsiBtnScale 0.96 0.06*PsiBtnScale 0.025], ...
+'Tag', 'checkboxpsiphi180', ...
+'String', ['180',char(176)], ...
+'Value', 0, ...
+'Callback', {@ClickPsiPhi180Callback} ...
+);
+h.checkboxpsiphi270 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.265*PsiBtnScale 0.94 0.06*PsiBtnScale 0.025], ...
+'Tag', 'checkboxpsiphi270', ...
+'String', ['270',char(176)], ...
+'Value', 0, ...
+'Callback', {@ClickPsiPhi270Callback} ...
+);
+h.buttonmodifypsistressdata1 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.31*PsiBtnScale 0.96 0.1*PsiBtnScale 0.035], ...
+'String', 'Modify stress data', ...
+'Tag', 'buttonmodifypsistressdata1', ...
+'Callback', {@buttonmodifypsistressdata} ...
+);
+
+% "Save modified Psi file": gleiche Position/Groesse wie im sin2psi-Tab
+% (h.buttonSaveModPsiFile). Nutzt dieselbe Callback, da sie nur die
+% gemeinsamen Daten (h.ParamsToFit, h.PsiFileTableData*Bkp usw.) verwendet,
+% die auch das "Modify stress data" des psi-Tabs bearbeitet.
+h.buttonSaveModPsiFilePsiTab = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.42*PsiBtnScale 0.96 0.11*PsiBtnScale 0.035], ...
+'String', 'Save modified Psi file', ...
+'Tag', 'buttonSaveModPsiFilePsiTab', ...
+'Callback', {@buttonSaveModPsiFile} ...
+);
+
+% Testweise auch fuer nicht-kubische (z.B. hexagonale) Proben nutzbar:
+% a=d*sqrt(H^2+K^2+L^2) gilt nur fuer kubische Symmetrie (1/d^2=(H^2+K^2+L^2)/a^2).
+% Checkbox deaktiviert diese Normierung (HKLFactor=1, es wird direkt mit
+% den gemessenen d-Werten gearbeitet -- sigma_par/sigma_shear bleiben davon
+% unberuehrt, da sich der Faktor in b1/d0 ohnehin herauskuerzt, siehe
+% Ruecksprache; nur die a-vs-psi-Kurve/Anzeige aendert sich dann zu d-vs-psi).
+h.checkboxpsicubic = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.77*PsiBtnScale 0.965 0.25*PsiBtnScale 0.025], ...
+'Tag', 'checkboxpsicubic', ...
+'String', 'Cubic (a=d*sqrt(H2+K2+L2))', ...
+'Value', 1, ...
+'Callback', {@ClickPsiCubicCallback} ...
+);
+
+% Slider to switch between hkl peaks -- Position wie h.SliderStressData im
+% sin2psi-Tab, mit PsiBtnScale auf die x-Achse umgerechnet (siehe oben).
+h.SliderPsiStressData = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'slider', ...
+'Units', 'Normalized', ...
+'Position', [0.475*PsiBtnScale 0.0125 0.1*PsiBtnScale 0.025], ...
+'Tag', 'SliderPsiStressData', ...
+'Min', 1, 'Max', 2, 'Value', 1, 'SliderStep', [1 1], ...
+'Callback', {@SliderCallbackPsiStressData} ...
+);
+
+% Main plot: a_hkl vs. psi, per azimuth Datenpunkte + angepasste Kurve.
+% Position wie h.axesplotdspacing im sin2psi-Tab ([0.075 0.4 0.9 0.525]),
+% x/Breite mit PsiBtnScale umgerechnet (siehe Kommentar bei PsiBtnScale
+% oben), y/Hoehe unveraendert (Panels sind etwa gleich hoch).
+h.axesplotpsi = axes('Parent', h.psimethodpanel, 'Position', [0.075*PsiBtnScale 0.4 0.9*PsiBtnScale 0.525]);
+hold(h.axesplotpsi,'on')
+x = 0; y = 0; err = 0;
+h.plotdatapsiphi0 = errorbar(h.axesplotpsi, x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',14,'Clipping','off');
+h.plotfitpsiphi0 = line(h.axesplotpsi, x,y,'LineWidth',2);
+h.plotdatapsiphi90 = errorbar(h.axesplotpsi, x,y,err,'Linestyle','none','Color','k','Marker','o','MarkerSize',14,'Clipping','off');
+h.plotfitpsiphi90 = line(h.axesplotpsi, x,y,'LineWidth',2);
+h.plotdatapsiphi180 = errorbar(h.axesplotpsi, x,y,err,'Linestyle','none','Color','k','Marker','d','MarkerSize',14,'Clipping','off');
+h.plotfitpsiphi180 = line(h.axesplotpsi, x,y,'LineWidth',2);
+h.plotdatapsiphi270 = errorbar(h.axesplotpsi, x,y,err,'Linestyle','none','Color','k','Marker','p','MarkerSize',14,'Clipping','off');
+h.plotfitpsiphi270 = line(h.axesplotpsi, x,y,'LineWidth',2);
+set(h.plotdatapsiphi0, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {'r','k','off'});
+set(h.plotfitpsiphi0, {'Color','Visible'}, {'r','off'});
+set(h.plotdatapsiphi90, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {'b','k','off'});
+set(h.plotfitpsiphi90, {'Color','Visible'}, {'b','off'});
+set(h.plotdatapsiphi180, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {[0 0.6 0],'k','off'});
+set(h.plotfitpsiphi180, {'Color','Visible'}, {[0 0.6 0],'off'});
+set(h.plotdatapsiphi270, {'MarkerFaceColor','MarkerEdgeColor','Visible'}, {[0.8 0.4 0],'k','off'});
+set(h.plotfitpsiphi270, {'Color','Visible'}, {[0.8 0.4 0],'off'});
+% Feste vertikale Linie bei psi=0 (analog h.axesplotpsideriv), nicht in
+% der Legende.
+xline(h.axesplotpsi, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+% Textfeld mit dem ermittelten sigma_par-Wert (+-SE) der aktuellen hkl-Linie,
+% je Referenzrichtung (0/180 schwarz, 90/270 blau), analog zur
+% Spannungs-Anzeige im sin2psi-Tab (dort nur fuer ETA3000, hier immer).
+h.textstresspsi1 = text(h.axesplotpsi, 0.02, 0.95, '', 'Units','normalized', ...
+    'FontSize', 13, 'FontWeight', 'bold', 'Color', 'k', ...
+    'BackgroundColor', 'w', 'EdgeColor', 'k', 'Margin', 3, ...
+    'VerticalAlignment', 'top', 'HorizontalAlignment', 'left', 'Visible', 'off');
+h.textstresspsi2 = text(h.axesplotpsi, 0.02, 0.82, '', 'Units','normalized', ...
+    'FontSize', 13, 'FontWeight', 'bold', 'Color', 'b', ...
+    'BackgroundColor', 'w', 'EdgeColor', 'b', 'Margin', 3, ...
+    'VerticalAlignment', 'top', 'HorizontalAlignment', 'left', 'Visible', 'off');
+box(h.axesplotpsi,'on')
+grid(h.axesplotpsi,'on')
+hold(h.axesplotpsi,'off')
+h.axesplotpsi.XLim = [-90,90];
+h.axesplotpsi.XTick = -90:10:90;
+h.axesplotpsi.YLim = [0,1];
+xlabel(h.axesplotpsi,['\psi [',char(176),']'],'FontSize', 12);
+ylabel(h.axesplotpsi,'a [nm]','FontSize', 12);
+title(h.axesplotpsi,'No measurement data loaded')
+
+% IB (Integralbreite) vs. psi -- analog h.axesplotIB im sin2psi-Tab, nur
+% Rohdaten (keine Fit-Kurve, wie im Original). Eigene Handle-Namen
+% ("...psi...") um Kollisionen mit den gleichnamigen sin2psi-Tab-Handles
+% (h.plotdataIBphi0 etc.) zu vermeiden -- h ist ein gemeinsames struct.
+% Position wie h.axesplotIB im sin2psi-Tab ([0.075 0.07 0.4 0.25]), x/Breite
+% mit PsiBtnScale umgerechnet.
+h.axesplotpsiIB = axes('Parent', h.psimethodpanel, 'Position', [0.075*PsiBtnScale 0.07 0.4*PsiBtnScale 0.25]);
+hold(h.axesplotpsiIB,'on')
+h.plotdataIBpsiphi0 = plot(h.axesplotpsiIB, x,y,'Linestyle','--','Color','k','Marker','s','MarkerSize',10,'Visible','off');
+h.plotdataIBpsiphi90 = plot(h.axesplotpsiIB, x,y,'Linestyle','--','Color','k','Marker','o','MarkerSize',10,'Visible','off');
+h.plotdataIBpsiphi180 = plot(h.axesplotpsiIB, x,y,'Linestyle','--','Color','k','Marker','d','MarkerSize',10,'Visible','off');
+h.plotdataIBpsiphi270 = plot(h.axesplotpsiIB, x,y,'Linestyle','--','Color','k','Marker','p','MarkerSize',10,'Visible','off');
+xline(h.axesplotpsiIB, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+box(h.axesplotpsiIB,'on')
+grid(h.axesplotpsiIB,'on')
+hold(h.axesplotpsiIB,'off')
+h.axesplotpsiIB.XLim = [-90,90];
+h.axesplotpsiIB.XTick = -90:30:90;
+h.axesplotpsiIB.YLim = [0,1];
+xlabel(h.axesplotpsiIB,['\psi [',char(176),']'],'FontSize', 9);
+ylabel(h.axesplotpsiIB,'IB [keV]','FontSize', 9);
+title(h.axesplotpsiIB,'No measurement data loaded','FontSize',8)
+
+% Integrated Intensity vs. psi -- Position wie h.axesplotInt im sin2psi-Tab
+% ([0.575 0.07 0.4 0.25]), x/Breite mit PsiBtnScale umgerechnet.
+h.axesplotpsiInt = axes('Parent', h.psimethodpanel, 'Position', [0.575*PsiBtnScale 0.07 0.4*PsiBtnScale 0.25]);
+hold(h.axesplotpsiInt,'on')
+h.plotdataIntpsiphi0 = plot(h.axesplotpsiInt, x,y,'Linestyle','--','Color','k','Marker','s','MarkerSize',10,'Visible','off');
+h.plotdataIntpsiphi90 = plot(h.axesplotpsiInt, x,y,'Linestyle','--','Color','k','Marker','o','MarkerSize',10,'Visible','off');
+h.plotdataIntpsiphi180 = plot(h.axesplotpsiInt, x,y,'Linestyle','--','Color','k','Marker','d','MarkerSize',10,'Visible','off');
+h.plotdataIntpsiphi270 = plot(h.axesplotpsiInt, x,y,'Linestyle','--','Color','k','Marker','p','MarkerSize',10,'Visible','off');
+xline(h.axesplotpsiInt, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+box(h.axesplotpsiInt,'on')
+grid(h.axesplotpsiInt,'on')
+hold(h.axesplotpsiInt,'off')
+h.axesplotpsiInt.XLim = [-90,90];
+h.axesplotpsiInt.XTick = -90:30:90;
+h.axesplotpsiInt.YLim = [0,1];
+xlabel(h.axesplotpsiInt,['\psi [',char(176),']'],'FontSize', 9);
+ylabel(h.axesplotpsiInt,'Integrated Int. [cts*keV]','FontSize', 9);
+title(h.axesplotpsiInt,'No measurement data loaded','FontSize',8)
+
+% Ergebnistabelle: sigma11/sigma13 je Azimut, fuer die aktuell per Slider
+% ausgewaehlte hkl-Linie. Unten in der rechten Spalte, unterhalb von
+% Ableitungsplot und Slot-Slider/Scale-Buttons (der tau0-Plot selbst nimmt
+% jetzt -- wie im sin2psi-Tab -- den oberen Teil der rechten Spalte ein).
+h.tablepsiresults = uitable(h.psimethodpanel, ...
+'Units', 'Normalized', ...
+'Position', [0.646 0.06 0.165 0.088], ...
+'Tag', 'tablepsiresults', ...
+'data', cell(4,6), ...
+'ColumnWidth', {35 55 55 55 55 30}, ...
+'ColumnName', {char(966), [char(963),char(8321),char(8321)], [char(916),char(963),char(8321),char(8321)], [char(963),char(8321),char(8323)], [char(916),char(963),char(8321),char(8323)], 'N'});
+
+% Zusatzplot (analog Fig. (b) im Paper): sigma_par(psi) und
+% sigma_shear(psi) als durchgehende Kurven -- die 1./2.Ableitung der
+% angepassten a(psi)-Kurve nach psi, in Spannungseinheiten umgerechnet.
+% Hergeleitet aus a(psi)=b1*sin(psi)^2+b2*sin(2psi)+b3 (sigma_par=b1/(d0*DEK3),
+% sigma_shear=b2/(d0*DEK3)): mit d/dpsi und d^2/dpsi^2 (psi im Bogenmass) und
+% Rueckeinsetzen von b1,b2 folgt
+%   sigma_shear(psi) = 0.5*sigma_par*sin(2psi) + sigma_shear*cos(2psi)
+%   sigma_par(psi)   = sigma_par*cos(2psi) - 2*sigma_shear*sin(2psi)
+% (bei psi=0: sigma_shear(0)=sigma_shear, sigma_par(0)=sigma_par; bei
+% psi=+-90 Grad: jeweils das Vorzeichen-Negative -- deckt sich mit dem
+% im Paper gezeigten Kurvenverlauf).
+h.axesplotpsideriv = axes('Parent', h.psimethodpanel, 'Position', [0.646 0.21 0.343 0.3]);
+hold(h.axesplotpsideriv,'on')
+h.plotderivpar1 = line(h.axesplotpsideriv, 0,0,'LineWidth',1.5,'LineStyle','-','Color','k','Visible','off');
+h.plotderivshear1 = line(h.axesplotpsideriv, 0,0,'LineWidth',1.5,'LineStyle',':','Color','k','Visible','off');
+h.plotderivpar2 = line(h.axesplotpsideriv, 0,0,'LineWidth',1.5,'LineStyle','-','Color','b','Visible','off');
+h.plotderivshear2 = line(h.axesplotpsideriv, 0,0,'LineWidth',1.5,'LineStyle',':','Color','b','Visible','off');
+% Marker + Beschriftung an den charakteristischen Schnittpunkten (psi=0
+% und psi=+-90), analog Fig. 3b im Paper: je 3 Punkte (-90/0/90) pro Kurve.
+h.plotderivmarkerspar1 = plot(h.axesplotpsideriv, nan(1,3), nan(1,3), 'o', 'MarkerSize',7, 'MarkerFaceColor','w','MarkerEdgeColor','k','LineWidth',1,'Visible','off','HandleVisibility','off');
+h.plotderivmarkersshear1 = plot(h.axesplotpsideriv, nan(1,3), nan(1,3), 'o', 'MarkerSize',7, 'MarkerFaceColor','w','MarkerEdgeColor','k','LineWidth',1,'Visible','off','HandleVisibility','off');
+h.plotderivmarkerspar2 = plot(h.axesplotpsideriv, nan(1,3), nan(1,3), 'o', 'MarkerSize',7, 'MarkerFaceColor','w','MarkerEdgeColor','b','LineWidth',1,'Visible','off','HandleVisibility','off');
+h.plotderivmarkersshear2 = plot(h.axesplotpsideriv, nan(1,3), nan(1,3), 'o', 'MarkerSize',7, 'MarkerFaceColor','w','MarkerEdgeColor','b','LineWidth',1,'Visible','off','HandleVisibility','off');
+h.textderivlabels1 = gobjects(1,4);
+h.textderivlabels2 = gobjects(1,4);
+for LabelIdx = 1:4
+    h.textderivlabels1(LabelIdx) = text(h.axesplotpsideriv, 0, 0, '', 'FontSize', 11, 'FontWeight', 'bold', 'Color', 'k', 'Visible', 'off');
+    h.textderivlabels2(LabelIdx) = text(h.axesplotpsideriv, 0, 0, '', 'FontSize', 11, 'FontWeight', 'bold', 'Color', 'b', 'Visible', 'off');
+end
+% Feste Nulllinien (analog Fig. 3b im Paper), nicht in der Legende.
+xline(h.axesplotpsideriv, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+yline(h.axesplotpsideriv, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+box(h.axesplotpsideriv,'on')
+grid(h.axesplotpsideriv,'on')
+hold(h.axesplotpsideriv,'off')
+h.axesplotpsideriv.XLim = [-90,90];
+h.axesplotpsideriv.XTick = -90:10:90;
+xlabel(h.axesplotpsideriv,['\psi [',char(176),']'],'FontSize', 10);
+ylabel(h.axesplotpsideriv,'\sigma [MPa]','FontSize', 10);
+legend(h.axesplotpsideriv, ...
+    [h.plotderivpar1,h.plotderivshear1,h.plotderivpar2,h.plotderivshear2], ...
+    {'\sigma_1_1(\psi)','\sigma_1_3(\psi)','\sigma_2_2(\psi)','\sigma_2_3(\psi)'}, ...
+    'Location','best','FontSize',7);
+
+% Uebersichtsplot Spannung vs. Informationstiefe tau0, analog zum "Plot
+% stresses"-Fenster des sin2psi-Tabs (h.axesplotstressdata/h.SliderPlotStressData):
+% ein Slot-Slider waehlt die aktuell gezeigte Spannungskomponente (Slot 1:
+% sigma11/sigma_par 0-180, Slot 2: sigma13/sigma_shear 0-180, Slot 3:
+% sigma22 90-270, Slot 4: sigma23 90-270 -- Slots 3/4 nur wenn 90/270-Daten
+% vorhanden sind), je hkl-Linie ein Punkt bei (tau0, Wert), farblich nach
+% hkl (h.Colors{k}). "Change X-scale"/"Change Y-scale" merken sich eigene
+% Achsengrenzen pro Slot (wie im sin2psi-Tab).
+% Slot-Slider und Change-X/Y-scale-Buttons sitzen jetzt direkt UNTER dem
+% tau0-Plot (der bei y=0.581 beginnt, siehe h.axesplotpsitau unten). Die
+% Change-X/Y-scale-Buttons liegen im sin2psi-Tab direkt auf h.Tabs(2)
+% (Position [0.6455/0.6975 0.5175 0.05 0.03]), sind also schon
+% Tab-absolut -- mit PsiPanelScale (1/0.995, s.o.) auf unser Panel bezogen,
+% NICHT mit PsiBtnScale (das waere falsch, da PsiBtnScale eine Umrechnung
+% von h.fitresultspanel-relativen Werten ist).
+h.modpsitauXlimbutton = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.646 0.545 0.05*PsiPanelScale 0.03*PsiPanelScale], ...
+'String', 'Change X-scale', ...
+'Tag', 'modpsitauXlimbutton', ...
+'Callback', {@modpsitauXlim} ...
+);
+h.modpsitauYlimbutton = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.706 0.545 0.05*PsiPanelScale 0.03*PsiPanelScale], ...
+'String', 'Change Y-scale', ...
+'Tag', 'modpsitauYlimbutton', ...
+'Callback', {@modpsitauYlim} ...
+);
+h.textpsitauslot = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'text', ...
+'Units', 'Normalized', ...
+'Position', [0.77 0.55 0.28 0.018], ...
+'HorizontalAlignment', 'left', ...
+'FontSize', 8, ...
+'String', 'Component' ...
+);
+h.SliderPsiTauSlot = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'slider', ...
+'Units', 'Normalized', ...
+'Position', [0.81 0.55 0.04 0.02], ...
+'Tag', 'SliderPsiTauSlot', ...
+'Min', 1, 'Max', 4, 'Value', 1, 'SliderStep', [1/3 1/3], ...
+'Callback', {@SliderCallbackPsiTauSlot} ...
+);
+% Checkbox unterhalb des Sigma-tau0-Plots (bzw. unterhalb der Button-Zeile
+% direkt darunter, in der schmalen Luecke bis zum Ableitungsplot bei
+% y=0.51): blendet zum Vergleich die entsprechenden sin2psi-Ergebnisse
+% (gleicher tau0, gleiches hkl, aber ueber die klassische sin2psi-Methode
+% statt den direkten a(psi)-Fit bestimmt) als zusaetzliche Marker im
+% selben Plot ein (siehe UpdatePsiTauPlot).
+h.checkboxpsishowsin2psi = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'checkbox', ...
+'Units', 'Normalized', ...
+'Position', [0.646 0.516 0.343 0.022], ...
+'HorizontalAlignment', 'left', ...
+'FontSize', 8, ...
+'String', ['Show sin',char(178),char(968),' results'], ...
+'Value', 0, ...
+'Tag', 'checkboxpsishowsin2psi', ...
+'Callback', {@ClickPsiShowSin2PsiCallback} ...
+);
+% Position wie h.axesplotstressdata im sin2psi-Tab: dort relativ zu
+% h.plotstresspanel ([0.6075 0.50125 0.39 0.495]) mit eigener Position
+% [0.1 0.16 0.875 0.8] -- in Tab-absolute Koordinaten umgerechnet und dann
+% auf h.psimethodpanel bezogen (wie bei PsiBtnScale). Hoehe leicht gekappt
+% (0.349 statt rechnerisch 0.398), da hier -- anders als beim separaten
+% plotstresspanel im sin2psi-Tab -- die gemeinsame Button-Zeile bei y=0.96
+% sonst ueberlappen wuerde.
+h.axesplotpsitau = axes('Parent', h.psimethodpanel, 'Position', [0.646 0.621 0.343 0.349]);
+% Feste Linie bei sigma=0, nicht in der Legende.
+yline(h.axesplotpsitau, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+box(h.axesplotpsitau,'on')
+grid(h.axesplotpsitau,'on')
+h.axesplotpsitau.TickDir = 'out';
+xlabel(h.axesplotpsitau,['\tau_0 [',char(181),'m]'],'FontSize', 10);
+ylabel(h.axesplotpsitau,'\sigma_1_1 [MPa]','FontSize', 10);
+title(h.axesplotpsitau,'No measurement data loaded','FontSize',9)
+
+% Kleine Hilfsfigur zum Editieren der X-Achsengrenzen des tau0-Plots (analog
+% h.Xlimfig/modstressXlim im sin2psi-Tab, gleiche AbmaÃŸe/Layout), pro Slot
+% merkbar.
+if screenWidth < 5120
+    h.psiTauXlimfig = figure('menubar','none','units','normalized','Position',[0.45 0.5 0.15 0.08],'Name', 'Change X-scale','NumberTitle','off','Visible','off');
+else
+    h.psiTauXlimfig = figure('menubar','none','units','normalized','Position',[0.25 0.5 0.08 0.07],'Name', 'Change X-scale','NumberTitle','off','Visible','off');
+end
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.705 0.3 0.25],...
+'String', 'Min',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.775 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauXlimMin  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.7125 0.2 0.225],...
+'Parent',h.psiTauXlimfig);
+
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.405 0.3 0.25],...
+'String', 'Max',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.475 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauXlimMax  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.4125 0.2 0.225],...
+'Parent',h.psiTauXlimfig);
+
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.105 0.3 0.25],...
+'String', 'Tick mark',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauXlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.175 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauXlimTick  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.1125 0.2 0.225],...
+'Parent',h.psiTauXlimfig);
+
+h.AcceptpsiTauXEditButton = uicontrol( ...
+'Parent', h.psiTauXlimfig, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.7 0.5 0.275 0.3], ...
+'String', 'Accept', ...
+'FontSize', 11,...
+'Callback', {@acceptpsiTauXlimEdit} ...
+);
+h.CancelpsiTauXEditButton = uicontrol( ...
+'Parent', h.psiTauXlimfig, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.7 0.1 0.275 0.3], ...
+'String', 'Cancel', ...
+'FontSize', 11,...
+'Callback', {@cancelpsiTauXlimEdit} ...
+);
+
+% Analoge Hilfsfigur fuer die Y-Achsengrenzen.
+if screenWidth < 5120
+    h.psiTauYlimfig = figure('menubar','none','units','normalized','Position',[0.45 0.5 0.15 0.08],'Name', 'Change Y-scale','NumberTitle','off','Visible','off');
+else
+    h.psiTauYlimfig = figure('menubar','none','units','normalized','Position',[0.25 0.5 0.08 0.07],'Name', 'Change Y-scale','NumberTitle','off','Visible','off');
+end
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.705 0.3 0.25],...
+'String', 'Min',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.775 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauYlimMin  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.7125 0.2 0.225],...
+'Parent',h.psiTauYlimfig);
+
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.405 0.3 0.25],...
+'String', 'Max',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.475 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauYlimMax  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.4125 0.2 0.225],...
+'Parent',h.psiTauYlimfig);
+
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.05 0.105 0.3 0.25],...
+'String', 'Tick mark',...
+'FontSize', 14,...
+'HorizontalAlignment', 'right');
+uicontrol('Style', 'text',...
+'Parent', h.psiTauYlimfig,...
+'Units','normalized',...
+'Position', [0.375 0.175 0.075 0.175],...
+'String', '=',...
+'FontSize', 14,...
+'HorizontalAlignment', 'left');
+h.editpsiTauYlimTick  = uicontrol('Style','edit',...
+'String', '0',...
+'FontSize', 12,...
+'Units','normalized',...
+'Position',[0.45 0.1125 0.2 0.225],...
+'Parent',h.psiTauYlimfig);
+
+h.AcceptpsiTauYEditButton = uicontrol( ...
+'Parent', h.psiTauYlimfig, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.7 0.5 0.275 0.3], ...
+'String', 'Accept', ...
+'FontSize', 11,...
+'Callback', {@acceptpsiTauYlimEdit} ...
+);
+h.CancelpsiTauYEditButton = uicontrol( ...
+'Parent', h.psiTauYlimfig, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.7 0.1 0.275 0.3], ...
+'String', 'Cancel', ...
+'FontSize', 11,...
+'Callback', {@cancelpsiTauYlimEdit} ...
+);
+
+% Export-Buttons (eigene, psi-Tab-spezifische Buttons, siehe Ruecksprache --
+% getrennt von den sin2psi-Tab-Buttons "Export sin2psi plots"/"Export
+% stress plots", um bestehende Funktionalitaet nicht anzufassen).
+h.buttonexportpsiplots1 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.54*PsiBtnScale 0.96 0.1*PsiBtnScale 0.035], ...
+'String', ['Export',' psi',' plots'], ...
+'Tag', 'buttonexportpsiplots1', ...
+'Callback', {@buttonexportpsiplots} ...
+);
+h.buttonexportpsitaufile1 = uicontrol( ...
+'Parent', h.psimethodpanel, ...
+'Style', 'Pushbutton', ...
+'Units', 'Normalized', ...
+'Position', [0.65*PsiBtnScale 0.96 0.1*PsiBtnScale 0.035], ...
+'String', 'Export stress plots', ...
+'Tag', 'buttonexportpsitaufile1', ...
+'Callback', {@buttoncreatepsitaufile} ...
+);
 
 %% Analyse texture measurements
 if screenWidth < 5120
@@ -3050,7 +3902,7 @@ h.popupmenuYData1 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.09 0.59 0.12 0.2], ...
 'Tag', 'popupmenuYData1', ...
-'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Form Factor','Int. Intensity','Max. Intensity'}, ...
+'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Asymmetry','Width Left','Width Right','Width Asymmetry','Form Factor','Int. Intensity','Max. Intensity'}, ...
 'Value', 1, ...
 'Callback', {@CallbackpopupmenuYData1, h} ...
 );
@@ -3225,7 +4077,7 @@ h.popupmenuYData2 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.09 0.59 0.12 0.2], ...
 'Tag', 'popupmenuYData1', ...
-'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Form Factor','Int. Intensity','Max. Intensity'}, ...
+'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Asymmetry','Width Left','Width Right','Width Asymmetry','Form Factor','Int. Intensity','Max. Intensity'}, ...
 'Value', 1, ...
 'Callback', {@CallbackpopupmenuYData2, h} ...
 );
@@ -3398,7 +4250,7 @@ h.popupmenuYData3 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.09 0.59 0.12 0.2], ...
 'Tag', 'popupmenuYData1', ...
-'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Form Factor','Int. Intensity','Max. Intensity'}, ...
+'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Asymmetry','Width Left','Width Right','Width Asymmetry','Form Factor','Int. Intensity','Max. Intensity'}, ...
 'Value', 1, ...
 'Callback', {@CallbackpopupmenuYData3, h} ...
 );
@@ -3572,7 +4424,7 @@ h.popupmenuYData4 = uicontrol( ...
 'Units', 'Normalized', ...
 'Position', [0.09 0.59 0.12 0.2], ...
 'Tag', 'popupmenuYData1', ...
-'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Form Factor','Int. Intensity','Max. Intensity'}, ...
+'String', {'Choose data','d-spacing','Energy','Integral Breadth','FWHM','Weighting Factor','Asymmetry','Width Left','Width Right','Width Asymmetry','Form Factor','Int. Intensity','Max. Intensity'}, ...
 'Value', 1, ...
 'Callback', {@CallbackpopupmenuYData4, h} ...
 );
@@ -3806,7 +4658,7 @@ h.textsdzeropoly5 = uicontrol('Style', 'text',...
 'FontSize', 8,...
 'HorizontalAlignment', 'left');
 
-%% Define sin²psi range
+%% Define sinï¿½psi range
 h.textsin2psirange = uicontrol('Style', 'text',...
 'Parent', h.uplotoptionspanel,...
 'Units','normalized',...
@@ -5767,7 +6619,7 @@ set(h.plotdataNoise, 'Color', 'blue');
 set(h.plotdataNoisecorr, 'Color', 'black');
 set(h.plotdataNoisecorrchannel, 'Color', 'red');
 
-xlabel('2\theta [°]');
+xlabel('2\theta [ï¿½]');
 ylabel('Intensity [cts]');
 
 %% Panel for PDF Database
@@ -6074,7 +6926,7 @@ h.axesplotPDFData.YLim = [0,110];
 % set(h.plotdataNoisecorr, 'Color', 'black');
 % set(h.plotdataNoisecorrchannel, 'Color', 'red');
 % 
-xlabel(h.axesplotPDFData,'2\theta [°]');
+xlabel(h.axesplotPDFData,'2\theta [ï¿½]');
 ylabel(h.axesplotPDFData,'rel. Intensity');
 
 % Axes for plot of diffraction line positions
@@ -7085,14 +7937,30 @@ else
     % Get parameters for the SpecFileConversionGUI script
     h.P.SpecFileName = get(h.selectfilename,'string');
     % Diffraktometer aus Ordner einlesen und hier an SPECFileConversionGUI
-    % übergeben
+    % ï¿½bergeben
     h.P.DiffractometerType = Diffsel;
     h.P.ScanMode = scanmode;
     calib = get(h.popupmenuDTCorr,'string');
     h.P.Calibration = calib{get(h.popupmenuDTCorr,'value')};
-    
-    % Run "SpecFileConversionGUI" script
-    [meas,~,DataTmp,Diffractometer,P,T] = SpecFileConversionGUI(h.P,h.Sample,h.T,h);
+
+    % Xlab-IKZ (Bruker XFlash 430) spectra are single, already energy-
+    % calibrated files with no scan/motor-position log -- the SPEC-format
+    % parser used by every other diffractometer does not apply, so this
+    % uses its own, separate import routine instead.
+    if strcmp(Diffsel,'Xlab-IKZ')
+        % The dropdown selection above is irrelevant here (this data needs
+        % no external calibration file) and must be overridden BEFORE the
+        % first TheoreticalPeakPositions call further below -- if the user
+        % happened to pick "Channel_scale" there, theoretical peaks would
+        % otherwise briefly be computed against the channel range instead
+        % of the correct energy range.
+        h.P.Calibration = 'Xlab-IKZ (direct energy values)';
+        FullFilePath = get(h.selectfilename,'UserData');
+        [meas,~,DataTmp,Diffractometer,P,T] = LoadXFlashFileGUI(FullFilePath,h.P,h.Sample,h.T);
+    else
+        % Run "SpecFileConversionGUI" script
+        [meas,~,DataTmp,Diffractometer,P,T] = SpecFileConversionGUI(h.P,h.Sample,h.T,h);
+    end
     % IF LEDDI measurements were conducted using only one detector
 %     assignin('base','measbefore',meas)
 
@@ -7115,8 +7983,6 @@ else
 %         meas(2).EDSpectrum(:,2) = IntDet1;
     end
 
-    % Get theoretical peak positions
-    h.TPeaks = TheoreticalPeakPositions(meas,DataTmp,h.P.Calibration,h.Diffsel);
     % Check if psi angles from ETA measurement are in correct order
     if strcmp(h.Diffsel,'ETA3000')
         % Extract angles from meas
@@ -7175,8 +8041,16 @@ else
         for k = 1:length(meas)
             meas(k).Sample.Materials.EnergyMax = 165;
         end
-
+    elseif strcmp(h.Diffsel,'P61A')
+        for k = 1:length(meas)
+            meas(k).Sample.Materials.EnergyMax = 200;
+        end
     end
+    % Get theoretical peak positions -- computed only now, after Emax was
+    % adjusted per diffractometer above; doing this earlier would compute
+    % h.TPeaks using the stale default EnergyMax (100 keV, set when the
+    % sample was created) instead of the corrected value.
+    h.TPeaks = TheoreticalPeakPositions(meas,DataTmp,h.P.Calibration,h.Diffsel);
     % Set output to variables
     h.Measurement = meas;
     setappdata(0,'MeasurementClone',meas)
@@ -7270,25 +8144,22 @@ else
     % Set plot data for theoretical line positions        
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         % Distinguish between Det1 and Det2
+        % X3Limit/Y3Limit wurden bereits aus dem auf diesen Detektor
+        % reduzierten Teil-Array (h.Measurement(Slidersteps)) berechnet,
+        % ihre Spalten sind also relativ dazu durchnummeriert (1 = erste
+        % Messung DIESES Detektors). Slidersteps(1) waere hier der
+        % urspruengliche, absolute Index in h.Measurement (z.B. 2 fuer
+        % Detector 1) und damit als Spaltenindex falsch -- fuer Detector 1
+        % griff das bisher auf die zweite statt die erste Messung zu.
         if strcmp(h.Detsel,'Detector 1')
 %             assignin('base','X3Limit',X3Limit)
             Slidersteps = 2:2:length(h.Measurement);
-            if size(X3Limit,2) ~= 1
-                set(h.plotEtheo,'xdata',X3Limit(:,Slidersteps(1)))
-                set(h.plotEtheo,'ydata',Y3Limit(:,Slidersteps(1)))
-            else
-                set(h.plotEtheo,'xdata',X3Limit(:,1))
-                set(h.plotEtheo,'ydata',Y3Limit(:,1))
-            end
+            set(h.plotEtheo,'xdata',X3Limit(:,1))
+            set(h.plotEtheo,'ydata',Y3Limit(:,1))
         elseif strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
-            if size(X3Limit,2) ~= 1
-                set(h.plotEtheo,'xdata',X3Limit(:,Slidersteps(1)))
-                set(h.plotEtheo,'ydata',Y3Limit(:,Slidersteps(1)))
-            else
-                set(h.plotEtheo,'xdata',X3Limit(:,1))
-                set(h.plotEtheo,'ydata',Y3Limit(:,1))
-            end   
+            set(h.plotEtheo,'xdata',X3Limit(:,1))
+            set(h.plotEtheo,'ydata',Y3Limit(:,1))
         end
     elseif strcmp(h.Diffsel,'ETA3000')
         % assignin('base','X3Limitka1',X3Limitka1)
@@ -7302,6 +8173,49 @@ else
         set(h.plotEtheo,'ydata',Y3Limit(:,1))
     end
     set(h.plotEtheo,'Visible','on')
+
+    % hkl-Beschriftung pro Peak, analog zu den Zusatzphasen/Fluoreszenz-
+    % Labels: mittig auf der jeweiligen Linie platziert.
+    if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+        OldMainLabels = h.EtheoMainLabelHandles;
+        delete(OldMainLabels(ishandle(OldMainLabels)));
+    end
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        % X3Limit/Y3Limit (und damit a/EtheoLimit) wurden oben bereits
+        % pro Detektor berechnet -- hier direkt weiterverwenden.
+        if strcmp(h.Detsel,'Detector 1')
+            LineHeightMain = h.TPeaksDet1.T.Peaks_y(1);
+            PeaksHKLMain = h.TPeaksDet1.T.Peaks(a,1:3);
+        else
+            LineHeightMain = h.TPeaksDet2.T.Peaks_y(1);
+            PeaksHKLMain = h.TPeaksDet2.T.Peaks(a,1:3);
+        end
+        PeaksXMain = EtheoLimit;
+    elseif strcmp(h.Diffsel,'ETA3000')
+        % Nur die ka1-Linien (Hauptlinien) beschriften, ka2 auslassen.
+        LineHeightMain = h.TPeaks.T.Peaks_y(1);
+        PeaksHKLMain = h.TPeaks.T.Peaks(aka1,1:3);
+        PeaksXMain = EtheoLimit_aka1;
+    else
+        LineHeightMain = h.TPeaks.T.Peaks_y(1);
+        PeaksHKLMain = h.TPeaks.T.Peaks(a,1:3);
+        PeaksXMain = EtheoLimit;
+    end
+    NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+    for i = 1:size(PeaksHKLMain,1)
+        hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+        NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+            'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+            'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+    end
+    h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
 %     if h.P.ShowSubstratePeaks == 1
 %         set(h.plotEtheoSub,'xdata',SX3Limit(:,1))
 %         set(h.plotEtheoSub,'ydata',SY3Limit(:,1))
@@ -7382,7 +8296,7 @@ else
             if strcmp(h.Diffsel,'ETA3000')
                 if size(h.Measurement,2) == 1
                     h.axesplotRawData.XLim = [floor(h.Measurement(1).EDSpectrum(1,1)), ceil(h.Measurement(1).EDSpectrum(end,1))];
-                    h.axesplotRawData.XLabel.String = '2\theta [°]';
+                    h.axesplotRawData.XLabel.String = '2\theta [ï¿½]';
                 else
                     h.axesplotRawData.XLim = [floor(h.Measurement(1).EDSpectrum(1,1)) ceil(h.Measurement(1).EDSpectrum(end,1))];
                 end
@@ -7403,6 +8317,8 @@ else
             set(h.plusbuttonshiftEtheo1,'visible','on')
             set(h.minusbuttonshiftEtheo1,'visible','on')
         end
+    elseif strcmp(h.Diffsel,'P61A')
+        h.axesplotRawData.XLim = [0, 200];
     else
         set(h.checkboxtheopeaks1,'Visible','on')
         set(h.checkboxshifttheopeaks1,'visible','on')
@@ -7869,7 +8785,7 @@ set(h.plotdataNoise,'XData',XData,'YData',YData)
 % set(h.plotdatacorr, 'Color', 'black');
 % set(h.plotcorrchannel, 'Color', 'red');
 % 
-% xlabel('2\theta [°]');
+% xlabel('2\theta [ï¿½]');
 % ylabel('Intensity [cts]');
 
 guidata(hObj, h);
@@ -8193,7 +9109,62 @@ MeasurementGetApp = getappdata(0,'MeasurementClone');
 IntegrateSpectra = get(h.checkboxselectmeas1,'Value');
 % Select measurements depending on the diffractometer and measurement mode
 % used.
-if IntegrateSpectra == 0
+if IntegrateSpectra == 0 && isfield(h,'IsIntegrated') && h.IsIntegrated
+    %% Re-crop the already-integrated spectra to a (possibly new) energy
+    % range. Always re-cropped from the pristine, full-range integrated
+    % backup saved when integration ran (h.IntegratedSpectrumBackup /
+    % ...Det1/Det2) -- never from the current, possibly already-cropped
+    % h.Measurement -- so this can be repeated narrower/wider any number
+    % of times without compounding. h.Measurement stays the integration
+    % result (same number of spectra); only each EDSpectrum's extent
+    % changes.
+    EnergyRange = [str2double(get(h.editfieldselectmeas4,'String')) str2double(get(h.editfieldselectmeas5,'String'))];
+
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        h.P.EnergyRangeDet1 = EnergyRange;
+        h.P.EnergyRangeDet2 = EnergyRange;
+        h.EnergyRangeDet1 = EnergyRange;
+        h.EnergyRangeDet2 = EnergyRange;
+        h.Sample.Materials.EnergyMax = EnergyRange(2);
+
+        h.DataTmpDet1 = cell(1, length(h.IntegratedSpectrumBackupDet1));
+        for c = 1:length(h.IntegratedSpectrumBackupDet1)
+            idx = Tools.Data.DataSetOperations.FindNearestIndex(h.IntegratedSpectrumBackupDet1{c}(:,1), EnergyRange);
+            h.DataTmpDet1{c} = h.IntegratedSpectrumBackupDet1{c}(idx(1):idx(2),:);
+        end
+        h.DataTmpDet2 = cell(1, length(h.IntegratedSpectrumBackupDet2));
+        for c = 1:length(h.IntegratedSpectrumBackupDet2)
+            idx = Tools.Data.DataSetOperations.FindNearestIndex(h.IntegratedSpectrumBackupDet2{c}(:,1), EnergyRange);
+            h.DataTmpDet2{c} = h.IntegratedSpectrumBackupDet2{c}(idx(1):idx(2),:);
+        end
+
+        SliderstepsDet1 = 2:2:length(h.Measurement);
+        SliderstepsDet2 = 1:2:length(h.Measurement);
+        for c = 1:length(h.DataTmpDet1)
+            h.Measurement(SliderstepsDet1(c)).EDSpectrum = h.DataTmpDet1{c};
+        end
+        for c = 1:length(h.DataTmpDet2)
+            h.Measurement(SliderstepsDet2(c)).EDSpectrum = h.DataTmpDet2{c};
+        end
+        h.DataTmp = cell(1, length(h.Measurement));
+        h.DataTmp(SliderstepsDet1) = h.DataTmpDet1;
+        h.DataTmp(SliderstepsDet2) = h.DataTmpDet2;
+    else
+        h.P.EnergyRange = EnergyRange;
+        h.EnergyRange = EnergyRange;
+        h.Sample.Materials.EnergyMax = EnergyRange(2);
+
+        h.DataTmp = cell(1, length(h.IntegratedSpectrumBackup));
+        for c = 1:length(h.IntegratedSpectrumBackup)
+            idx = Tools.Data.DataSetOperations.FindNearestIndex(h.IntegratedSpectrumBackup{c}(:,1), EnergyRange);
+            h.DataTmp{c} = h.IntegratedSpectrumBackup{c}(idx(1):idx(2),:);
+        end
+        for c = 1:length(h.Measurement)
+            h.Measurement(c).EDSpectrum = h.DataTmp{c};
+        end
+    end
+    disp(['energy range [' num2str(EnergyRange(1)) ' ' num2str(EnergyRange(2)) '] applied to the integrated spectra.']);
+elseif IntegrateSpectra == 0
     if strcmp(h.measmode,'Reflection') || strcmp(h.measmode,'Transmission') %measmode == 'Reflection' || measmode == 'Transmission'
         h.P.WhichMeasurementsDetector(1) = str2double(get(h.editfieldselectmeas2,'String'));
         h.P.WhichMeasurementsDetector(2) = str2double(get(h.editfieldselectmeas3,'String'));
@@ -8328,99 +9299,114 @@ if IntegrateSpectra == 0
         % Update Measurement
         h.Measurement = meas;
     end
-else  
+else
     %% Nr of Spectra to integrate [integer]
     Binning = str2double(get(h.editfieldselectmeas6,'String'));
-    % [1 | 0] Discard remaining scans without integration
+    % [1 | 0] Discard remaining scans without integration (Block mode only)
     DiscardRemainder = get(h.checkboxselectmeas2,'Value');
-    % Energy Range of Interest
-    EnergyRange = [str2double(get(h.editfieldselectmeas4,'String')) str2double(get(h.editfieldselectmeas5,'String'))];
-    h.EnergyRange = EnergyRange;
-    h.P.EnergyRange = EnergyRange;
-    % Energy Resolution
-    EnergyRes = 0.01;                                                          
-    
-    % Processing
-    if Binning ~= 1
-        if Binning > length(h.Measurement)
-            Binning = length(h.Measurement);
-        end
-        % Nr of spectra
-        NrMeas = length(h.Measurement);
-        % Computing Energy Scale
-        X = linspace(EnergyRange(1),EnergyRange(2),...
-                 (EnergyRange(2)-EnergyRange(1))/EnergyRes);
-%         X = linspace(EDSpectrum(1,1),EDSpectrum(end,1),length(EDSpectrum))';     
-        % Make Copy of h.Measurement
-        h.MeasurementInt = h.Measurement.Clone;
-        h.MeasurementBackup = h.Measurement.Clone;
-        % Choose every "n th" h.Measurement
-        h.MeasurementInt = h.MeasurementInt(1:Binning:NrMeas);                     
-        
-        %Loop over h.Measurements
-        for i = Binning:Binning:NrMeas 
-           % Sum up RealTime
-           h.MeasurementInt(i/Binning).RealTime = sum([h.Measurement(i-Binning+1:i).RealTime]);
-           % Sum up DeadTime                                  
-           h.MeasurementInt(i/Binning).DeadTime = mean([h.Measurement(i-Binning+1:i).DeadTime]);
-           %Loop over spectra to integrate                                  
-		   % Intensity_interp = zeros(1,Binning);
-           
-           for j = 1:Binning
-               % Save current EDSpectrum
-               EDSpectrum = h.Measurement(i-Binning+j).EDSpectrum;
-               % X = linspace(EDSpectrum(1,1),EDSpectrum(end,1),length(EDSpectrum))'; 
-%                assignin('base','EDSpectrum',EDSpectrum)
-               % Interpolate Spectrum on common Energy range vector
-               Intensity_interp(j,:) = interp1(EDSpectrum(:,1),EDSpectrum(:,2),X);
-           end
-           % Integrate Spectra to new EDSpectrum
-           NewEDSpectrum = [X;sum(Intensity_interp,1)]';
-           % Delete NaN entries
-           NewEDSpectrum = NewEDSpectrum(~any(isnan(NewEDSpectrum),2),:);
-           % Overwrite prior spectrum data
-           h.MeasurementInt(i/Binning).EDSpectrum = NewEDSpectrum;
-        end
-
-        % if remainder should be removed and if remainder is present 
-        if DiscardRemainder && logical((NrMeas - i))
-            % remove remainder
-            h.MeasurementInt(end) = [];
-        end
-
-        % Read temperatures and build mean according to binning
-        for k = 1:length(h.Measurement)
-            temp(k,:) = h.Measurement(k).Temperatures;
-        end
-        
-        n     = Binning;
-        nRows = floor(size(temp, 1) / n) * n;   % auf vielfaches von 10 kürzen
-        data_trim = temp(1:nRows, :);
-        
-        % Reshape und Mittelwert
-        data_mean = reshape(data_trim, n, [], size(temp,2));
-        mean_Temp    = squeeze(mean(data_mean, 1));
-        %% Overwrite Data
-        % Backup Measurement data
-%         h.MeasurementBackup = h.Measurement.Clone;
-        % Overwrite h.Measurement object with integrated data
-        h.Measurement = h.MeasurementInt;  
-        % Neu setzen der Messdaten
-        for c = 1:length(h.Measurement)
-	        DataTmp{c} = h.Measurement(c).EDSpectrum;
-            h.Measurement(c).Temperatures = ceil(mean_Temp(c,:));   
-        end
-        h.DataTmp = DataTmp;
-        h.DataTmpBackup = DataTmp;
-        h.RawData = DataTmp;	
-        assignin('base','hMeasurement',h.Measurement)
-        % Screen Output
-        disp('spectra integrated');
-        % Mess
-        h.P.WhichMeasurementsDetector(1) = 1;
-        h.P.WhichMeasurementsDetector(2) = length(Binning:Binning:NrMeas);
+    % Integration mode: 'Block' (non-overlapping groups) or 'Sliding'
+    % (overlapping windows, step 1) -- see IntegrateSpectraGUI.m
+    IntegrateModeStr = get(h.popupmenuintegratemode,'String');
+    IntegrateModeVal = get(h.popupmenuintegratemode,'Value');
+    if strcmp(IntegrateModeStr{IntegrateModeVal},'Sliding window (step 1)')
+        IntegrateMode = 'Sliding';
+    else
+        IntegrateMode = 'Block';
     end
-end    
+    % Integration always covers the spectrum's full native energy range
+    % and ignores the Emin/Emax fields -- restricting the range here
+    % would permanently discard data outside it from the summed result,
+    % and could otherwise only ever be set once. Narrowing the displayed/
+    % analysed range remains a separate, freely repeatable step via
+    % Emin/Emax afterward (applied to the pristine integrated backup
+    % saved below, see the IntegrateSpectra==0/h.IsIntegrated branch).
+    EnergyRange = [ceil(min(MeasurementGetApp(1).EDSpectrum(:,1))) ceil(max(MeasurementGetApp(1).EDSpectrum(:,1)))-1];
+    % Energy Resolution
+    EnergyRes = 0.01;
+    % The plot/table code further below always expects h.P.EnergyRange
+    % (or, for LEDDI, h.P.EnergyRangeDet1/2) to be set -- normally done
+    % only in the non-integrate branch above, so it has to be repeated
+    % here as well.
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        h.P.EnergyRangeDet1 = EnergyRange;
+        h.P.EnergyRangeDet2 = EnergyRange;
+        h.EnergyRangeDet1 = EnergyRange;
+        h.EnergyRangeDet2 = EnergyRange;
+    else
+        h.P.EnergyRange = EnergyRange;
+        h.EnergyRange = EnergyRange;
+    end
+
+    % Processing
+    if isnan(Binning) || Binning < 1 || Binning ~= round(Binning)
+        msgbox({'Please enter a valid integer >= 1 for "# Spectra to integrate".'});
+    elseif Binning == 1
+        disp('Binning = 1: no integration performed.');
+    else
+        h.MeasurementBackup = h.Measurement.Clone;
+
+        if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+            % Detector spectra alternate (Detector 1 at even indices,
+            % Detector 2 at odd indices, see SliderstepsDet1/2 elsewhere
+            % in this file) -- integrate each detector's own sequence
+            % separately, then interleave the results back so downstream
+            % code keeps working unchanged. Always integrate from the
+            % pristine, original MeasurementGetApp list (never from the
+            % current h.Measurement, which may already be a previous
+            % integration result) so integrating twice in a row can never
+            % accidentally combine already-combined spectra.
+            IdxDet1 = 2:2:length(MeasurementGetApp);
+            IdxDet2 = 1:2:length(MeasurementGetApp);
+            [MeasDet1Int, DataTmpDet1Int] = IntegrateSpectraGUI(MeasurementGetApp(IdxDet1), Binning, IntegrateMode, DiscardRemainder, EnergyRange, EnergyRes);
+            [MeasDet2Int, DataTmpDet2Int] = IntegrateSpectraGUI(MeasurementGetApp(IdxDet2), Binning, IntegrateMode, DiscardRemainder, EnergyRange, EnergyRes);
+            NrGroups = min(length(MeasDet1Int), length(MeasDet2Int));
+            MeasDet1Int = MeasDet1Int(1:NrGroups);
+            MeasDet2Int = MeasDet2Int(1:NrGroups);
+            h.DataTmpDet1 = DataTmpDet1Int(1:NrGroups);
+            h.DataTmpDet2 = DataTmpDet2Int(1:NrGroups);
+            % Pristine, full-range copy of the integrated spectra -- any
+            % later energy-range change (see IntegrateSpectra==0 /
+            % h.IsIntegrated below) is re-cropped from this, never from
+            % an already-cropped version, so it can be repeated freely.
+            h.IntegratedSpectrumBackupDet1 = h.DataTmpDet1;
+            h.IntegratedSpectrumBackupDet2 = h.DataTmpDet2;
+
+            h.MeasurementInt = MeasurementGetApp(1:2*NrGroups).Clone;
+            h.MeasurementInt(2:2:end) = MeasDet1Int;
+            h.MeasurementInt(1:2:end) = MeasDet2Int;
+
+            h.DataTmp = cell(1, 2*NrGroups);
+            h.DataTmp(2:2:end) = h.DataTmpDet1;
+            h.DataTmp(1:2:end) = h.DataTmpDet2;
+        else
+            [h.MeasurementInt, DataTmpInt] = IntegrateSpectraGUI(MeasurementGetApp, Binning, IntegrateMode, DiscardRemainder, EnergyRange, EnergyRes);
+            h.DataTmp = DataTmpInt;
+            h.IntegratedSpectrumBackup = DataTmpInt;
+        end
+
+        % Overwrite h.Measurement object with integrated data
+        h.Measurement = h.MeasurementInt;
+        % Keep the "which measurements" range consistent with the new,
+        % integrated h.Measurement -- otherwise the code below (which
+        % re-derives h.Measurement from the raw MeasurementGetApp list
+        % using this stale range for non-integrated selections) would
+        % silently discard the integration result.
+        h.P.WhichMeasurementsDetector = [1 length(h.Measurement)];
+        h.P.WhichMeasurements = 1:length(h.Measurement);
+        % Marks h.Measurement as an integration result -- lets a later
+        % OK press with "Integrate spectra" unchecked know to re-crop the
+        % energy range from the pristine integrated backup above instead
+        % of falling back to the raw, un-integrated measurements.
+        h.IsIntegrated = true;
+        % Reflect the (full) range actually used back into the Emin/Emax
+        % fields, so it's visible that integration did not restrict it.
+        set(h.editfieldselectmeas4,'String',num2str(EnergyRange(1)))
+        set(h.editfieldselectmeas5,'String',num2str(EnergyRange(2)))
+
+        % Screen Output
+        disp(['spectra integrated (' IntegrateMode ' mode), ' num2str(length(h.Measurement)) ' resulting spectra.']);
+    end
+end
 % Set slider values
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
@@ -8449,13 +9435,19 @@ end
             end    
         end
     else
-        % Select scans or scan number
-        if h.P.WhichMeasurementsDetector(1) ~= h.P.WhichMeasurementsDetector(2)
-            h.Measurement = MeasurementGetApp(h.P.WhichMeasurementsDetector(1):h.P.WhichMeasurementsDetector(2));
-        else
-            h.Measurement = MeasurementGetApp(h.P.WhichMeasurementsDetector(1));
+        % Select scans or scan number -- only when NOT integrating AND not
+        % just re-cropping an existing integration result to a new energy
+        % range: in both of those other cases h.Measurement already holds
+        % the correct, combined spectra (set above) and must not be
+        % re-sliced from the raw, un-integrated MeasurementGetApp list.
+        if IntegrateSpectra == 0 && ~(isfield(h,'IsIntegrated') && h.IsIntegrated)
+            if h.P.WhichMeasurementsDetector(1) ~= h.P.WhichMeasurementsDetector(2)
+                h.Measurement = MeasurementGetApp(h.P.WhichMeasurementsDetector(1):h.P.WhichMeasurementsDetector(2));
+            else
+                h.Measurement = MeasurementGetApp(h.P.WhichMeasurementsDetector(1));
+            end
         end
-        
+
         if length(h.Measurement) == 1
             set(h.Slider,'Min',1);
             set(h.Slider,'Max',length(h.Measurement));
@@ -8501,11 +9493,63 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 %             SX3Limit = h.TPeaks.S.X3((1:(3*length(SEtheoLimit)-1)),:);
 %             SY3Limit = h.TPeaks.S.Y3((1:(3*length(SEtheoLimit)-1)),:);
 %         end
-        % Change Ymax according to energy range        
+        % Change Ymax according to energy range
         set(h.plotEtheo,'xdata',X3Limit(:,valueSlider))
         set(h.plotEtheo,'ydata',Y3Limit(:,valueSlider).*(max(h.DataTmp{1,Slidersteps(valueSlider)}(:,2))/max(Y3Limit(:,valueSlider))))
         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
-        if isfield(h, 'PeaksTheoAdd') 
+        % hkl-Beschriftung pro Peak neu aufbauen (Energiebereich geaendert)
+        if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+            delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+        end
+        LineHeightMain = max(h.DataTmp{1,Slidersteps(valueSlider)}(:,2));
+        PeaksHKLMain = h.TPeaksDet1.T.Peaks(a,1:3);
+        PeaksXMain = h.TPeaksDet1.T.Etheo(a);
+        NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+        for i = 1:size(PeaksHKLMain,1)
+            hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+            NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+                'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+                'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+        end
+        h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+        % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die
+        % neue Spektrenhoehe anpassen.
+        FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+        FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+        for kf = 1:4
+            if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+                XDataFluor = get(FluorPlotHandles{kf},'XData');
+                % Punktezahl von der aktuellen Linie ableiten statt fest 8
+                % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+                % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+                NumPointsFluor = numel(XDataFluor);
+                PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+                y_tmpFluor = nan(NumPointsFluor,1);
+                y_tmpFluor(PatternIdxFluor==0) = 0;
+                y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+                set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+                % Label auf die erste im aktuell sichtbaren Energiebereich
+                % liegende Fluoreszenzlinie setzen (nicht mehr die bei
+                % "Show peaks" fest gewaehlte Linie -- die kann
+                % inzwischen ausserhalb des eingeschraenkten Bereichs
+                % liegen).
+                InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+                IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+                if ~isempty(IdxFluorVisible)
+                    set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+                else
+                    set(FluorLabelHandles{kf},'Visible','off')
+                end
+            end
+        end
+        if isfield(h, 'PeaksTheoAdd')
             Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
             set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{Slidersteps(valueSlider)}(:,2))/max(Y3LimitAdd1(:,valueSlider))))
         end
@@ -8549,11 +9593,63 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 %             SX3Limit = h.TPeaks.S.X3((1:(3*length(SEtheoLimit)-1)),:);
 %             SY3Limit = h.TPeaks.S.Y3((1:(3*length(SEtheoLimit)-1)),:);
 %         end
-        % Change Ymax according to energy range        
+        % Change Ymax according to energy range
         set(h.plotEtheo,'xdata',X3Limit(:,valueSlider))
         set(h.plotEtheo,'ydata',Y3Limit(:,valueSlider).*(max(h.DataTmp{Slidersteps(valueSlider)}(:,2))/max(Y3Limit(:,valueSlider))))
         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
-        if isfield(h, 'PeaksTheoAdd') 
+        % hkl-Beschriftung pro Peak neu aufbauen (Energiebereich geaendert)
+        if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+            delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+        end
+        LineHeightMain = max(h.DataTmp{Slidersteps(valueSlider)}(:,2));
+        PeaksHKLMain = h.TPeaksDet2.T.Peaks(a,1:3);
+        PeaksXMain = h.TPeaksDet2.T.Etheo(a);
+        NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+        for i = 1:size(PeaksHKLMain,1)
+            hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+            NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+                'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+                'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+        end
+        h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+        % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die
+        % neue Spektrenhoehe anpassen.
+        FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+        FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+        for kf = 1:4
+            if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+                XDataFluor = get(FluorPlotHandles{kf},'XData');
+                % Punktezahl von der aktuellen Linie ableiten statt fest 8
+                % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+                % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+                NumPointsFluor = numel(XDataFluor);
+                PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+                y_tmpFluor = nan(NumPointsFluor,1);
+                y_tmpFluor(PatternIdxFluor==0) = 0;
+                y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+                set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+                % Label auf die erste im aktuell sichtbaren Energiebereich
+                % liegende Fluoreszenzlinie setzen (nicht mehr die bei
+                % "Show peaks" fest gewaehlte Linie -- die kann
+                % inzwischen ausserhalb des eingeschraenkten Bereichs
+                % liegen).
+                InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+                IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+                if ~isempty(IdxFluorVisible)
+                    set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+                else
+                    set(FluorLabelHandles{kf},'Visible','off')
+                end
+            end
+        end
+        if isfield(h, 'PeaksTheoAdd')
             Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
             set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,Slidersteps(valueSlider)).*(max(h.DataTmp{Slidersteps(valueSlider)}(:,2))/max(Y3LimitAdd1(:,Slidersteps(valueSlider)))))
         end
@@ -8599,7 +9695,59 @@ elseif strcmp(h.Diffsel,'ETA3000')
     % Change Ymax according to energy range
     set(h.plotEtheo,'xdata',[X3Limitka1(:,valueSlider); nan; X3Limitka2(:,valueSlider)])
     set(h.plotEtheo,'ydata',[Y3Limitka1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3Limitka1(:,valueSlider))); nan; 0.5.*(Y3Limitka2(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3Limitka2(:,valueSlider))))])
-    if isfield(h, 'PeaksTheoAdd') 
+    % hkl-Beschriftung pro Peak neu aufbauen (Energiebereich geaendert),
+    % nur ka1-Linien (Hauptlinien).
+    if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+        delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+    end
+    LineHeightMain = max(h.DataTmp{valueSlider}(:,2));
+    PeaksHKLMain = h.TPeaks.T.Peaks(a,1:3);
+    PeaksXMain = h.TPeaks.T.Etheoka1(a);
+    NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+    for i = 1:size(PeaksHKLMain,1)
+        hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+        NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+            'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+            'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+    end
+    h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+    % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die neue
+    % Spektrenhoehe anpassen.
+    FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+    FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+    for kf = 1:4
+        if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+            XDataFluor = get(FluorPlotHandles{kf},'XData');
+            % Punktezahl von der aktuellen Linie ableiten statt fest 8
+            % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+            % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+            NumPointsFluor = numel(XDataFluor);
+            PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+            y_tmpFluor = nan(NumPointsFluor,1);
+            y_tmpFluor(PatternIdxFluor==0) = 0;
+            y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+            set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+            % Label auf die erste im aktuell sichtbaren Energiebereich
+            % liegende Fluoreszenzlinie setzen (nicht mehr die bei "Show
+            % peaks" fest gewaehlte Linie -- die kann inzwischen
+            % ausserhalb des eingeschraenkten Bereichs liegen).
+            InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+            IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+            if ~isempty(IdxFluorVisible)
+                set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+            else
+                set(FluorLabelHandles{kf},'Visible','off')
+            end
+        end
+    end
+    if isfield(h, 'PeaksTheoAdd')
         Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAddka1)-1)),:);
         set(h.plotEtheoAdd1,'ydata',[Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))); nan;Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))).*0.5])
     end
@@ -8641,7 +9789,58 @@ else
     % Change Ymax according to energy range
     set(h.plotEtheo,'xdata',X3Limit(:,valueSlider))
     set(h.plotEtheo,'ydata',Y3Limit(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3Limit(:,valueSlider))))
-    if isfield(h, 'PeaksTheoAdd') 
+    % hkl-Beschriftung pro Peak neu aufbauen (Energiebereich geaendert)
+    if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+        delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+    end
+    LineHeightMain = max(h.DataTmp{valueSlider}(:,2));
+    PeaksHKLMain = h.TPeaks.T.Peaks(a,1:3);
+    PeaksXMain = h.TPeaks.T.Etheo(a);
+    NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+    for i = 1:size(PeaksHKLMain,1)
+        hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+        NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+            'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+            'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+    end
+    h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+    % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die neue
+    % Spektrenhoehe anpassen.
+    FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+    FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+    for kf = 1:4
+        if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+            XDataFluor = get(FluorPlotHandles{kf},'XData');
+            % Punktezahl von der aktuellen Linie ableiten statt fest 8
+            % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+            % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+            NumPointsFluor = numel(XDataFluor);
+            PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+            y_tmpFluor = nan(NumPointsFluor,1);
+            y_tmpFluor(PatternIdxFluor==0) = 0;
+            y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+            set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+            % Label auf die erste im aktuell sichtbaren Energiebereich
+            % liegende Fluoreszenzlinie setzen (nicht mehr die bei "Show
+            % peaks" fest gewaehlte Linie -- die kann inzwischen
+            % ausserhalb des eingeschraenkten Bereichs liegen).
+            InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+            IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+            if ~isempty(IdxFluorVisible)
+                set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+            else
+                set(FluorLabelHandles{kf},'Visible','off')
+            end
+        end
+    end
+    if isfield(h, 'PeaksTheoAdd')
         Y3LimitAdd1 = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
         set(h.plotEtheoAdd1,'ydata',Y3LimitAdd1(:,valueSlider).*(max(h.DataTmp{valueSlider}(:,2))/max(Y3LimitAdd1(:,valueSlider))))
     end
@@ -8731,8 +9930,12 @@ if h.P.DetectorLEDDIselected == 2
     end
 %     EtheoLimit = h.TPeaksDet1.T.Etheo(a);
 %     X1Limit = h.TPeaksDet1.T.X1(a,:);
-    X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-    Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    % Logische statt positionaler Indizierung, damit auch bei gesetztem
+    % EnergyRangeDet1 (Filter mit Unter- UND Obergrenze, nicht nur EMax)
+    % korrekt nur die tatsaechlich sichtbaren Peaks verwendet werden.
+    aX = repelem(a,3); aX(end) = [];
+    X3Limit = h.TPeaksDet1.T.X3(aX,:);
+    Y3Limit = h.TPeaksDet1.T.Y3(aX,:);
     set(h.plotEtheo,'xdata',X3Limit(:,1))
     % Set table data for theoretical peak positions
 %     set(h.tablephasehkl,'data',h.TPeaksDet1.T.Peaks(a,:))
@@ -8752,6 +9955,60 @@ if h.P.DetectorLEDDIselected == 2
         % Set GUI fields for energy range
         set(h.editfieldselectmeas4,'String','Emin')
         set(h.editfieldselectmeas5,'String','Emax')
+    end
+    % hkl-Beschriftung pro Peak neu aufbauen (Detektorwechsel), analog zu
+    % okbuttonloadmeasurement. Logische statt positionaler Indizierung
+    % (h.TPeaksDet1.T.Peaks(a,:)/.Etheo(a)) verwendet, damit es auch bei
+    % gesetztem EnergyRangeDet1 (Bandfilter) korrekt bleibt.
+    if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+        delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+    end
+    LineHeightMain = max(h.DataTmp{Slidersteps(valueSlider)}(:,2));
+    PeaksHKLMain = h.TPeaksDet1.T.Peaks(a,1:3);
+    PeaksXMain = h.TPeaksDet1.T.Etheo(a);
+    NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+    for i = 1:size(PeaksHKLMain,1)
+        hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+        NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+            'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+            'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+    end
+    h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+    % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die neue
+    % Spektrenhoehe anpassen.
+    FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+    FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+    for kf = 1:4
+        if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+            XDataFluor = get(FluorPlotHandles{kf},'XData');
+            % Punktezahl von der aktuellen Linie ableiten statt fest 8
+            % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+            % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+            NumPointsFluor = numel(XDataFluor);
+            PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+            y_tmpFluor = nan(NumPointsFluor,1);
+            y_tmpFluor(PatternIdxFluor==0) = 0;
+            y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+            set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+            % Label auf die erste im aktuell sichtbaren Energiebereich
+            % liegende Fluoreszenzlinie setzen (nicht mehr die bei "Show
+            % peaks" fest gewaehlte Linie -- die kann inzwischen
+            % ausserhalb des eingeschraenkten Bereichs liegen).
+            InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+            IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+            if ~isempty(IdxFluorVisible)
+                set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+            else
+                set(FluorLabelHandles{kf},'Visible','off')
+            end
+        end
     end
     % Set backgroundpoints, if defined by user
     if isfield(h, 'PeakRegionsXdataDet1')
@@ -8828,10 +10085,16 @@ if h.P.DetectorLEDDIselected == 2
             elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                 SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                     h.FittedPeaksDet1{valueSlider}(d, 1), h.FittedPeaksDet1{valueSlider}(d, 2), h.FittedPeaksDet1{valueSlider}(d, 3));
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                    h.FittedPeaksDet1{valueSlider}(d, 1), h.FittedPeaksDet1{valueSlider}(d, 2), h.FittedPeaksDet1{valueSlider}(d, 3),h.FittedPeaksDet1{valueSlider}(d, 4),h.FittedPeaksDet1{valueSlider}(d, 5));
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                    h.FittedPeaksDet1{valueSlider}(d, 1), h.FittedPeaksDet1{valueSlider}(d, 2), h.FittedPeaksDet1{valueSlider}(d, 3),h.FittedPeaksDet1{valueSlider}(d, 4),h.FittedPeaksDet1{valueSlider}(d, 5));
             end
                 YPlot = YPlot + SinglePlot;
         end
-        % Add plots of fitted peaks and residual to axes according to current 
+        % Add plots of fitted peaks and residual to axes according to current
         % slider value
         set(h.plotfits,'xdata',XPlot)
         set(h.plotfits,'ydata',YPlot)
@@ -8841,7 +10104,7 @@ if h.P.DetectorLEDDIselected == 2
         set(h.plotfitresidual,'ydata', YDataResidual)
         % Set Ylim according to current slider value
         h.axesplotRawData.YLim = [-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
-        
+
         % Set table data
         if h.P.PopupValueFitFunc == 2 %PV-Func
         set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,valueSlider}(:,7), h.FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
@@ -8858,6 +10121,17 @@ if h.P.DetectorLEDDIselected == 2
             set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,valueSlider}(:,6), h.FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
                 h.FittedPeaksCalctmpDet1{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
                 h.FittedPeaksCalctmpDet1{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,valueSlider}(:,8), h.FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,6),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,7),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,valueSlider}(:,9), h.FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,7),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,8),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet1{1,valueSlider}(:,5),...
+                h.FittedPeaksCalctmpDet1{1,valueSlider}(:,6)])
         end
         set(h.plotpeakpoints,'Visible','off')
         set(h.plotfits,'visible','on')
@@ -8920,8 +10194,12 @@ elseif h.P.DetectorLEDDIselected == 3
     end
 %     EtheoLimit = h.TPeaksDet2.T.Etheo(a);
 %     X1Limit = h.TPeaksDet2.T.X1(a,:);
-    X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-    Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+    % Logische statt positionaler Indizierung, damit auch bei gesetztem
+    % EnergyRangeDet2 (Filter mit Unter- UND Obergrenze, nicht nur EMax)
+    % korrekt nur die tatsaechlich sichtbaren Peaks verwendet werden.
+    aX = repelem(a,3); aX(end) = [];
+    X3Limit = h.TPeaksDet2.T.X3(aX,:);
+    Y3Limit = h.TPeaksDet2.T.Y3(aX,:);
     set(h.plotEtheo,'xdata',X3Limit(:,1))
     % Set table data for theoretical peak positions
 %     set(h.tablephasehkl,'data',h.TPeaksDet2.T.Peaks(a,:))
@@ -8941,6 +10219,60 @@ elseif h.P.DetectorLEDDIselected == 3
         % Set GUI fields for energy range
         set(h.editfieldselectmeas4,'String','Emin')
         set(h.editfieldselectmeas5,'String','Emax')
+    end
+    % hkl-Beschriftung pro Peak neu aufbauen (Detektorwechsel), analog zu
+    % okbuttonloadmeasurement. Logische statt positionaler Indizierung
+    % (h.TPeaksDet2.T.Peaks(a,:)/.Etheo(a)) verwendet, damit es auch bei
+    % gesetztem EnergyRangeDet2 (Bandfilter) korrekt bleibt.
+    if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+        delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+    end
+    LineHeightMain = max(h.DataTmp{Slidersteps(valueSlider)}(:,2));
+    PeaksHKLMain = h.TPeaksDet2.T.Peaks(a,1:3);
+    PeaksXMain = h.TPeaksDet2.T.Etheo(a);
+    NewMainLabels = gobjects(size(PeaksHKLMain,1),1);
+    for i = 1:size(PeaksHKLMain,1)
+        hklStrMain = regexprep(regexprep(mat2str(PeaksHKLMain(i,:)),'\[',''),'\]','');
+        NewMainLabels(i) = text(h.axesplotRawData, PeaksXMain(i), LineHeightMain/2, hklStrMain, ...
+            'Color', 'red', 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+            'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+    end
+    h.EtheoMainLabelHandles = NewMainLabels;
+    % Sichtbarkeit der neu erzeugten Labels an den aktuellen Checkbox-
+    % Zustand angleichen (sonst wuerden sie bei jedem Aktualisieren des
+    % Plots -- z.B. Slider bewegen -- wieder sichtbar, auch wenn der
+    % Nutzer sie per "Show sample peak positions" ausgeblendet hat).
+    if isfield(h,'checkboxtheopeaks1') && get(h.checkboxtheopeaks1,'Value') == 0
+        set(h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles)),'Visible','off')
+    end
+    % Fluoreszenzlinien/-labels (sichtbare Slots) ebenfalls an die neue
+    % Spektrenhoehe anpassen.
+    FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+    FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+    for kf = 1:4
+        if strcmp(get(FluorPlotHandles{kf},'Visible'),'on')
+            XDataFluor = get(FluorPlotHandles{kf},'XData');
+            % Punktezahl von der aktuellen Linie ableiten statt fest 8
+            % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+            % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+            NumPointsFluor = numel(XDataFluor);
+            PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+            y_tmpFluor = nan(NumPointsFluor,1);
+            y_tmpFluor(PatternIdxFluor==0) = 0;
+            y_tmpFluor(PatternIdxFluor==1) = LineHeightMain;
+            set(FluorPlotHandles{kf},'ydata',y_tmpFluor)
+            % Label auf die erste im aktuell sichtbaren Energiebereich
+            % liegende Fluoreszenzlinie setzen (nicht mehr die bei "Show
+            % peaks" fest gewaehlte Linie -- die kann inzwischen
+            % ausserhalb des eingeschraenkten Bereichs liegen).
+            InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+            IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+            if ~isempty(IdxFluorVisible)
+                set(FluorLabelHandles{kf},'Position',[XDataFluor(IdxFluorVisible) LineHeightMain/2 0],'Visible','on')
+            else
+                set(FluorLabelHandles{kf},'Visible','off')
+            end
+        end
     end
     % Set backgroundpoints, if defined by user
     if isfield(h, 'PeakRegionsXdataDet2')
@@ -9019,10 +10351,16 @@ elseif h.P.DetectorLEDDIselected == 3
             elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                 SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                     h.FittedPeaksDet2{valueSlider}(d, 1), h.FittedPeaksDet2{valueSlider}(d, 2), h.FittedPeaksDet2{valueSlider}(d, 3));
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                    h.FittedPeaksDet2{valueSlider}(d, 1), h.FittedPeaksDet2{valueSlider}(d, 2), h.FittedPeaksDet2{valueSlider}(d, 3),h.FittedPeaksDet2{valueSlider}(d, 4),h.FittedPeaksDet2{valueSlider}(d, 5));
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                    h.FittedPeaksDet2{valueSlider}(d, 1), h.FittedPeaksDet2{valueSlider}(d, 2), h.FittedPeaksDet2{valueSlider}(d, 3),h.FittedPeaksDet2{valueSlider}(d, 4),h.FittedPeaksDet2{valueSlider}(d, 5));
             end
                 YPlot = YPlot + SinglePlot;
         end
-        % Add plots of fitted peaks and residual to axes according to current 
+        % Add plots of fitted peaks and residual to axes according to current
         % slider value
         set(h.plotfits,'xdata',XPlot)
         set(h.plotfits,'ydata',YPlot)
@@ -9032,7 +10370,7 @@ elseif h.P.DetectorLEDDIselected == 3
         set(h.plotfitresidual,'ydata', YDataResidual)
         % Set Ylim according to current slider value
         h.axesplotRawData.YLim = [-Inf round(max(h.DataTmp{Slidersteps(valueSlider)}(:,2)),-1)];
-        
+
         % Set table data
         if h.P.PopupValueFitFunc == 2 %PV-Func
             set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,valueSlider}(:,7), h.FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
@@ -9049,6 +10387,17 @@ elseif h.P.DetectorLEDDIselected == 3
             set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,valueSlider}(:,6), h.FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
                 h.FittedPeaksCalctmpDet2{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
                 h.FittedPeaksCalctmpDet2{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,valueSlider}(:,8), h.FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,6),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,7),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,valueSlider}(:,9), h.FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,2),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,7),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,8),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,4),h.FittedPeaksCalctmpDet2{1,valueSlider}(:,5),...
+                h.FittedPeaksCalctmpDet2{1,valueSlider}(:,6)])
         end
         set(h.plotpeakpoints,'Visible','off')
         set(h.plotfits,'visible','on')
@@ -9249,61 +10598,16 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.PeakRegionsX{l} = reshape([h.PeakRegionsXdata{l,:}],2,size([h.PeakRegionsXdata{l,:}],2)/2);
     end
 else
-    % Get x and y data in the range of +/- 5 channels of user selected bkg point
-    xBKG = cell(1,1);
-    yBKG = cell(1,1);
-    indexBKG = zeros(11,length(indexUSP));
+    % Verwendet direkt die vom Nutzer angeklickte Position (indexUSP,
+    % bereits per FindNearestIndex auf den naechsten Datenpunkt
+    % gerundet) -- keine Suche nach einem lokalen Minimum in einem
+    % +/-5-Kanal-Fenster mehr, da diese den Untergrundpunkt von der
+    % grafisch ausgewaehlten Stelle wegziehen konnte. Entspricht damit
+    % dem Verhalten, das fuer 'ETA3000' hier schon immer galt.
     for l = 1:size(h.DataTmp,2)
         for k = 1:length(indexUSP)
-            if strcmp(h.Diffsel,'ETA3000')
-                indexBKG(:,k) = (indexUSP(k)):(indexUSP(k));
-                xBKG{l,k} = h.DataTmp{l}((indexUSP(k)):(indexUSP(k)),1);
-                yBKG{l,k} = h.DataTmp{l}((indexUSP(k)):(indexUSP(k)),2);
-            else
-                indexBKG(:,k) = (indexUSP(k)-5):(indexUSP(k)+5);
-                xBKG{l,k} = h.DataTmp{l}((indexUSP(k)-5):(indexUSP(k)+5),1);
-                yBKG{l,k} = h.DataTmp{l}((indexUSP(k)-5):(indexUSP(k)+5),2);
-            end
-        end
-    end
-%     assignin('base','yBKG',yBKG)
-%     assignin('base','indexBKG',indexBKG)
-%     assignin('base','xBKG',xBKG)
-%     assignin('base','DataTmp',h.DataTmp)
-%     assignin('base','indexUSP',indexUSP)
-    % Find min of yBKG
-    indexYmin = cell(1);
-    for l = 1:size(h.DataTmp,2)
-        for k = 1:length(indexUSP)
-            if all(yBKG{l,k} == 0)
-                indexYmin{l,k} = 4;
-            else
-                indexYmin{l,k} = find(min(yBKG{l,k}(yBKG{l,k}>0)) == yBKG{l,k});
-            end
-        end
-    end
-
-    % Find and delete duplicate entries
-    for l = 1:size(h.DataTmp,2)
-        for k = 1:length(indexUSP)
-            if length(indexYmin{l,k}) ~= 1
-                indexYmin{l,k} = indexYmin{l,k}(1);
-            end
-        end
-    end
-
-    % Get index of Ymin
-    indexYminDataTmp = cell(1);
-    for l = 1:size(h.DataTmp,2)
-        for k = 1:length(indexUSP)
-            indexYminDataTmp{l,k} = indexBKG(indexYmin{l,k},k); 
-        end
-    end
-    % Get x and y data for Ymin and create PeakRegions data X and Y
-    for l = 1:size(h.DataTmp,2)
-        for k = 1:length(indexUSP)
-            h.PeakRegionsXdata{l,k} = h.DataTmp{l}(indexYminDataTmp{l,k},1);
-            h.PeakRegionsYdata{l,k} = h.DataTmp{l}(indexYminDataTmp{l,k},2);
+            h.PeakRegionsXdata{l,k} = h.DataTmp{l}(indexUSP(k),1);
+            h.PeakRegionsYdata{l,k} = h.DataTmp{l}(indexUSP(k),2);
         end
     end
 
@@ -9749,6 +11053,10 @@ guidata(hObj, h);
 function buttonselectbkg4(hObj, ~)
 % Callback for "Fit" button in background panel
 h = guidata(hObj);
+% Unlike SNIP-global, this click-based routine operates on the currently
+% selected (possibly narrowed) range -- make sure Accept doesn't reset
+% Emin/Emax to the full spectrum in case a SNIP run's flag is still set.
+h.SNIPRanFullRange = false;
 
 % if ~isfield(h,'PeakRegionsX') || ~isfield(h,'PeakRegionsXDet1') || ~isfield(h,'PeakRegionsXDet2')
 %     msgbox({'Background correction already performed.'});
@@ -9777,10 +11085,11 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.BackgroundCorrDataToAcceptDet2 = DataTmp;
     end
 else
-    [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX,h.P.Calibration);
+    [Measurement,DataTmp,~,BkgTmp] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX,h.P.Calibration,h.Diffsel);
     h.DataTmpToAccept = DataTmp;
     h.MeasurementToAccept = Measurement;
     h.BackgroundCorrDataToAccept = DataTmp;
+    h.BkgToAccept = BkgTmp;
 %     h.DataTmpToAccept = h.DataTmp;
 %     h.MeasurementToAccept = h.Measurement;
 %     h.BackgroundCorrDataToAccept = h.DataTmp;
@@ -9795,7 +11104,7 @@ set(h.plotbkgpoints,'Visible','off')
 %     set(h.plotpeakpoints,'Visible','off')
 % end
 
-% Plot background corrected data  
+% Plot background corrected data
 if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
 %         Slidersteps = 2:2:length(h.Measurement);
@@ -9806,6 +11115,11 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     end
 else
     h.plotBKG = plot(h.axesplotRawData, DataTmp{valueSlider}(:,1), DataTmp{valueSlider}(:,2),'Color','r','LineWidth',2);
+    % Gefittete Untergrundlinie zusaetzlich zusammen mit dem
+    % Originalspektrum anzeigen, damit man vor "Accept Fit" beurteilen
+    % kann, ob der SNIP-Untergrund plausibel aussieht.
+    hold(h.axesplotRawData,'on')
+    h.plotBKGline = plot(h.axesplotRawData, h.BkgToAccept{valueSlider}(:,1), h.BkgToAccept{valueSlider}(:,2),'Color','k','LineStyle','--','LineWidth',1.5);
 end
 h.axesplotRawData.YLim(1) = 0;
 % h.plotBKG = plot(h.axesplotRawData, DataTmp{valueSlider}(:,1), DataTmp{valueSlider}(:,2),'Color','r','LineWidth',2);
@@ -9823,6 +11137,112 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 2')
 else
     msgbox('Background corrected. Accept if background correction is good.');
 end
+
+guidata(hObj, h);
+
+function buttonselectbkgSNIP(hObj, ~)
+% Callback for "SNIP Background (global)" button.
+% Separater, vorgeschalteter Schritt zur gewohnten Klick-Routine: laeuft
+% automatisch ueber das gesamte Spektrum, ohne dass Peak-Regionen
+% markiert sein muessen. Nutzt Vorschau/Accept/Decline ueber dieselben
+% Felder/Buttons wie "Fit Background" (buttonselectbkg4/5/6).
+h = guidata(hObj);
+
+% Fensterbreite aus dem Eingabefeld lesen (in keV bei Energieachse, in
+% Kanaelen bei 'Channel_scale'). Ein zu kleines Fenster erodiert Peaks
+% von innen, ein zu grosses vermischt eng benachbarte Peaks -- der
+% richtige Wert haengt von Peakbreite/-abstand der jeweiligen Messung ab.
+WindowValueStr = get(h.editbkgSNIPWindow,'String');
+WindowValue = str2double(WindowValueStr);
+if isnan(WindowValue) || WindowValue <= 0
+    msgbox('Ungueltige SNIP-Fensterbreite. Bitte eine positive Zahl eingeben.');
+    return
+end
+
+Detstr = get(h.popupmenuselectmeas1,'String');
+Detval = get(h.popupmenuselectmeas1,'Value');
+Detsel = Detstr{Detval};
+h.Detsel = Detsel;
+
+% Like "Integrate spectra", SNIP is meant to run on the spectrum's full
+% native energy range, not whatever narrower range happens to be
+% selected right now -- so if the current data came from integration,
+% run SNIP on the pristine, full-range integrated backup instead of the
+% (possibly narrowed) h.DataTmp. Narrowing the range again afterward
+% remains a separate step (see okbuttonselectmeas/h.IsIntegrated), which
+% will then re-crop from this SNIP-corrected full-range result.
+IsIntegrated = isfield(h,'IsIntegrated') && h.IsIntegrated;
+% Consumed by buttonselectbkg5 (Accept) to know whether the range Emin/
+% Emax should be reset to the full spectrum afterward (only true here,
+% never for the regular click-based "Fit Background" routine).
+h.SNIPRanFullRange = IsIntegrated;
+
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        Slidersteps = 2:2:length(h.Measurement);
+        if IsIntegrated
+            DataTmpSource = h.IntegratedSpectrumBackupDet1;
+        else
+            DataTmpSource = h.DataTmp(Slidersteps);
+        end
+        [Measurement,DataTmp,~,BkgTmp] = SNIPBackgroundGUI(h.Measurement(Slidersteps),DataTmpSource,h.P.Calibration,WindowValue);
+        h.DataTmpToAcceptDet1 = DataTmp;
+        h.MeasurementToAcceptDet1 = Measurement;
+        h.BackgroundCorrDataToAcceptDet1 = DataTmp;
+        h.BkgToAcceptDet1 = BkgTmp;
+    elseif strcmp(h.Detsel,'Detector 2')
+        Slidersteps = 1:2:length(h.Measurement);
+        if IsIntegrated
+            DataTmpSource = h.IntegratedSpectrumBackupDet2;
+        else
+            DataTmpSource = h.DataTmp(Slidersteps);
+        end
+        [Measurement,DataTmp,~,BkgTmp] = SNIPBackgroundGUI(h.Measurement(Slidersteps),DataTmpSource,h.P.Calibration,WindowValue);
+        h.DataTmpToAcceptDet2 = DataTmp;
+        h.MeasurementToAcceptDet2 = Measurement;
+        h.BackgroundCorrDataToAcceptDet2 = DataTmp;
+        h.BkgToAcceptDet2 = BkgTmp;
+    end
+else
+    if IsIntegrated
+        DataTmpSource = h.IntegratedSpectrumBackup;
+    else
+        DataTmpSource = h.DataTmp;
+    end
+    [Measurement,DataTmp,~,BkgTmp] = SNIPBackgroundGUI(h.Measurement,DataTmpSource,h.P.Calibration,WindowValue);
+    h.DataTmpToAccept = DataTmp;
+    h.MeasurementToAccept = Measurement;
+    h.BackgroundCorrDataToAccept = DataTmp;
+    h.BkgToAccept = BkgTmp;
+end
+
+% Get slider value
+valueSlider = round(get(h.Slider, 'Value'));
+% Set plot of bkg points visible off (falls "Define Background" schon
+% mal gelaufen ist -- fuer SNIP selbst nicht erforderlich)
+if isfield(h,'plotbkgpoints')
+    set(h.plotbkgpoints,'Visible','off')
+end
+
+% Plot background corrected data
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        h.plotBKG = plot(h.axesplotRawData, h.DataTmpToAcceptDet1{valueSlider}(:,1), h.DataTmpToAcceptDet1{valueSlider}(:,2),'Color','r','LineWidth',2);
+        hold(h.axesplotRawData,'on')
+        h.plotBKGline = plot(h.axesplotRawData, h.BkgToAcceptDet1{valueSlider}(:,1), h.BkgToAcceptDet1{valueSlider}(:,2),'Color','k','LineStyle','--','LineWidth',1.5);
+    elseif strcmp(h.Detsel,'Detector 2')
+        h.plotBKG = plot(h.axesplotRawData, h.DataTmpToAcceptDet2{valueSlider}(:,1), h.DataTmpToAcceptDet2{valueSlider}(:,2),'Color','r','LineWidth',2);
+        hold(h.axesplotRawData,'on')
+        h.plotBKGline = plot(h.axesplotRawData, h.BkgToAcceptDet2{valueSlider}(:,1), h.BkgToAcceptDet2{valueSlider}(:,2),'Color','k','LineStyle','--','LineWidth',1.5);
+    end
+else
+    h.plotBKG = plot(h.axesplotRawData, DataTmp{valueSlider}(:,1), DataTmp{valueSlider}(:,2),'Color','r','LineWidth',2);
+    hold(h.axesplotRawData,'on')
+    h.plotBKGline = plot(h.axesplotRawData, h.BkgToAccept{valueSlider}(:,1), h.BkgToAccept{valueSlider}(:,2),'Color','k','LineStyle','--','LineWidth',1.5);
+end
+h.axesplotRawData.YLim(1) = 0;
+
+msgbox('SNIP background corrected (global). Accept if background correction is good.');
 
 guidata(hObj, h);
 
@@ -9845,17 +11265,55 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
                 h.DataTmp{Slidersteps(c)} = h.DataTmpToAcceptDet1{c};
                 h.Measurement(Slidersteps(c)) = h.MeasurementToAcceptDet1(c);
             end
+        % If this data came from "Integrate spectra", keep the pristine
+        % energy-range backup (see okbuttonselectmeas/h.IsIntegrated) in
+        % sync with the just-accepted, background-corrected spectra --
+        % otherwise a later energy-range change would silently discard
+        % the background correction by re-cropping from the older,
+        % uncorrected integrated data.
+        if isfield(h,'IsIntegrated') && h.IsIntegrated
+            h.IntegratedSpectrumBackupDet1 = h.DataTmpToAcceptDet1;
+        end
     elseif strcmp(h.Detsel,'Detector 2')
         Slidersteps = 1:2:length(h.Measurement);
             for c = 1:length(h.DataTmpToAcceptDet2)
                 h.DataTmp{Slidersteps(c)} = h.DataTmpToAcceptDet2{c};
                 h.Measurement(Slidersteps(c)) = h.MeasurementToAcceptDet2(c);
             end
+        if isfield(h,'IsIntegrated') && h.IsIntegrated
+            h.IntegratedSpectrumBackupDet2 = h.DataTmpToAcceptDet2;
+        end
     end
 else
     h.DataTmp = h.DataTmpToAccept;
     h.Measurement = h.MeasurementToAccept;
     h.DataTmpBackgroundCorrData = h.BackgroundCorrDataToAccept;
+    % See comment above (LEDDI branch): keep the pristine energy-range
+    % backup in sync with the accepted, background-corrected spectra.
+    if isfield(h,'IsIntegrated') && h.IsIntegrated
+        h.IntegratedSpectrumBackup = h.DataTmpToAccept;
+    end
+end
+% SNIP-global ran on the full spectrum (see buttonselectbkgSNIP) -- the
+% just-accepted h.DataTmp now covers the full range again, so reflect
+% that back into the Emin/Emax fields (mirrors "Integrate spectra"'s
+% behavior). Not done for the click-based routine, which intentionally
+% keeps working on whatever range was already selected.
+if isfield(h,'SNIPRanFullRange') && h.SNIPRanFullRange
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        FullRange = [ceil(min(h.DataTmp{1}(:,1))) ceil(max(h.DataTmp{1}(:,1)))-1];
+        h.P.EnergyRangeDet1 = FullRange;
+        h.P.EnergyRangeDet2 = FullRange;
+        h.EnergyRangeDet1 = FullRange;
+        h.EnergyRangeDet2 = FullRange;
+    else
+        FullRange = [ceil(min(h.DataTmp{1}(:,1))) ceil(max(h.DataTmp{1}(:,1)))-1];
+        h.P.EnergyRange = FullRange;
+        h.EnergyRange = FullRange;
+    end
+    set(h.editfieldselectmeas4,'String',num2str(FullRange(1)))
+    set(h.editfieldselectmeas5,'String',num2str(FullRange(2)))
+    h.SNIPRanFullRange = false;
 end
 % assignin('base','DataTmp',h.DataTmp)
 % Set plot data
@@ -9884,6 +11342,9 @@ else
 end
 % Set plot background corrected data visible off
 set(h.plotBKG,'Visible','off')
+if isfield(h,'plotBKGline')
+    set(h.plotBKGline,'Visible','off')
+end
 % Set peak position plot visible
 if isfield(h, 'Peaks') 
     h.DataInterpPeaks = interp1(h.DataTmp{valueSlider}(:,1),h.DataTmp{valueSlider}(:,2),h.Peaks{valueSlider});
@@ -9931,10 +11392,19 @@ guidata(hObj, h);
 function buttonselectbkg6(hObj, ~)
 % Callback for "Decline" button in background panel
 h = guidata(hObj);
+% Discard the preview -- a later Accept (of a different correction) must
+% not act as if this declined SNIP-on-full-range run had been accepted.
+h.SNIPRanFullRange = false;
 % Set plot background corrected data visible off
 set(h.plotBKG,'Visible','off')
-% Set plot background points visible on
-set(h.plotbkgpoints,'Visible','on')
+if isfield(h,'plotBKGline')
+    set(h.plotBKGline,'Visible','off')
+end
+% Set plot background points visible on (existiert nicht, falls z.B. nur
+% "SNIP Background" ohne vorheriges "Define Background" gelaufen ist)
+if isfield(h,'plotbkgpoints')
+    set(h.plotbkgpoints,'Visible','on')
+end
 % Messagebox
 msgbox('Background correction declined. Change background values.')
 guidata(hObj, h);
@@ -11494,14 +12964,14 @@ ULDDataFile = matfile(BackgroundFileName,'Writable',true);
 if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if isfield(h, 'PeaksDet1') && ~isfield(h, 'PeaksDet2')
         ULDDataFile.PeaksDet1 = h.PeaksDet1;
-        ULDDataFile.PeakslbDet1 = h.PeakslbDet1;
-        ULDDataFile.PeaksubDet1 = h.PeaksubDet1;
+        ULDDataFile.Peakslb = h.PeakslbDet1;
+        ULDDataFile.Peaksub = h.PeaksubDet1;
         ULDDataFile.MinVal = h.MinVal;
         ULDDataFile.TableBkgColorArrayDet1 = h.TableBkgColorArrayDet1;
     elseif isfield(h, 'PeaksDet2') && ~isfield(h, 'PeaksDet1')
         ULDDataFile.PeaksDet2 = h.PeaksDet2;
-        ULDDataFile.PeakslbDet2 = h.PeakslbDet2;
-        ULDDataFile.PeaksubDet2 = h.PeaksubDet2;
+        ULDDataFile.Peakslb = h.PeakslbDet2;
+        ULDDataFile.Peaksub = h.PeaksubDet2;
         ULDDataFile.MinVal = h.MinVal;
         ULDDataFile.TableBkgColorArrayDet2 = h.TableBkgColorArrayDet2;
                   
@@ -11541,6 +13011,13 @@ function buttonselectpeak3(hObj, ~)
 h = guidata(hObj);
 % Get value of checkbox "fit data from both detectors"
 FitBothDet = get(h.checkboxFitBothDetectors,'value');
+% Get value of "Overlap handling" popup menu (2-peak-region special
+% cases for Pseudo-Voigt: none / couple overlapping peaks / martensite
+% {200} split with shared or free width)
+OverlapModeVal = get(h.popupmenuOverlapMode,'value');
+CoupleOverlapPeaks = (OverlapModeVal == 2);
+MartensiteSplit = (OverlapModeVal == 3 || OverlapModeVal == 4);
+MartensiteFreeWidth = (OverlapModeVal == 4);
 % Function to make "Fit" button blink in red during fitting process
 col = get(hObj,'backg');  % Get the background color of the figure.
 set(hObj,'str','Fitting','backg',[1 .6 .6]) % Change color of button. 
@@ -11561,7 +13038,7 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
             % Consider the following spectra
             Slidersteps = 2:2:length(h.Measurement);
             % Run fit script
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -11579,7 +13056,7 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
             h.SEDet1 = SE;
         elseif strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -11599,7 +13076,7 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             % Here, no case analysis is done, the data from both detectors
             % is fitted directly one after the other
             Slidersteps = 2:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet1,h.PeaksDet1,h.PeakslbDet1,h.PeaksubDet1,h.P.PopupValueFitFunc,h.Diffsel,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -11616,7 +13093,7 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             h.SEDet1 = SE;
 
             Slidersteps = 1:2:length(h.Measurement);
-            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel);
+            [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement(Slidersteps),h.DataTmp(Slidersteps),h.PeakRegionsXDet2,h.PeaksDet2,h.PeakslbDet2,h.PeaksubDet2,h.P.PopupValueFitFunc,h.Diffsel,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth);
             % Update Measurement and Datatmp
             for c = 1:length(DataTmp)
                 h.DataTmp{Slidersteps(c)} = DataTmp{c};
@@ -11633,7 +13110,7 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             h.SEDet2 = SE;
 else
     % Run fit script
-    [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement,h.DataTmp,h.PeakRegionsX,h.Peaks,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc,h.Diffsel);
+    [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(h.Measurement,h.DataTmp,h.PeakRegionsX,h.Peaks,h.Peakslb,h.Peaksub,h.P.PopupValueFitFunc,h.Diffsel,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth);
     % Set and update handle variables
     h.Measurement = Measurement;
     h.DataTmp = DataTmp;
@@ -11752,6 +13229,17 @@ if FitBothDet == 0
         set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,6), FittedPeaksCalctmp{1,valueSlider}(:,1),...
             FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
             FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5)])
+    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+        set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,8), FittedPeaksCalctmp{1,valueSlider}(:,1),...
+            FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
+            FittedPeaksCalctmp{1,valueSlider}(:,6),FittedPeaksCalctmp{1,valueSlider}(:,7),...
+            FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5)])
+    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+        set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,9), FittedPeaksCalctmp{1,valueSlider}(:,1),...
+            FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
+            FittedPeaksCalctmp{1,valueSlider}(:,7),FittedPeaksCalctmp{1,valueSlider}(:,8),...
+            FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5),...
+            FittedPeaksCalctmp{1,valueSlider}(:,6)])
     end
 
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
@@ -11846,6 +13334,17 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             set(h.tablefitresults,'data',[FittedPeaksCalctmpDet1{1,valueSlider}(:,6), FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
                 FittedPeaksCalctmpDet1{1,valueSlider}(:,2),FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
                 FittedPeaksCalctmpDet1{1,valueSlider}(:,4),FittedPeaksCalctmpDet1{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            set(h.tablefitresults,'data',[FittedPeaksCalctmpDet1{1,valueSlider}(:,8), FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,2),FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,6),FittedPeaksCalctmpDet1{1,valueSlider}(:,7),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,4),FittedPeaksCalctmpDet1{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            set(h.tablefitresults,'data',[FittedPeaksCalctmpDet1{1,valueSlider}(:,9), FittedPeaksCalctmpDet1{1,valueSlider}(:,1),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,2),FittedPeaksCalctmpDet1{1,valueSlider}(:,3),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,7),FittedPeaksCalctmpDet1{1,valueSlider}(:,8),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,4),FittedPeaksCalctmpDet1{1,valueSlider}(:,5),...
+                FittedPeaksCalctmpDet1{1,valueSlider}(:,6)])
         end
     elseif strcmp(h.Detsel,'Detector 2')
         h.plotfits = plot(h.axesplotRawData, XPlotDet2, YPlotDet2,'Color','red','LineWidth',1.5);
@@ -11872,6 +13371,17 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
             set(h.tablefitresults,'data',[FittedPeaksCalctmpDet2{1,valueSlider}(:,6), FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
                 FittedPeaksCalctmpDet2{1,valueSlider}(:,2),FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
                 FittedPeaksCalctmpDet2{1,valueSlider}(:,4),FittedPeaksCalctmpDet2{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            set(h.tablefitresults,'data',[FittedPeaksCalctmpDet2{1,valueSlider}(:,8), FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,2),FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,6),FittedPeaksCalctmpDet2{1,valueSlider}(:,7),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,4),FittedPeaksCalctmpDet2{1,valueSlider}(:,5)])
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            set(h.tablefitresults,'data',[FittedPeaksCalctmpDet2{1,valueSlider}(:,9), FittedPeaksCalctmpDet2{1,valueSlider}(:,1),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,2),FittedPeaksCalctmpDet2{1,valueSlider}(:,3),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,7),FittedPeaksCalctmpDet2{1,valueSlider}(:,8),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,4),FittedPeaksCalctmpDet2{1,valueSlider}(:,5),...
+                FittedPeaksCalctmpDet2{1,valueSlider}(:,6)])
         end
     end
 end
@@ -11902,6 +13412,10 @@ if get(h.checkboxexportfits,'value') == 1
                         SinglePlot = Tools.Science.Math.FF_Gauss(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
                     elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                         SinglePlot = Tools.Science.Math.FF_Lorentz(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
+                    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
+                    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                        SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
                     end
                     YPlotExport(:,l) = YPlotExport(:,l) + SinglePlot;
                 end
@@ -11953,6 +13467,10 @@ if get(h.checkboxexportfits,'value') == 1
                         SinglePlot = Tools.Science.Math.FF_Gauss(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
                     elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                         SinglePlot = Tools.Science.Math.FF_Lorentz(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
+                    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
+                    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                        SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XFitExport(:,l), FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
                     end
                     YPlotExport(:,l) = YPlotExport(:,l) + SinglePlot;
                 end
@@ -11971,7 +13489,7 @@ if get(h.checkboxexportfits,'value') == 1
             if exist(Path,'dir') ~= 7
                 mkdir(Path);
             end
-            
+
             for k = 1:size(FittedPeaksCalc, 2)
                 fid = fopen([[Path,'\'],name,'_','FittedSpectra_Det2','_',num2str(k),'_',d,'.dat'],'w');
                 fprintf(fid,'%6s %8s %11s %10s \r\n','X','Y','YFit','Residual');
@@ -12018,6 +13536,10 @@ if get(h.checkboxexportfits,'value') == 1
                         SinglePlot = Tools.Science.Math.FF_Gauss(XFitExportDet1(:,l), FittedPeaksCalcDet1{l}(d, 1), FittedPeaksCalcDet1{l}(d, 2), FittedPeaksCalcDet1{l}(d, 3));
                     elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                         SinglePlot = Tools.Science.Math.FF_Lorentz(XFitExportDet1(:,l), FittedPeaksCalcDet1{l}(d, 1), FittedPeaksCalcDet1{l}(d, 2), FittedPeaksCalcDet1{l}(d, 3));
+                    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XFitExportDet1(:,l), FittedPeaksCalcDet1{l}(d, 1), FittedPeaksCalcDet1{l}(d, 2), FittedPeaksCalcDet1{l}(d, 3),FittedPeaksCalcDet1{l}(d, 4),FittedPeaksCalcDet1{l}(d, 5));
+                    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                        SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XFitExportDet1(:,l), FittedPeaksCalcDet1{l}(d, 1), FittedPeaksCalcDet1{l}(d, 2), FittedPeaksCalcDet1{l}(d, 3),FittedPeaksCalcDet1{l}(d, 4),FittedPeaksCalcDet1{l}(d, 5));
                     end
                     YPlotExportDet1(:,l) = YPlotExportDet1(:,l) + SinglePlot;
                 end
@@ -12033,6 +13555,10 @@ if get(h.checkboxexportfits,'value') == 1
                         SinglePlot = Tools.Science.Math.FF_Gauss(XFitExportDet2(:,l), FittedPeaksCalcDet2{l}(d, 1), FittedPeaksCalcDet2{l}(d, 2), FittedPeaksCalcDet2{l}(d, 3));
                     elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                         SinglePlot = Tools.Science.Math.FF_Lorentz(XFitExportDet2(:,l), FittedPeaksCalcDet2{l}(d, 1), FittedPeaksCalcDet2{l}(d, 2), FittedPeaksCalcDet2{l}(d, 3));
+                    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XFitExportDet2(:,l), FittedPeaksCalcDet2{l}(d, 1), FittedPeaksCalcDet2{l}(d, 2), FittedPeaksCalcDet2{l}(d, 3),FittedPeaksCalcDet2{l}(d, 4),FittedPeaksCalcDet2{l}(d, 5));
+                    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                        SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XFitExportDet2(:,l), FittedPeaksCalcDet2{l}(d, 1), FittedPeaksCalcDet2{l}(d, 2), FittedPeaksCalcDet2{l}(d, 3),FittedPeaksCalcDet2{l}(d, 4),FittedPeaksCalcDet2{l}(d, 5));
                     end
                     YPlotExportDet2(:,l) = YPlotExportDet2(:,l) + SinglePlot;
                 end
@@ -12092,6 +13618,10 @@ if get(h.checkboxexportfits,'value') == 1
                     SinglePlot = Tools.Science.Math.FF_Gauss(XFitExport{l}, FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
                 elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                     SinglePlot = Tools.Science.Math.FF_Lorentz(XFitExport{l}, FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3));
+                elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                    SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XFitExport{l}, FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
+                elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                    SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XFitExport{l}, FittedPeaksCalc{l}(d, 1), FittedPeaksCalc{l}(d, 2), FittedPeaksCalc{l}(d, 3),FittedPeaksCalc{l}(d, 4),FittedPeaksCalc{l}(d, 5));
                 end
                 YPlotExport{l} = SinglePlot;
             end
@@ -12285,7 +13815,78 @@ elseif h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
     'PeakCount',...
     })
     set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
-    set(h.tablepsifile, 'data',zeros(16,22));    
+    set(h.tablepsifile, 'data',zeros(16,22));
+elseif h.P.PopupValueFitFunc == 6
+    % Set Fit Results table properties
+    set(h.tablefitresults, 'ColumnName', {'Iint [cts]','Imax [cts]', ...
+        'E [keV]', [char(916),' ','E [keV]'], ...
+        'IB [keV]', 'FWHM [keV]', char(951), 'Asym.'})
+    set(h.tablefitresults, 'ColumnWidth',{70,70,60,60,60,75,50,50});
+    set(h.tablefitresults, 'data',zeros(10,8));
+    % Set Psi File table properties
+    set(h.tablepsifile, 'ColumnName', {'LNr',...
+    'Emax',...
+    'dEmax',...
+    'Iint',...
+    'Ib',...
+    'GLmix',...
+    'Asym',...
+    'tth',...
+    'phiP',...
+    'psiP',...
+    'etaP',...
+    'h',...
+    'k',...
+    'l',...
+    'xdiff',...
+    'ydiff',...
+    'zdiff',...
+    'RT',...
+    'DT',...
+    'temp1',...
+    'temp2',...
+    'heatrate',...
+    'Time',...
+    'PeakCount',...
+    })
+    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 60 80});
+    set(h.tablepsifile, 'data',zeros(16,24));
+elseif h.P.PopupValueFitFunc == 7
+    % Set Fit Results table properties
+    set(h.tablefitresults, 'ColumnName', {'Iint [cts]','Imax [cts]', ...
+        'E [keV]', [char(916),' ','E [keV]'], ...
+        'IB [keV]', 'FWHM [keV]', 'wL [keV]', 'wR [keV]', char(951)})
+    set(h.tablefitresults, 'ColumnWidth',{70,70,60,60,60,75,50,50,50});
+    set(h.tablefitresults, 'data',zeros(10,9));
+    % Set Psi File table properties
+    set(h.tablepsifile, 'ColumnName', {'LNr',...
+    'Emax',...
+    'dEmax',...
+    'Iint',...
+    'Ib',...
+    'wL',...
+    'wR',...
+    'GLmix',...
+    'tth',...
+    'phiP',...
+    'psiP',...
+    'etaP',...
+    'h',...
+    'k',...
+    'l',...
+    'xdiff',...
+    'ydiff',...
+    'zdiff',...
+    'RT',...
+    'DT',...
+    'temp1',...
+    'temp2',...
+    'heatrate',...
+    'Time',...
+    'PeakCount',...
+    })
+    set(h.tablepsifile, 'ColumnWidth',{40 50 55 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 50 60 60 80});
+    set(h.tablepsifile, 'data',zeros(16,25));
 end
 
 guidata(hObj,h);
@@ -12601,6 +14202,13 @@ if isfield(h,'FittedPeaksbkp') || isfield(h,'FittedPeaksbkpDet1') || isfield(h,'
     end
 end
 % assignin('base','idxkeepPeaksDet2',h.idxkeepPeaksDet2)
+% hkl-Werte den gefitteten Peaks zuordnen, falls "Select peaks" noch
+% nicht gedrueckt wurde -- sonst wuerden hier nur die Platzhalter-Nullen
+% aus der Default-Initialisierung von h.SelectPeaktable.Data gelesen
+% (siehe Ruecksprache: hkl-Spalte in der psi-Tabelle enthaelt dann nur
+% Nullen). "Select peaks" bleibt weiterhin manuell nutzbar, um einzelne
+% Peaks ueber "Use" auszuschliessen.
+h = PopulateSelectPeaktable(h);
 % Get hkl values from "selectPeaktable data"
 hklDataPsiFile = h.SelectPeaktable.Data(:,1:3);
 % Create table with hkl values
@@ -12720,8 +14328,42 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
     % Create Psidata for the two detectors, depending on the fit function
     % used to fit the data
     for k = 1:size(DiffractionLinestmp,2)
-        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
         [Psidata] = PsiDataPVGeneral(DiffractionLinestmp(k).LEDDI,h.SpecFileCheck);
+        % Adjust LineNumber in case peaks were deselected
+        LineCnt = 1:size(Psidata.LineNumber,2);
+        LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % Replace Line number with ordered one
+            for m = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
+                end
+            end
+        DiffractionLinestmp(k).Psidata = Psidata;
+        % Create PsiFileTableData
+        Psidata_tmp = struct2cell(Psidata);
+        PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+        DiffractionLinestmp(k).PsiFileTableData = [PsiFileTableData_tmp{:}];
+        % Create psidata for AsymPV function
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+        [Psidata] = PsiDataAsymPVGeneral(DiffractionLinestmp(k).LEDDI,h.SpecFileCheck);
+        % Adjust LineNumber in case peaks were deselected
+        LineCnt = 1:size(Psidata.LineNumber,2);
+        LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % Replace Line number with ordered one
+            for m = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,m} = num2str(LineCnt(l,m));
+                end
+            end
+        DiffractionLinestmp(k).Psidata = Psidata;
+        % Create PsiFileTableData
+        Psidata_tmp = struct2cell(Psidata);
+        PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+        DiffractionLinestmp(k).PsiFileTableData = [PsiFileTableData_tmp{:}];
+        % Create psidata for Split-PV function
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+        [Psidata] = PsiDataSplitPVGeneral(DiffractionLinestmp(k).LEDDI,h.SpecFileCheck);
         % Adjust LineNumber in case peaks were deselected
         LineCnt = 1:size(Psidata.LineNumber,2);
         LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
@@ -12769,7 +14411,7 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 1
 elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     if strcmp(h.Detsel,'Detector 1')
         % Create psidata for PV, Lorentz and Gauss function
-        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
             [Psidata] = PsiDataPVGeneral(DiffractionLinesDet1,h.SpecFileCheck);
             % Adjust LineNumber in case peaks were deselected
             LineCnt = 1:size(Psidata.LineNumber,2);
@@ -12793,9 +14435,57 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
             PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
             h.PsiFileTableDataDet1 = [PsiFileTableData_tmp{:}];
 %             assignin('base','PsiFileTableData_tmp',PsiFileTableData_tmp)
+        % Create psidata for AsymPV function
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            [Psidata] = PsiDataAsymPVGeneral(DiffractionLinesDet1,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet1 = [PsiFileTableData_tmp{:}];
+        % Create psidata for Split-PV function
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            [Psidata] = PsiDataSplitPVGeneral(DiffractionLinesDet1,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet1 = [PsiFileTableData_tmp{:}];
         % Create psidata for TCH function
         elseif h.P.PopupValueFitFunc == 3 %TCH-Func
-            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet1,h.SpecFileCheck);        
+            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet1,h.SpecFileCheck);
             % Adjust LinNumber in case peaks were deselected
             LineCnt = 1:size(Psidata.LineNumber,2);
             LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
@@ -12822,7 +14512,7 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
         h.PsidataDet1 = Psidata;
     elseif strcmp(h.Detsel,'Detector 2')
         % Create psidata for PV, Lorentz and Gauss function
-        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+        if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
             [Psidata] = PsiDataPVGeneral(DiffractionLinesDet2,h.SpecFileCheck);
             % Adjust LineNumber in case peaks were deselected
             LineCnt = 1:size(Psidata.LineNumber,2);
@@ -12841,15 +14531,63 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
                     Psidata.l{l,k} = num2str(l_hkltmp(l,k));
                 end
             end
-            
+
             % Create PsiFileTableData
             Psidata_tmp = struct2cell(Psidata);
             PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
             h.PsiFileTableDataDet2 = [PsiFileTableData_tmp{:}];
 %             assignin('base','PsiFileTableDataDet2Neu',h.PsiFileTableDataDet2)
+        % Create psidata for AsymPV function
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            [Psidata] = PsiDataAsymPVGeneral(DiffractionLinesDet2,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet2 = [PsiFileTableData_tmp{:}];
+        % Create psidata for Split-PV function
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            [Psidata] = PsiDataSplitPVGeneral(DiffractionLinesDet2,h.SpecFileCheck);
+            % Adjust LineNumber in case peaks were deselected
+            LineCnt = 1:size(Psidata.LineNumber,2);
+            LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+            % create hkl data for psi file
+            h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+            k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+            l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+            % Replace Line number with ordered one
+            for k = 1:size(Psidata.LineNumber,2)
+                for l = 1:size(Psidata.LineNumber,1)
+                    Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                    Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                    Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                    Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+                end
+            end
+
+            % Create PsiFileTableData
+            Psidata_tmp = struct2cell(Psidata);
+            PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+            h.PsiFileTableDataDet2 = [PsiFileTableData_tmp{:}];
         % Create psidata for TCH function
         elseif h.P.PopupValueFitFunc == 3 %TCH-Func
-            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet2,h.SpecFileCheck);        
+            [Psidata] = PsiDataTCHGeneral(DiffractionLinesDet2,h.SpecFileCheck);
             % Adjust LinNumber in case peaks were deselected
             LineCnt = 1:size(Psidata.LineNumber,2);
             LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
@@ -12877,7 +14615,7 @@ elseif strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && FitBothDet == 0
     end
 else
     % Create psidata for PV, Lorentz and Gauss function
-    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
+    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func %Gauss %Lorentz
         [Psidata] = PsiDataPVGeneral(DiffractionLines,h.SpecFileCheck);
 %         if h.P.DiffractometerType == 1 % EDDI
 %             [Psidata] = EDDIPsiDataPV(DiffractionLines);
@@ -12911,6 +14649,54 @@ else
         PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
         h.PsiFileTableData = [PsiFileTableData_tmp{:}];
 %         assignin('base','PsiFileTableData',h.PsiFileTableData)
+    % Create psidata for AsymPV function
+    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+        [Psidata] = PsiDataAsymPVGeneral(DiffractionLines,h.SpecFileCheck);
+        % Adjust LineNumber in case peaks were deselected
+        LineCnt = 1:size(Psidata.LineNumber,2);
+        LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % create hkl data for psi file
+        h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+        k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+        l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+        % Replace Line number with ordered one
+        for k = 1:size(Psidata.LineNumber,2)
+            for l = 1:size(Psidata.LineNumber,1)
+                Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+            end
+        end
+
+        % Create PsiFileTableData
+        Psidata_tmp = struct2cell(Psidata);
+        PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+        h.PsiFileTableData = [PsiFileTableData_tmp{:}];
+    % Create psidata for Split-PV function
+    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+        [Psidata] = PsiDataSplitPVGeneral(DiffractionLines,h.SpecFileCheck);
+        % Adjust LineNumber in case peaks were deselected
+        LineCnt = 1:size(Psidata.LineNumber,2);
+        LineCnt = repmat(LineCnt,size(Psidata.LineNumber,1),1);
+        % create hkl data for psi file
+        h_hkltmp = repmat(h.hklDataPsiFile(:,1)',size(Psidata.LineNumber,1),1);
+        k_hkltmp = repmat(h.hklDataPsiFile(:,2)',size(Psidata.LineNumber,1),1);
+        l_hkltmp = repmat(h.hklDataPsiFile(:,3)',size(Psidata.LineNumber,1),1);
+        % Replace Line number with ordered one
+        for k = 1:size(Psidata.LineNumber,2)
+            for l = 1:size(Psidata.LineNumber,1)
+                Psidata.LineNumber{l,k} = num2str(LineCnt(l,k));
+                Psidata.h{l,k} = num2str(h_hkltmp(l,k));
+                Psidata.k{l,k} = num2str(k_hkltmp(l,k));
+                Psidata.l{l,k} = num2str(l_hkltmp(l,k));
+            end
+        end
+
+        % Create PsiFileTableData
+        Psidata_tmp = struct2cell(Psidata);
+        PsiFileTableData_tmp = cellfun(@(x) reshape(x,prod(size(Psidata_tmp{1})),[]),Psidata_tmp,'un',0);
+        h.PsiFileTableData = [PsiFileTableData_tmp{:}];
     % Create psidata for TCH function
     elseif h.P.PopupValueFitFunc == 3 %TCH-Func
         [Psidata] = PsiDataTCHGeneral(DiffractionLines,h.SpecFileCheck);
@@ -13209,8 +14995,8 @@ PsiFileTableData = get(h.tablepsifile,'data');
 % assignin('base','PsiFileTableData',PsiFileTableData)
 % Convert cell to array (datestr converts to NaN)
 DiffractionLines = str2double(PsiFileTableData);
-if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
-    %PV, Lorentz, Gauss-Func
+if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 || h.P.PopupValueFitFunc == 6 || h.P.PopupValueFitFunc == 7
+    %PV, Lorentz, Gauss-Func, AsymPV, Split-PV
     % Convert date string to date number
     % Find column with date
     if h.SpecFileCheck == 1
@@ -13279,6 +15065,189 @@ msgbox('Psi file created.');
 
 guidata(hObj, h);
 
+function buttoncreatepsi4(hObj, ~)
+% Callback "Extract settings": speichert die Fit-Einstellungen der aktuellen
+% Referenzauswertung als Batch-Einstellungsdatei (fuer BatchFitXFlash.m).
+% Ablauf: 1) ULD-Datei waehlen, 2) Namen der Einstellungsdatei waehlen und speichern.
+% Voraussetzung: Peaks gefittet und "Load fit data" (buttoncreatepsi1) ausgefuehrt.
+h = guidata(hObj);
+
+need = {'Diffsel','P','Peaks','Peakslb','Peaksub','PeakRegionsX','FilterOptions','hklDataPsiFile','SpecFileCheck'};
+if ~all(isfield(h,need))
+    errordlg('Please fit the peaks and press "Load fit data" first.','Extract settings');
+    return
+end
+
+% 1) ULD-Datei (Untergrundpunkte) waehlen
+[uldName,uldPath] = uigetfile('*.mat','Select ULD file used for the background',[General.ProgramInfo.Path,'\Data\ULD\']);
+if isequal(uldName,0)
+    return
+end
+
+% 2) Name der Einstellungsdatei waehlen und speichern
+setFolder = [General.ProgramInfo.Path,'\Data\BatchSettings\'];
+if ~exist(setFolder,'dir')
+    mkdir(setFolder);
+end
+if isfield(h.P,'MPDFileName') && ~isempty(h.P.MPDFileName)
+    defName = [strrep(h.P.MPDFileName,' ','_'),'_Streifen_',datestr(now,'ddmmyyyy'),'.mat'];
+else
+    defName = ['BatchSettings_',datestr(now,'ddmmyyyy'),'.mat'];
+end
+[setName,setPath] = uiputfile('*.mat','Save batch settings as',[setFolder,defName]);
+if isequal(setName,0)
+    return
+end
+
+% Hinweis, falls die hkl-Tabelle nicht zur Zahl der gefitteten Peaks passt
+% (der Batch wuerde dann je Datei mit einem Fehler abbrechen)
+nPkFit = numel(h.Peaks{1});
+nHkl = size(h.hklDataPsiFile,1);
+okCounts = nPkFit;
+if isfield(h,'idxdeletePeaks')
+    okCounts = [nPkFit, nPkFit - numel(h.idxdeletePeaks)];
+end
+hklWarning = '';
+if ~any(nHkl == okCounts)
+    hklWarning = sprintf('\n\nWARNING: The hkl table has %d rows, but %d peaks were fitted. The batch will stop with an error for every file. Most likely "Select peaks" was not executed before "Load fit data" (then the default table with 10 rows of zeros is used). Please press "Select peaks", then "Load fit data" and "Extract settings" again.',nHkl,nPkFit);
+end
+
+try
+    ExtractBatchSettingsFromGUI(h,'File',fullfile(setPath,setName),'ULDFile',fullfile(uldPath,uldName));
+    if isempty(hklWarning)
+        msgbox(sprintf('Batch settings saved:\n%s',fullfile(setPath,setName)),'Extract settings');
+    else
+        msgbox([sprintf('Batch settings saved:\n%s',fullfile(setPath,setName)),hklWarning],'Extract settings','warn');
+    end
+catch ME
+    errordlg(ME.message,'Extract settings');
+end
+
+function buttoncreatepsi5(hObj, ~)
+% Callback "Run batch": wertet alle Streifendateien eines Ordners mit den
+% gespeicherten Batch-Einstellungen aus (BatchFitXFlash.m); je Datei eine psi-Datei.
+% Benoetigt nur die Einstellungsdatei ("Extract settings"), nicht den GUI-Zustand.
+pathGUI = General.ProgramInfo.Path;
+
+% 1) Einstellungsdatei
+[setName,setPath] = uigetfile('*.mat','Select batch settings file',[pathGUI,'\Data\BatchSettings\']);
+if isequal(setName,0)
+    return
+end
+% 2) Ordner mit den Streifendateien
+inDir = uigetdir([pathGUI,'\Data\Measurements\'],'Select folder with the strip files (*.mat)');
+if isequal(inDir,0)
+    return
+end
+% 3) Ausgabeordner (neuen Ordner ueber "Make New Folder" anlegen)
+outDir = uigetdir([pathGUI,'\Data\Results\'],'Select output folder for the psi files');
+if isequal(outDir,0)
+    return
+end
+% 4) Optionen
+opts = listdlg('ListString',{'Anchor mean background (recommended for weak peaks)','Run in parallel (Parallel Computing Toolbox)'}, ...
+    'InitialValue',[1 2],'PromptString','Batch options:','Name','Run batch','ListSize',[420 80]);
+if isempty(opts)
+    return
+end
+useAnchor = any(opts == 1);
+useParallel = any(opts == 2);
+
+% Bestaetigung
+nFiles = numel(dir(fullfile(inDir,'*.mat')));
+if nFiles == 0
+    errordlg('No .mat files found in the selected folder.','Run batch');
+    return
+end
+% Streifen, fuer die im Ausgabeordner noch keine psi-Datei liegt (diese werden gerechnet,
+% fertige werden uebersprungen)
+dList = dir(fullfile(inDir,'*.mat'));
+[~,baseNames] = cellfun(@fileparts,{dList.name},'UniformOutput',false);
+isDone = cellfun(@(b) exist(fullfile(outDir,[b,'.psi']),'file') == 2,baseNames);
+nDone = sum(isDone);
+nRemaining = nFiles - nDone;
+if nRemaining == 0
+    msgbox(sprintf('All %d strips already have a psi file in the output folder. Nothing to do.',nFiles),'Run batch');
+    return
+end
+% Abfrage: wie viele Streifen sollen jetzt ausgewertet werden?
+nRun = 0;
+while nRun < 1
+    ansN = inputdlg({sprintf('Number of strips to process now (1 to %d).\n%d of %d strips are already finished and are skipped.\nThe next strips in alphabetical file order are processed.',nRemaining,nDone,nFiles)}, ...
+        'Run batch',1,{num2str(nRemaining)});
+    if isempty(ansN)
+        return
+    end
+    nRun = round(str2double(ansN{1}));
+    if isnan(nRun) || nRun < 1
+        errordlg(sprintf('Please enter a whole number between 1 and %d.',nRemaining),'Run batch');
+        nRun = 0;
+    end
+end
+nRun = min(nRun,nRemaining);
+% Parallelbetrieb lohnt nur ab 2 Streifen (BatchFitXFlash rechnet sonst seriell)
+useParallelEff = useParallel && nRun >= 2;
+if useParallelEff
+    modeLine = 'parallel (starting the pool takes about a minute)';
+elseif useParallel
+    modeLine = 'serial (parallel mode needs at least 2 strips)';
+else
+    modeLine = 'serial';
+end
+answer = questdlg(sprintf('Process %d of %d remaining strips (%d strip files in total) from\n%s\n\nOutput folder:\n%s\n\nMode: %s\n\nStart batch?',nRun,nRemaining,nFiles,inDir,outDir,modeLine),'Run batch','Start','Cancel','Start');
+if ~strcmp(answer,'Start')
+    return
+end
+
+% Lauf (die GUI ist waehrenddessen blockiert; Details im Command Window)
+if useParallelEff
+    wbText = 'Batch running in parallel (progress in the Command Window) ...';
+else
+    wbText = 'Batch running ...';
+end
+wb = waitbar(0,wbText,'Name','Run batch');
+set(hObj,'Enable','off');
+drawnow
+Results = [];
+Info = [];
+errMsg = '';
+try
+    [Results,Info] = BatchFitXFlash(fullfile(setPath,setName),inDir,outDir,'AnchorMean',useAnchor,'UseParallel',useParallel,'MaxFiles',nRun, ...
+        'ProgressFcn',@(k,n,R) batchProgressRunBatch(wb,k,n,R));
+catch ME
+    errMsg = ME.message;
+end
+if ishandle(wb)
+    delete(wb);
+end
+set(hObj,'Enable','on');
+
+if ~isempty(errMsg)
+    errordlg(errMsg,'Run batch');
+elseif ~isempty(Results)
+    nOK = sum(strcmp({Results.Status},'fertig'));
+    nSkip = sum(strncmp({Results.Status},'uebersprungen',13));
+    nErr = sum(strcmp({Results.Status},'Fehler'));
+    modeStr = '';
+    if ~isempty(Info)
+        if strcmp(Info.Mode,'parallel')
+            modeStr = sprintf('\nMode: parallel (%d workers)',Info.NumWorkers);
+        elseif Info.ParallelRequested
+            modeStr = sprintf('\nMode: serial (parallel was requested but not used, see Command Window)');
+        else
+            modeStr = sprintf('\nMode: serial');
+        end
+    end
+    msgbox(sprintf('Batch finished.\nProcessed: %d, skipped: %d, errors: %d%s\n\nLog: %s',nOK,nSkip,nErr,modeStr,fullfile(outDir,'BatchLog.csv')),'Run batch');
+end
+
+function batchProgressRunBatch(wb,k,n,R)
+% Fortschrittsbalken aktualisieren (ignoriert, falls der Balken geschlossen wurde)
+if ishandle(wb)
+    [~,nm] = fileparts(R.File);
+    waitbar(k/n,wb,sprintf('%d / %d finished: %s',k,n,strrep(nm,'_','\_')));
+end
+
 function buttoncreatepsi3(hObj, ~)
 % Callback for open table to select peaks 
 h = guidata(hObj);
@@ -13288,6 +15257,24 @@ Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
 h.Detsel = Detsel;
 
+
+% Peaks ihren theoretischen hkl-Werten zuordnen (ausgelagert nach
+% PopulateSelectPeaktable, damit "Load fit data" dies automatisch
+% mitausfuehren kann, falls "Select peaks" uebersprungen wurde).
+h = PopulateSelectPeaktable(h);
+
+% Make figure visible
+set(h.figSelectPeaktable,'Visible','on')
+
+guidata(hObj, h);
+
+function h = PopulateSelectPeaktable(h)
+% Ordnet den aktuell gefitteten Peaks ihre theoretischen hkl-Werte zu und
+% schreibt das Ergebnis in h.SelectPeaktable.Data. Wird von "Select peaks"
+% (buttoncreatepsi3) aufgerufen, und zusaetzlich automatisch von "Load fit
+% data" (buttoncreatepsi1), damit auch ohne vorheriges manuelles Druecken
+% von "Select peaks" die korrekten hkl-Werte verwendet werden, statt der
+% Platzhalter-Nullen, mit denen h.SelectPeaktable.Data initialisiert wird.
 
 % Check if peaks where already fitted (in case User clicks on this button
 % before peaks were fitted)
@@ -13302,7 +15289,14 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
             a = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
             PeaksTheo = h.TPeaksDet1.T.Peaks.*a;
             PeaksTheo( ~any(PeaksTheo,2), : ) = [];
-            hkltmp = PeaksTheo(h.FitPeaksLogicalDet1(:,1),1:3);
+            % Nur die angehakten ("Use") theoretischen Peaks als moegliche
+            % Treffer zulassen (alle Spalten, nicht nur h,k,l, damit die
+            % Energie-Spalte 5 fuer den Abgleich weiter unten erhalten
+            % bleibt) -- sonst wuerde IndVal auch auf nicht angehakte
+            % Peaks zeigen koennen (z.B. "006"), selbst wenn der Nutzer
+            % genau den manuell abgewaehlt hat.
+            PeaksTheoUsed = PeaksTheo(h.FitPeaksLogicalDet1(:,1),:);
+            hkltmp = PeaksTheoUsed(:,1:3);
             if ~isfield(h,'idxSelectPeaktableDet1')
                 h.idxSelectPeaktableDet1 = logical(ones(length(EnergyPos),1));
             end
@@ -13316,7 +15310,10 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
             a = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
             PeaksTheo = h.TPeaksDet2.T.Peaks.*a;
             PeaksTheo( ~any(PeaksTheo,2), : ) = [];
-            hkltmp = PeaksTheo(h.FitPeaksLogicalDet2(:,1),1:3);
+            % Nur die angehakten ("Use") theoretischen Peaks als moegliche
+            % Treffer zulassen (siehe Kommentar im Detector-1-Zweig oben).
+            PeaksTheoUsed = PeaksTheo(h.FitPeaksLogicalDet2(:,1),:);
+            hkltmp = PeaksTheoUsed(:,1:3);
             if ~isfield(h,'idxSelectPeaktableDet2')
                 h.idxSelectPeaktableDet2 = logical(ones(length(EnergyPos),1));
             end
@@ -13334,8 +15331,11 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
         end
         a = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
         PeaksTheo = h.TPeaks.T.Peaks.*a;
-        PeaksTheo( ~any(PeaksTheo,2), : ) = [];        
-        hkltmp = PeaksTheo(h.FitPeaksLogical(:,1),1:3);
+        PeaksTheo( ~any(PeaksTheo,2), : ) = [];
+        % Nur die angehakten ("Use") theoretischen Peaks als moegliche
+        % Treffer zulassen (siehe Kommentar im LEDDI-Zweig oben).
+        PeaksTheoUsed = PeaksTheo(h.FitPeaksLogical(:,1),:);
+        hkltmp = PeaksTheoUsed(:,1:3);
     else
         % Check whether peaks where already selected
         if ~isfield(h,'idxSelectPeaktable')
@@ -13344,10 +15344,12 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
         a = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
         PeaksTheo = h.TPeaks.T.Peaks.*a;
         PeaksTheo( ~any(PeaksTheo,2), : ) = [];
-        hkltmp = PeaksTheo(h.FitPeaksLogical(:,1),1:3);
+        % Nur die angehakten ("Use") theoretischen Peaks als moegliche
+        % Treffer zulassen (siehe Kommentar im LEDDI-Zweig oben).
+        PeaksTheoUsed = PeaksTheo(h.FitPeaksLogical(:,1),:);
+        hkltmp = PeaksTheoUsed(:,1:3);
     end
 
-    n = 1;
     hkl_table = zeros(size(EnergyPos,1),3);
 
 %     for k = 1:size(EnergyPos,1)
@@ -13360,48 +15362,70 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
 %     end
 
     % Calculate differences between theoretical and user defined peaks.
+    % Nur gegen PeaksTheoUsed (die angehakten "Use"-Peaks) vergleichen,
+    % nicht gegen die volle PeaksTheo-Liste -- sonst koennte ein Peak
+    % einem nicht angehakten theoretischen Reflex zugeordnet werden (siehe
+    % Ruecksprache).
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             for k = 1:size(h.PeaksDet1{1},2)
-                for l = 1:size(PeaksTheo,1)
-                    PeakDiff{k,l} = abs(h.PeaksDet1{1}(k)-PeaksTheo(l,5));
+                for l = 1:size(PeaksTheoUsed,1)
+                    PeakDiff{k,l} = abs(h.PeaksDet1{1}(k)-PeaksTheoUsed(l,5));
                 end
             end
         elseif strcmp(h.Detsel,'Detector 2')
             for k = 1:size(h.PeaksDet2{1},2)
-                for l = 1:size(PeaksTheo,1)
-                    PeakDiff{k,l} = abs(h.PeaksDet2{1}(k)-PeaksTheo(l,5));
+                for l = 1:size(PeaksTheoUsed,1)
+                    PeakDiff{k,l} = abs(h.PeaksDet2{1}(k)-PeaksTheoUsed(l,5));
                 end
             end
         end
     else
         for k = 1:size(h.Peaks{1},2)
-            for l = 1:size(PeaksTheo,1)
-                PeakDiff{k,l} = abs(h.Peaks{1}(k)-PeaksTheo(l,5));
+            for l = 1:size(PeaksTheoUsed,1)
+                PeakDiff{k,l} = abs(h.Peaks{1}(k)-PeaksTheoUsed(l,5));
             end
         end
     end
 
-    [MinVal, IndVal] = min(cell2mat(PeakDiff)');
-
-    if size(PeaksTheo,1) == 1
-        MinVal = cell2mat(PeakDiff);
-        MinValLimit_tmp = sort(cell2mat(PeakDiff));
-        MinValLimit = MinValLimit_tmp(size(hkltmp,1));
-    else
-        MinValLimit_tmp = sort(MinVal);
-        MinValLimit = MinValLimit_tmp(size(hkltmp,1));
-    end
+    % Explizit entlang Dimension 2 (ueber die theoretischen Peaks) minimieren,
+    % NICHT per Transponieren + min() ohne Dimensionsangabe (so war es
+    % vorher). Hat genau EIN theoretischer Peak die Use-Markierung (z.B.
+    % nur ein Reflex im gewaehlten Energiebereich), ist
+    % cell2mat(PeakDiff)' ein 1xK-Zeilenvektor -- und MATLAB behandelt
+    % einen Vektor bei min() OHNE Dimensionsangabe als Spezialfall: es
+    % wird dann nur ein EINZIGER skalarer Gesamtminimalwert ueber alle K
+    % gefitteten Peaks hinweg zurueckgegeben (die K Peaks werden
+    % faelschlich gegeneinander statt jeder fuer sich gegen den
+    % theoretischen Peak verglichen), statt je einem Wert pro Peak k. Das
+    % fuehrte bei genau einem Use-Peak weiter unten zu "Index exceeds
+    % array bounds", sobald mehr als ein Peak gefittet wurde (z.B. ein
+    % per "Couple overlapping peaks" mitgefitteter Dummy-Peak). Mit
+    % explizitem dim=2 liefert min() immer ein Kx1-Ergebnis, unabhaengig
+    % von der Anzahl theoretischer Peaks.
+    [MinVal, IndVal] = min(cell2mat(PeakDiff), [], 2);
+    MinValLimit_tmp = sort(MinVal);
+    MinValLimit = MinValLimit_tmp(size(hkltmp,1));
 
     for k = 1:size(EnergyPos,1)
         if MinVal(k) <= MinValLimit
-            hkl_table(k,:) = hkltmp(n,:);
-            n = n + 1;
+            % Statt eines Zaehlers ueber die behaltenen Peaks (hkltmp(n,:))
+            % direkt den theoretischen Peak verwenden, dem dieser Peak k
+            % laut Energievergleich tatsaechlich am naechsten liegt
+            % (IndVal(k), Index in PeaksTheoUsed -- nur die angehakten
+            % "Use"-Peaks, siehe oben). Der Zaehler-Ansatz ging davon aus,
+            % dass "der n-te behaltene Peak" und "der n-te angehakte
+            % theoretische Peak" immer 1:1 in derselben Reihenfolge
+            % zueinander passen -- sobald irgendwo ein Peak fehlt/
+            % ueberzaehlig ist oder eine Use-Markierung kurzzeitig nicht
+            % stimmt, verschob das die hkl-Zuordnung aller nachfolgenden
+            % Peaks (siehe Ruecksprache).
+            hkl_table(k,:) = PeaksTheoUsed(IndVal(k), 1:3);
         else
             hkl_table(k,:) = [NaN NaN NaN];
         end
     end
-       
+
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
 
         if strcmp(h.Detsel,'Detector 1')
@@ -13412,12 +15436,7 @@ if isfield(h,'FittedPeaks') || isfield(h,'FittedPeaksDet1') || isfield(h,'Fitted
     else
         set(h.SelectPeaktable,'data',[num2cell(hkl_table(:,1)) num2cell(hkl_table(:,2)) num2cell(hkl_table(:,3)) num2cell(EnergyPos) num2cell(h.idxSelectPeaktable)])
     end
-end    
-
-% Make figure visible
-set(h.figSelectPeaktable,'Visible','on')
-
-guidata(hObj, h);
+end
 
 function buttonTextureAnalysis(hObj, ~)
 % Callback for open table to select peaks 
@@ -13755,7 +15774,7 @@ end
 for l = 1:size(YDataMod,2)
     for k = 1:size(PeakPosXDataMod_tmp,2)
         [YDataModMax(k,l) YDataModMaxInd(k,l)] = max(YDataMod(PeakPosXDataMod_tmp(:,k),l));
-        % Max Werte für jede einzelne Position in PeakPosXDataMod_tmp. Dient dazu, PeakMaxima besser zu filtern und nicht nur einen Untergrund Ausreißer zu erwischen.
+        % Max Werte fï¿½r jede einzelne Position in PeakPosXDataMod_tmp. Dient dazu, PeakMaxima besser zu filtern und nicht nur einen Untergrund Ausreiï¿½er zu erwischen.
         YDataModMaxAll{k,l} = YDataMod(PeakPosXDataMod_tmp(:,k),l);
     end
 end
@@ -14459,9 +16478,17 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
     end
 
     % Compare energy positions of user selected peaks in order to update
-    % DEK table
-    [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(FittedPeakstmp,EPosTmp);
-%     [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(EPoskeep,EPosTmp);
+    % DEK table.
+    % Wichtig: hier muss EPoskeep (oben bereits um die in "Select peaks"
+    % abgewaehlten Peaks reduziert, siehe h.idxkeepPeaks/-Det1/-Det2)
+    % verwendet werden, NICHT das noch ungekuerzte FittedPeakstmp weiter
+    % unten. Mit FittedPeakstmp fand ComparePeaks fuer JEDE theoretische
+    % Position noch einen Treffer (auch fuer die in "Select peaks"
+    % abgewaehlten, da deren Loeschung aus FittedPeakstmp erst NACH diesem
+    % Vergleich passiert) -- dadurch stand h.KeepPeaksDEKLogical immer auf
+    % "alles ausgewaehlt" und die beim Fitten abgewaehlten Peaks tauchten
+    % beim Laden der DEK-Daten faelschlich wieder als ausgewaehlt auf.
+    [CompareFitPeaksLogicalDEK,~,~,~] = ComparePeaks(EPoskeep,EPosTmp);
     h.KeepPeaksDEKLogical = CompareFitPeaksLogicalDEK;
 
     % Delete user deselected peaks from FittedPeaks
@@ -14527,6 +16554,10 @@ if isfield(h,'FitPeaksLogical') || isfield(h,'FitPeaksLogicalDet1') || isfield(h
         FileName = [FileRoot,MatName,'.mat'];
         Path = fullfile('Data','Materials\');
         if exist([Path,FileName], 'file')
+            % Namen der automatisch geladenen DEK-Datei merken, damit er
+            % spaeter beim Export der Spannungsplots mit ausgegeben werden
+            % kann (Nutzerwunsch).
+            h.DEKFileName = FileName;
             DEKMatFile = load([Path,FileName]);
             DEKdatatmp = get(h.loadDEKtable,'data');
 			hklDEKtmp = zeros();
@@ -14600,6 +16631,10 @@ if baseFileName == 0
   % user pressed cancel
   return
 end
+
+% Namen der manuell geladenen DEK-Datei merken, damit er spaeter beim
+% Export der Spannungsplots mit ausgegeben werden kann (Nutzerwunsch).
+h.DEKFileName = baseFileName;
 
 % Load user selected data
 DEKDataFileName = fullfile(folder, baseFileName);
@@ -14689,6 +16724,797 @@ h.dataDEKtable = get(hObj,'data');
 guidata(hObj, h);
 
 %% Load/modify stress data
+function h = RecomputeSin2PsiStressRegression(h, PhiWinkel, ia, TwoThetaTau, ResetCheckboxes)
+% Gemeinsame Pipeline fuer die sin2psi-Spannungsauswertung, verwendet
+% sowohl beim initialen Laden (buttonloadstressdata) als auch nach dem
+% Loeschen von Datenpunkten (buttonmodifystressdata). Beide Aufrufer
+% haben h.Params/h.ParamsToFit sowie PhiWinkel/ia bereits aktuell
+% aufgebaut; diese Funktion berechnet daraus:
+% - h.idxphi0/90/180/270 und die gemittelten/differenzierten
+%   sin2psi-Groessen (h.sin2psi.dphi0/90/180/270 usw.)
+% - die lineare Regression (sigma11/22 via sin2psi, sigma13/23 via
+%   sin|2psi|)
+% - Informationstiefe tau/tau0 (h.StressesMW, h.sin2psi.tau*)
+% - die DEK-Zuordnung und daraus d0 (h.sin2psi.dzero)
+% - die finale sigmatau-Ergebnisliste (h.sin2psi.sigmataulist) und die
+%   Regressionslinien fuer den Plot (h.sin2psi.reglinephi0/90/180/270)
+%
+% ResetCheckboxes (true/false) steuert, ob dabei auch der Wert/Enable-
+% Zustand der checkboxphi0/90/180/270-Bedienelemente neu gesetzt wird.
+% Beim Laden (true) soll das passieren; beim nachtraeglichen Loeschen
+% von Datenpunkten (false) NICHT, da der Nutzer den Checkbox-Zustand
+% bewusst so eingestellt haben kann, dass in "Modify stress data" nur
+% eine Phi-Richtung zur Punktauswahl aktiv/sichtbar ist -- ein Reset
+% hier wuerde diese Auswahl-Logik durcheinanderbringen.
+h.idxphi0 = find(PhiWinkel{1}==0);
+h.idxphi90 = find(PhiWinkel{1}==90);
+h.idxphi180 = find(PhiWinkel{1}==180);
+h.idxphi270 = find(PhiWinkel{1}==270);
+% Delete field if already present, in case of reloading stress data with
+% different number of peaks
+if isfield(h, 'sin2psi')
+    h = rmfield(h,'sin2psi');
+end
+% assignin('base','Params',h.Params)
+% Create vectors with dspacings according to the number of phi angles used
+% in the measurement
+if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 || sigma22
+    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 || sigma22
+    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 || sigma22
+    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 || sigma22
+    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 + sigma13
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma22 + sigma23
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma13 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+    % sigma11 + sigma13 + sigma22
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','off'); end
+elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma22 + sigma23
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma22 + sigma23
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',0); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','off'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+    % sigma11 + sigma13 + sigma22 + sigma23
+    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
+    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
+    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
+    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
+    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
+    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol; 
+    if ResetCheckboxes; set(h.checkboxphi0,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi0,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi90,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi180,'Enable','on'); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Value',1); end
+    if ResetCheckboxes; set(h.checkboxphi270,'Enable','on'); end
+end
+% assignin('base','sin2psi',h.sin2psi)
+
+% Bereitstellung der im Weiteren benï¿½tigten, ï¿½ber die verschiedenen Azimute
+% gemittelten Verteilungen; es gilt:
+% dphi0p180 =
+% (d_phi0 + d_phi180)/2% -> sigma_11 / sinï¿½psi-Auswertung
+% dphi0m180 = 
+% (d_phi0 - d_phi180)/2% -> sigma_13 / |sin2psi|-Auswertung
+% dphi90p270 = 
+% (d_phi90 + d_phi270)/2% -> sigma_22 / sinï¿½psi-Auswertung
+% dphi90m270 = 
+% (d_phi90 - d_phi270)/2% -> sigma_23 / |sin2psi|-Auswertung
+% dphi0p180p90p270 = 
+% (d_phi0 + d_phi180 + d_phi90 + d_phi270)/4% -> sigma_|| und d0% / U-Plot
+% dphi0p180m90p270 = 
+% [(d_phi0 + d_phi180) - (d_phi90 + d_phi270)]/4 -> sigma_11 - sigma_22% / U-Plot 
+
+% Hinweis: die vorherige Version enthielt hier eine
+% if length(ia{1})==1 / elseif ~=1 - Verzweigung mit in beiden Zweigen
+% identischem Code (toter Code, kein Verhaltensunterschied) -- entfernt.
+for k = 1:size(h.sin2psi.dphi0,2)
+    h.sin2psi.dphi0p180{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k})./2;
+    h.sin2psi.dphi0m180{k} = (h.sin2psi.dphi0{k} - h.sin2psi.dphi180{k})./2;
+    h.sin2psi.dphi90p270{k} = (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./2;
+    h.sin2psi.dphi90m270{k} = (h.sin2psi.dphi90{k} - h.sin2psi.dphi270{k})./2;
+    h.sin2psi.dphi0p180p90p270{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k} + h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./4;
+    h.sin2psi.dphi0p180m90p270{k} = ((h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k}) - (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k}))./4;
+    h.sin2psi.dphi0p180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
+    h.sin2psi.dphi0m180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
+    h.sin2psi.dphi90p270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
+    h.sin2psi.dphi90m270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
+    h.sin2psi.dphi0p180p90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
+    h.sin2psi.dphi0p180m90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
+end
+
+% Prepare sin2psi data for regression
+% (auch hier war die if/elseif-Verzweigung auf beiden Seiten identisch)
+for k = 1:size(h.sin2psi.dphi0,2)
+    h.sin2psi.dphi0p180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0p180{k},h.sin2psi.dphi0p180delta{k}];
+    h.sin2psi.dphi0m180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
+    h.sin2psi.dphi0m180sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
+    h.sin2psi.dphi90p270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90p270{k},h.sin2psi.dphi90p270delta{k}];
+    h.sin2psi.dphi90m270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
+    h.sin2psi.dphi90m270sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
+end
+
+% Perform linear regeression
+% Gewichtung mit 1/delta (nicht 1/delta^2): entspricht exakt dem
+% Mathematica-Original (Spannungsdatenanalysesin2psi: Weights ->
+% 1/dphi0p180sinquadratpsi[[All,{3}]]), daher hier beibehalten statt auf
+% die statistisch strengere 1/delta^2-Gewichtung umzustellen (siehe
+% Ruecksprache).
+for k = 1:size(h.sin2psi.dphi0,2)
+    h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
+    h.sin2psi.dphi90p270sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi90p270sinquadratpsi{k}(:,1),h.sin2psi.dphi90p270sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi90p270sinquadratpsi{k}(:,3));
+    funsigmashear = @(m,x)(m.*x);
+    h.sin2psi.dphi0m180sin2psiregress{k} = fitnlm(h.sin2psi.dphi0m180sin2psi{k}(:,1),h.sin2psi.dphi0m180sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi0m180sin2psi{k}(:,3));
+    h.sin2psi.dphi90m270sin2psiregress{k} = fitnlm(h.sin2psi.dphi90m270sin2psi{k}(:,1),h.sin2psi.dphi90m270sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi90m270sin2psi{k}(:,3));
+end
+
+% Delete field if already present, in case of reloading stress data with
+% different number of peaks
+if isfield(h, 'StressesMW')
+    h = rmfield(h,'StressesMW');
+end
+
+% Calculate tau
+if length(ia{1}) == 1
+    % Calculate absorbtion coefficient for Emax values
+    if strcmp(h.Diffsel,'ETA3000')
+        h.StressesMW.absorbcoeff = cell(1);
+
+        if strcmp(h.Measurement(1).Anode,'Cu')
+            h.XRay_Energy = 8.048;
+        elseif strcmp(h.Measurement(1).Anode,'Co')
+            h.XRay_Energy = 6.9305;
+        elseif strcmp(h.Measurement(1).Anode,'Ag')
+            h.XRay_Energy = 22.1634;
+        elseif strcmp(h.Measurement(1).Anode,'Fe')
+            h.XRay_Energy = 6.40484;
+        elseif strcmp(h.Measurement(1).Anode,'Mo')
+            h.XRay_Energy = 17.4808;
+        elseif strcmp(h.Measurement(1).Anode,'Cr')    
+            h.XRay_Energy = 5.41506;
+        end
+
+        eta = 90;
+        for k = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
+        end
+        h.StressesMW.temptau = cell(1);
+        for k = 1:size(h.Params.Energy_Max,2)
+            beampath{k} = ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)) + ...
+                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)))./...
+                ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)).*...
+                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)));
+        end
+
+        for k = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.temptau{k} = 1./(h.StressesMW.absorbcoeff{k}./10000.*beampath{k});
+        end
+        % Calculate average <tau>
+        for ii = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
+            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
+        end
+    else
+        % Calculate absorbtion coefficient for Emax values
+        h.StressesMW.absorbcoeff = cell(1);
+        for k = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.Params.Energy_Max{k});
+        end
+        % Calculate tau for Emax values
+        h.StressesMW.temptau = cell(1);
+        for k = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.temptau{k} = (sind(TwoThetaTau./2).*cosd(h.Params.Psi_Winkel{k}))./(2.*h.StressesMW.absorbcoeff{k}./10000);
+        end
+        % Calculate average <tau>
+        for ii = 1:size(h.Params.Energy_Max,2)
+            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
+            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
+        end
+    end
+elseif length(ia{1}) ~= 1
+    % Calculate absorbtion coefficient for Emax values
+    if strcmp(h.Diffsel,'ETA3000')
+        
+        if strcmp(h.Measurement(1).Anode,'Cu')
+            h.XRay_Energy = 8.048;
+        elseif strcmp(h.Measurement(1).Anode,'Co')
+            h.XRay_Energy = 6.9305;
+        elseif strcmp(h.Measurement(1).Anode,'Ag')
+            h.XRay_Energy = 22.1634;
+        elseif strcmp(h.Measurement(1).Anode,'Fe')
+            h.XRay_Energy = 6.40484;
+        elseif strcmp(h.Measurement(1).Anode,'Mo')
+            h.XRay_Energy = 17.4808;
+        elseif strcmp(h.Measurement(1).Anode,'Cr')    
+            h.XRay_Energy = 5.41506;
+        end
+
+        eta = 90;
+        for j = 1:length(ia{1})
+            h.StressesMW(j).absorbcoeff = cell(1);
+            for k = 1:size(h.Params.Energy_Max,2)
+                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
+            end
+
+        end
+%         assignin('base','ia',ia)
+%         assignin('base','hParamsToFit',h.ParamsToFit)
+        for j = 1:length(ia{1})
+            % Calculate tau for Emax values
+            % Calculate average <tau>
+            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
+                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
+                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
+                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
+                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
+            end
+        end
+%         assignin('base','beampath',beampath)
+        % Variable beampath has to be sorted to increase
+%         beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
+        for j = 1:length(ia{1})
+            h.StressesMW(j).temptau = cell(1);
+            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
+                h.StressesMW(j).temptau{k} = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k});
+
+                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
+                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
+                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
+                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
+                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
+%                 assignin('base','beampath1',beampath)
+                % Variable beampath has to be sorted to increase
+%                 beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
+                h.StressesMW(j).taupsizero(k) = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k}(1));
+            end
+        end
+%         assignin('base','StressesMW',h.StressesMW)
+    else
+        for j = 1:length(ia{1})
+            h.StressesMW(j).absorbcoeff = cell(1);
+            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
+                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.ParamsToFit(j).Energy_Max{k});
+            end
+        end
+    
+        for j = 1:length(ia{1})
+            % Calculate tau for Emax values
+            % Calculate average <tau>
+            h.StressesMW(j).temptau = cell(1);
+            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
+                h.StressesMW(j).temptau{k} = (sind(TwoThetaTau./2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}))./(2.*h.StressesMW(j).absorbcoeff{k}./10000);
+                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
+    %             h.StressesMW(j).taupsizero(k) = h.StressesMW(j).temptau{k}(1);
+                h.StressesMW(j).taupsizero(k) = (sind(TwoThetaTau./2).*cosd(0))./(2.*h.StressesMW(j).absorbcoeff{k}(1)./10000);
+            end
+        end
+    end
+end
+
+% Calculate aveerage tau from all measured azimuths
+for j = 1:size(h.StressesMW,2)
+    h.sin2psi.tautmp(:,j) = h.StressesMW(j).tau;
+    h.sin2psi.taupsizero(:,j) = h.StressesMW(j).taupsizero;
+end
+
+for k = 1:size(h.sin2psi.tautmp,1)
+    h.sin2psi.taumean(k) = mean(h.sin2psi.tautmp(k,:));
+    h.sin2psi.taupsizeromean(k) = mean(h.sin2psi.taupsizero(k,:));
+end
+
+% Load DEK data previously entered by user
+DEKdatatmp = get(h.loadDEKtable,'data');
+% Convert hkl to vector
+hklDEKtmp = zeros(1,size(DEKdatatmp,1));
+for k = 1:length(DEKdatatmp(:,1))
+    hklDEKtmp(k) = DEKdatatmp(k,1)*100 + DEKdatatmp(k,2)*10 + DEKdatatmp(k,3);
+end
+
+hklDEKtmp = hklDEKtmp';
+% Set DEK values to Params structure
+h.Params.DEK = [hklDEKtmp DEKdatatmp(:,4:5)];
+% assignin('base','hParamsToFit',h.ParamsToFit)
+% assignin('base','hParams',h.Params)
+% assignin('base','hsin2psi',h.sin2psi)
+% assignin('base','PsiforInterpol',h.PsiforInterpol)
+% Calculate dzero
+if length(ia{1}) == 1
+    for k = 1:size(h.Params.LatticeSpacing,2)
+        % Calculate dzero
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
+    end
+elseif length(ia{1}) ~= 1    
+    for k = 1:size(h.ParamsToFit(1).LatticeSpacingInterpol,2)
+        % Calculate dzero
+%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
+        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
+        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
+    end
+end
+% h.sin2psi.dzero = [0.262972618199912	0.237103587545019	0.154480224802823	0.142500376481118	0.131793508588701];
+% Hinweis: sigma11/22 (sinquadratpsi) und sigma13/23 (sin2psi) wurden
+% bereits weiter oben berechnet (dphi0p180sinquadratpsiregress etc.) --
+% die vorherige Version berechnete hier exakt dieselbe Regression auf
+% denselben Eingangsdaten ein zweites Mal (kein Unterschied im Ergebnis,
+% nur unnoetige Rechenzeit). Entfernt.
+% assignin('base','StressesMW',h.StressesMW)
+% Create sigmatau list
+for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];      
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];                
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma13
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22, sigma23
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
+        % sigma11, sigma22, sigma13
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];   
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+        % sigma11, sigma22, sigma13
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22, sigma23
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+        % sigma11, sigma22, sigma23
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];  
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22, sigma13, sigma23	
+        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
+    end
+%     if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];      
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11, sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma11, sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11, sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma11, sigma22
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];                
+%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+%         % sigma11, sigma13
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma22, sigma23
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
+%         % sigma11, sigma22, sigma13
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];   
+%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%         % sigma11, sigma22, sigma13
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma11, sigma22, sigma23
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+%         % sigma11, sigma22, sigma23
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];  
+%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+%         % sigma11, sigma22, sigma13, sigma23	
+%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
+%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
+%     end
+end
+
+% h.sin2psi.sigmataulist = sortrows(h.sin2psi.sigmataulist,1);
+
+% Calculate regression lines
+sinpsisquare = linspace(0,1,51);
+h.sinpsisquare = sinpsisquare;
+
+for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
+    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11
+        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma22
+        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11
+        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22
+        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;    
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22
+        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;     
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma13
+        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);				   
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
+        % sigma11, sigma22, sigma13
+        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;				   
+        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+        % sigma11, sigma22, sigma13
+        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma22, sigma23
+        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22, sigma23
+        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);			   
+        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
+        % sigma11, sigma22, sigma23
+        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
+        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);                   
+    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
+        % sigma11, sigma22, sigma13, sigma23
+        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
+                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
+                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
+                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
+    end
+end
+
 function buttonloadstressdata(hObj, ~)
 % Function to load data for the "Stress Analysis" tab.
 h = guidata(hObj);
@@ -14703,6 +17529,17 @@ Detstr = get(h.popupmenuselectmeas1,'String');
 Detval = get(h.popupmenuselectmeas1,'Value');
 Detsel = Detstr{Detval};
 h.Detsel = Detsel;
+
+% 2theta-Winkel fuer die tau-Berechnung weiter unten: bei LEDDI haben
+% Detector 1 und Detector 2 unterschiedliche, feste 2theta-Winkel.
+% h.Measurement(1) ist durch die Interleaving-Konvention (Det1 = gerade,
+% Det2 = ungerade Indizes) immer eine Detector-2-Messung -- fuer
+% Detector 1 muss daher h.Measurement(2) verwendet werden.
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 1')
+    TwoThetaTau = h.Measurement(2).twotheta;
+else
+    TwoThetaTau = h.Measurement(1).twotheta;
+end
 
 if isfield(h, 'YlimChanged') && size(h.YlimChanged,2) ~= h.SliderPlotStressData.Max
         h.YlimChanged = zeros(1,h.SliderPlotStressData.Max);
@@ -14832,8 +17669,8 @@ end
 % Get index from peak to be kept during further analysis
 indexPeakToKeep = cell(1);
 for k = 1:length(C)
-    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5
-        %PV-Func
+    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 || h.P.PopupValueFitFunc == 6
+        %PV-Func %Gauss %Lorentz %AsymPV
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},h.PeakCountColumn);
     elseif h.P.PopupValueFitFunc == 3 %TCH-Func
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},h.PeakCountColumn);
@@ -14844,6 +17681,25 @@ end
 % different number of peaks
 if isfield(h, 'Params')
     h = rmfield(h,'Params');
+end
+
+% Sicherheitscheck: idxkeepPeaks kommt aus der Peak-Auswahl ("Select
+% peaks", gefiltert ueber die Tabelle der theoretischen Peaklagen /
+% FitPeaksLogical*), kann aber einen Peak enthalten, der dem Abgleich
+% (ComparePeaks) faelschlich als "gefittet" zugeordnet wurde (in der
+% Tabelle rot markiert/ausgewaehlt), obwohl er in den tatsaechlichen
+% Fit-Ergebnissen (DiffractionLinestmp) gar nicht vorhanden ist -- z.B.
+% weil pro Spektrum tatsaechlich weniger Peaks gefittet wurden, als
+% theoretisch im Energiebereich liegen. Ohne diesen Check fuehrt das
+% weiter unten zu einem kryptischen "Index exceeds array bounds".
+MaxPeaksPerMeas = size(DiffractionLinestmp{1},2);
+if any(idxkeepPeaks > MaxPeaksPerMeas)
+    error(['Die Peak-Auswahl ("Select peaks") enthaelt einen Peak (Nr. ', ...
+        num2str(max(idxkeepPeaks)), '), der in den tatsaechlich gefitteten Daten nicht ', ...
+        'vorhanden ist (pro Spektrum wurden nur ', num2str(MaxPeaksPerMeas), ' Peaks gefittet). ', ...
+        'Vermutlich wurde in der Tabelle der theoretischen Peaklagen ein Peak faelschlich als ', ...
+        'gefittet markiert (rot/ausgewaehlt, obwohl nicht tatsaechlich gefittet). Bitte diesen ', ...
+        'Peak dort manuell abwaehlen und "Select peaks"/"Load DEK" erneut ausfuehren.']);
 end
 
 % Get parameters from fitted peak data
@@ -15113,11 +17969,8 @@ end
 if length(ia{1}) ~= 1
     for j = 1:size(h.ParamsToFit,2)
         for k = 1:size(h.ParamsToFit(j).LatticeSpacing,2)
-                % linfit = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},1);
-                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = polyval(linfit,h.PsiforInterpol{k});
-                % linfit1 = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},1);
-                % h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = polyval(linfit1,h.PsiforInterpol{k});
-                h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
+                h.ParamsToFit(j).LatticeSpacingInterpol{k} = InterpolLatticeSpacingKeepData(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k});
+                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
                 h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},h.PsiforInterpol{k},'linear','extrap');
         end
     end
@@ -15129,800 +17982,10 @@ elseif length(ia{1}) == 1
 end
 
 % Find indices of phi angles.
-h.idxphi0 = find(PhiWinkel{1}==0);
-h.idxphi90 = find(PhiWinkel{1}==90);
-h.idxphi180 = find(PhiWinkel{1}==180);
-h.idxphi270 = find(PhiWinkel{1}==270);
-% Delete field if already present, in case of reloading stress data with
-% different number of peaks
-if isfield(h, 'sin2psi')
-    h = rmfield(h,'sin2psi');
-end
-% assignin('base','Params',h.Params)
-% Create vectors with dspacings according to the number of phi angles used
-% in the measurement
-if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')     
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma13
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',0)
-    set(h.checkboxphi90,'Enable','off')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',0)
-    set(h.checkboxphi270,'Enable','off')
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',0)
-    set(h.checkboxphi180,'Enable','off')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    set(h.checkboxphi0,'Value',0)
-    set(h.checkboxphi0,'Enable','off')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol; 
-    set(h.checkboxphi0,'Value',1)
-    set(h.checkboxphi0,'Enable','on')
-    set(h.checkboxphi90,'Value',1)
-    set(h.checkboxphi90,'Enable','on')
-    set(h.checkboxphi180,'Value',1)
-    set(h.checkboxphi180,'Enable','on')
-    set(h.checkboxphi270,'Value',1)
-    set(h.checkboxphi270,'Enable','on')
-end
-% assignin('base','sin2psi',h.sin2psi)
-
-% Bereitstellung der im Weiteren benötigten, über die verschiedenen Azimute
-% gemittelten Verteilungen; es gilt:
-% dphi0p180 =
-% (d_phi0 + d_phi180)/2% -> sigma_11 / sin²psi-Auswertung
-% dphi0m180 = 
-% (d_phi0 - d_phi180)/2% -> sigma_13 / |sin2psi|-Auswertung
-% dphi90p270 = 
-% (d_phi90 + d_phi270)/2% -> sigma_22 / sin²psi-Auswertung
-% dphi90m270 = 
-% (d_phi90 - d_phi270)/2% -> sigma_23 / |sin2psi|-Auswertung
-% dphi0p180p90p270 = 
-% (d_phi0 + d_phi180 + d_phi90 + d_phi270)/4% -> sigma_|| und d0% / U-Plot
-% dphi0p180m90p270 = 
-% [(d_phi0 + d_phi180) - (d_phi90 + d_phi270)]/4 -> sigma_11 - sigma_22% / U-Plot 
-
-if length(ia{1}) == 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi0m180{k} = (h.sin2psi.dphi0{k} - h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi90p270{k} = (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi90m270{k} = (h.sin2psi.dphi90{k} - h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi0p180p90p270{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k} + h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./4;
-        h.sin2psi.dphi0p180m90p270{k} = ((h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k}) - (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k}))./4;
-        h.sin2psi.dphi0p180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi0m180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi90p270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi90m270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180p90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180m90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-    end
-elseif length(ia{1}) ~= 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi0m180{k} = (h.sin2psi.dphi0{k} - h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi90p270{k} = (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi90m270{k} = (h.sin2psi.dphi90{k} - h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi0p180p90p270{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k} + h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./4;
-        h.sin2psi.dphi0p180m90p270{k} = ((h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k}) - (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k}))./4;
-        h.sin2psi.dphi0p180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi0m180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi90p270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi90m270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180p90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180m90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-    end
-end
-
-% Prepare sin2psi data for regression
-if length(ia{1}) == 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0p180{k},h.sin2psi.dphi0p180delta{k}];
-        h.sin2psi.dphi0m180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi0m180sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi90p270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90p270{k},h.sin2psi.dphi90p270delta{k}];
-        h.sin2psi.dphi90m270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-        h.sin2psi.dphi90m270sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-    end
-elseif length(ia{1}) ~= 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0p180{k},h.sin2psi.dphi0p180delta{k}];
-        h.sin2psi.dphi0m180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi0m180sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi90p270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90p270{k},h.sin2psi.dphi90p270delta{k}];
-        h.sin2psi.dphi90m270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-        h.sin2psi.dphi90m270sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-    end
-end
-
-% Perform linear regeression
-for k = 1:size(h.sin2psi.dphi0,2)
-    h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
-    h.sin2psi.dphi90p270sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi90p270sinquadratpsi{k}(:,1),h.sin2psi.dphi90p270sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi90p270sinquadratpsi{k}(:,3));
-    funsigmashear = @(m,x)(m.*x);
-    h.sin2psi.dphi0m180sin2psiregress{k} = fitnlm(h.sin2psi.dphi0m180sin2psi{k}(:,1),h.sin2psi.dphi0m180sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi0m180sin2psi{k}(:,3));
-    h.sin2psi.dphi90m270sin2psiregress{k} = fitnlm(h.sin2psi.dphi90m270sin2psi{k}(:,1),h.sin2psi.dphi90m270sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi90m270sin2psi{k}(:,3));
-end
-
-% Delete field if already present, in case of reloading stress data with
-% different number of peaks
-if isfield(h, 'StressesMW')
-    h = rmfield(h,'StressesMW');
-end
-
-% Calculate tau
-if length(ia{1}) == 1
-    % Calculate absorbtion coefficient for Emax values
-    if strcmp(h.Diffsel,'ETA3000')
-        h.StressesMW.absorbcoeff = cell(1);
-
-        if strcmp(h.Measurement(1).Anode,'Cu')
-            h.XRay_Energy = 8.048;
-        elseif strcmp(h.Measurement(1).Anode,'Co')
-            h.XRay_Energy = 6.9305;
-        elseif strcmp(h.Measurement(1).Anode,'Ag')
-            h.XRay_Energy = 22.1634;
-        elseif strcmp(h.Measurement(1).Anode,'Fe')
-            h.XRay_Energy = 6.40484;
-        elseif strcmp(h.Measurement(1).Anode,'Mo')
-            h.XRay_Energy = 17.4808;
-        elseif strcmp(h.Measurement(1).Anode,'Cr')    
-            h.XRay_Energy = 5.41506;
-        end
-
-        eta = 90;
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
-        end
-        h.StressesMW.temptau = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            beampath{k} = ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)) + ...
-                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)))./...
-                ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)).*...
-                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)));
-        end
-
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.temptau{k} = 1./(h.StressesMW.absorbcoeff{k}./10000.*beampath{k});
-        end
-        % Calculate average <tau>
-        for ii = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
-            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
-        end
-    else
-        % Calculate absorbtion coefficient for Emax values
-        h.StressesMW.absorbcoeff = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.Params.Energy_Max{k});
-        end
-        % Calculate tau for Emax values
-        h.StressesMW.temptau = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.Params.Psi_Winkel{k}))./(2.*h.StressesMW.absorbcoeff{k}./10000);
-        end
-        % Calculate average <tau>
-        for ii = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
-            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
-        end
-    end
-elseif length(ia{1}) ~= 1
-    % Calculate absorbtion coefficient for Emax values
-    if strcmp(h.Diffsel,'ETA3000')
-        
-        if strcmp(h.Measurement(1).Anode,'Cu')
-            h.XRay_Energy = 8.048;
-        elseif strcmp(h.Measurement(1).Anode,'Co')
-            h.XRay_Energy = 6.9305;
-        elseif strcmp(h.Measurement(1).Anode,'Ag')
-            h.XRay_Energy = 22.1634;
-        elseif strcmp(h.Measurement(1).Anode,'Fe')
-            h.XRay_Energy = 6.40484;
-        elseif strcmp(h.Measurement(1).Anode,'Mo')
-            h.XRay_Energy = 17.4808;
-        elseif strcmp(h.Measurement(1).Anode,'Cr')    
-            h.XRay_Energy = 5.41506;
-        end
-
-        eta = 90;
-        for j = 1:length(ia{1})
-            h.StressesMW(j).absorbcoeff = cell(1);
-            for k = 1:size(h.Params.Energy_Max,2)
-                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
-            end
-
-        end
-%         assignin('base','ia',ia)
-%         assignin('base','hParamsToFit',h.ParamsToFit)
-        for j = 1:length(ia{1})
-            % Calculate tau for Emax values
-            % Calculate average <tau>
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
-                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
-            end
-        end
-%         assignin('base','beampath',beampath)
-        % Variable beampath has to be sorted to increase
-%         beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
-        for j = 1:length(ia{1})
-            h.StressesMW(j).temptau = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).temptau{k} = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k});
-
-                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
-                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
-                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
-%                 assignin('base','beampath1',beampath)
-                % Variable beampath has to be sorted to increase
-%                 beampath = cellfun(@(x) sort(x),beampath,'UniformOutput',false);
-                h.StressesMW(j).taupsizero(k) = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k}(1));
-            end
-        end
-%         assignin('base','StressesMW',h.StressesMW)
-    else
-        for j = 1:length(ia{1})
-            h.StressesMW(j).absorbcoeff = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.ParamsToFit(j).Energy_Max{k});
-            end
-        end
-    
-        for j = 1:length(ia{1})
-            % Calculate tau for Emax values
-            % Calculate average <tau>
-            h.StressesMW(j).temptau = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}))./(2.*h.StressesMW(j).absorbcoeff{k}./10000);
-                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
-    %             h.StressesMW(j).taupsizero(k) = h.StressesMW(j).temptau{k}(1);
-                h.StressesMW(j).taupsizero(k) = (sind(h.Measurement(1).twotheta./2).*cosd(0))./(2.*h.StressesMW(j).absorbcoeff{k}(1)./10000);
-            end
-        end
-    end
-end
-
-% Calculate aveerage tau from all measured azimuths
-for j = 1:size(h.StressesMW,2)
-    h.sin2psi.tautmp(:,j) = h.StressesMW(j).tau;
-    h.sin2psi.taupsizero(:,j) = h.StressesMW(j).taupsizero;
-end
-
-for k = 1:size(h.sin2psi.tautmp,1)
-    h.sin2psi.taumean(k) = mean(h.sin2psi.tautmp(k,:));
-    h.sin2psi.taupsizeromean(k) = mean(h.sin2psi.taupsizero(k,:));
-end
-
-% Load DEK data previously entered by user
-DEKdatatmp = get(h.loadDEKtable,'data');
-% Convert hkl to vector
-hklDEKtmp = zeros(1,size(DEKdatatmp,1));
-for k = 1:length(DEKdatatmp(:,1))
-    hklDEKtmp(k) = DEKdatatmp(k,1)*100 + DEKdatatmp(k,2)*10 + DEKdatatmp(k,3);
-end
-
-hklDEKtmp = hklDEKtmp';
-% Set DEK values to Params structure
-h.Params.DEK = [hklDEKtmp DEKdatatmp(:,4:5)];
-% assignin('base','hParamsToFit',h.ParamsToFit)
-% assignin('base','hParams',h.Params)
-% assignin('base','hsin2psi',h.sin2psi)
-% assignin('base','PsiforInterpol',h.PsiforInterpol)
-% Calculate dzero
-if length(ia{1}) == 1
-    for k = 1:size(h.Params.LatticeSpacing,2)
-        % Calculate dzero
-%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
-        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
-        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
-    end
-elseif length(ia{1}) ~= 1    
-    for k = 1:size(h.ParamsToFit(1).LatticeSpacingInterpol,2)
-        % Calculate dzero
-%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
-        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
-        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
-    end
-end
-% h.sin2psi.dzero = [0.262972618199912	0.237103587545019	0.154480224802823	0.142500376481118	0.131793508588701];
-% Calculate sigma11 and sigma22
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsi,2)
-    h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
-    h.sin2psi.dphi90p270sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi90p270sinquadratpsi{k}(:,1),h.sin2psi.dphi90p270sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi90p270sinquadratpsi{k}(:,3));
-end
-
-% Calculate sigma13 and sigma23
-for k = 1:size(h.sin2psi.dphi0m180sin2psi,2)
-	h.sin2psi.dphi0m180sin2psiregress{k} = fitnlm(h.sin2psi.dphi0m180sin2psi{k}(:,1),h.sin2psi.dphi0m180sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi0m180sin2psi{k}(:,3));
-	h.sin2psi.dphi90m270sin2psiregress{k} = fitnlm(h.sin2psi.dphi90m270sin2psi{k}(:,1),h.sin2psi.dphi90m270sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi90m270sin2psi{k}(:,3));
-end
-% assignin('base','StressesMW',h.StressesMW)
-% Create sigmatau list
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
-    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];      
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];                
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];   
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];  
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13, sigma23	
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    end
-%     if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];      
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];                
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];   
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];  
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22, sigma13, sigma23	
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     end
-end
-
-% h.sin2psi.sigmataulist = sortrows(h.sin2psi.sigmataulist,1);
-
-% Calculate regression lines
-sinpsisquare = linspace(0,1,51);
-h.sinpsisquare = sinpsisquare;
-
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
-    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;    
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;     
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);				   
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;				   
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22, sigma23
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma23
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);			   
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma23
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);                   
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13, sigma23
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    end
-end
-
+% Gemeinsame sin2psi-Regressionspipeline (siehe RecomputeSin2PsiStressRegression).
+% ResetCheckboxes=true: beim initialen Laden sollen die Checkboxen den
+% verfuegbaren Azimuten entsprechend gesetzt werden.
+h = RecomputeSin2PsiStressRegression(h, PhiWinkel, ia, TwoThetaTau, true);
 % Get peak hkl and sort acording to tau value of peak
 if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
@@ -16370,6 +18433,9 @@ for d = 1:size(FittedPeakstmp{valueSliderFit}, 1)
     elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
         SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
             FittedPeakstmp{valueSliderFit}(d, 1), FittedPeakstmp{valueSliderFit}(d, 2), FittedPeakstmp{valueSliderFit}(d, 3));
+    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+            FittedPeakstmp{valueSliderFit}(d, 1), FittedPeakstmp{valueSliderFit}(d, 2), FittedPeakstmp{valueSliderFit}(d, 3),FittedPeakstmp{valueSliderFit}(d, 4),FittedPeakstmp{valueSliderFit}(d, 5));
     end
 %     SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
 %         FittedPeakstmp{valueSliderFit}(d, 1), FittedPeakstmp{valueSliderFit}(d, 2), FittedPeakstmp{valueSliderFit}(d, 3),FittedPeakstmp{valueSliderFit}(d, 4));
@@ -16693,6 +18759,17 @@ function buttonmodifystressdata(hObj, ~)
 % Function to load data for the "Stress Analysis" tab.
 h = guidata(hObj);
 
+% 2theta-Winkel fuer die tau-Berechnung weiter unten: bei LEDDI haben
+% Detector 1 und Detector 2 unterschiedliche, feste 2theta-Winkel.
+% h.Measurement(1) ist durch die Interleaving-Konvention (Det1 = gerade,
+% Det2 = ungerade Indizes) immer eine Detector-2-Messung -- fuer
+% Detector 1 muss daher h.Measurement(2) verwendet werden.
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 1')
+    TwoThetaTau = h.Measurement(2).twotheta;
+else
+    TwoThetaTau = h.Measurement(1).twotheta;
+end
+
 % Get value of checkbox "fit data from both detectors"
 % FitBothDet = get(h.checkboxFitBothDetectors,'value');
 % Slidersteps
@@ -16701,6 +18778,11 @@ h = guidata(hObj);
 % Get slider value
 valueSlider = get(h.SliderStressData, 'Value');
 valueSliderStress = get(h.SliderPlotStressData, 'Value');
+% Aktueller Wert des Fit-Plot-Sliders (h.SliderFitData, zeigt Rohspektrum +
+% Fit fuer eine einzelne psi-Messung) VOR dem Loeschen merken, damit nach
+% dem Loeschen automatisch auf den vorherigen/naechsten verbliebenen Punkt
+% gesprungen werden kann (siehe unten, kurz vor Ende dieser Funktion).
+valueSliderFitOld = get(h.SliderFitData, 'Value');
 % Get checkbox values
 CheckBoxesPhi = [get(h.checkboxphi0,'Value'),get(h.checkboxphi90,'Value'),get(h.checkboxphi180,'Value'),get(h.checkboxphi270,'Value')];
 % Get phi angles
@@ -16715,7 +18797,7 @@ end
 [pointslist,~,~] = selectdatastressvalues('Handle',h.axesplotdspacing,'CheckBoxesPhi',CheckBoxesPhi,'PhiWinkel',PhiWinkel,'sel','closest','action','delete','verify','on');
 % Update modified peak data depending on the choosen phi angle
 if CheckBoxesPhi(1) == 1
-    % Phi = 0°
+    % Phi = 0ï¿½
     % Load x and y data from IB and Int.Intensity plots
     PointsXIB = get(h.plotdataIBphi0,'xdata');
     PointsYIB = get(h.plotdataIBphi0,'ydata');
@@ -16743,7 +18825,7 @@ if CheckBoxesPhi(1) == 1
     h.ParamsToFit(1).LatticeSpacingInterpol{valueSlider}(pointslist) = [];
     h.ParamsToFit(1).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
 elseif CheckBoxesPhi(2) == 1
-    % Phi = 90°
+    % Phi = 90ï¿½
     % Load x and y data from IB and Int.Intensity plots
     PointsXIB = get(h.plotdataIBphi90,'xdata');
     PointsYIB = get(h.plotdataIBphi90,'ydata');
@@ -16774,7 +18856,7 @@ elseif CheckBoxesPhi(2) == 1
     elseif length(ia{1}) == 2
         PhiInd = find(PhiWinkel{1}==90);
         if PhiInd == 2
-            % Phi = 0°/90°
+            % Phi = 0ï¿½/90ï¿½
             h.ParamsToFit(2).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16786,7 +18868,7 @@ elseif CheckBoxesPhi(2) == 1
             h.ParamsToFit(2).LatticeSpacingInterpol{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
         elseif PhiInd == 1
-            % Phi = 90°/180° or Phi = 90°/270°
+            % Phi = 90ï¿½/180ï¿½ or Phi = 90ï¿½/270ï¿½
             h.ParamsToFit(1).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16801,7 +18883,7 @@ elseif CheckBoxesPhi(2) == 1
     elseif length(ia{1}) == 3
         PhiInd = find(PhiWinkel{1}==90);
         if PhiInd == 2
-            % Phi = 0°/90°/180° or Phi = 0°/90°/270°
+            % Phi = 0ï¿½/90ï¿½/180ï¿½ or Phi = 0ï¿½/90ï¿½/270ï¿½
             h.ParamsToFit(2).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16813,7 +18895,7 @@ elseif CheckBoxesPhi(2) == 1
             h.ParamsToFit(2).LatticeSpacingInterpol{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
         elseif PhiInd == 1
-            % Phi = 90°/180°/270°
+            % Phi = 90ï¿½/180ï¿½/270ï¿½
             h.ParamsToFit(1).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16826,7 +18908,7 @@ elseif CheckBoxesPhi(2) == 1
             h.ParamsToFit(1).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
         end
     elseif length(ia{1}) == 4
-        % Phi = 0°/90°/180°/270°
+        % Phi = 0ï¿½/90ï¿½/180ï¿½/270ï¿½
         h.ParamsToFit(2).Energy_Max{valueSlider}(pointslist) = [];
         h.ParamsToFit(2).FWHM{valueSlider}(pointslist) = [];
         h.ParamsToFit(2).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16839,7 +18921,7 @@ elseif CheckBoxesPhi(2) == 1
         h.ParamsToFit(2).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
     end
 elseif CheckBoxesPhi(3) == 1
-    % Phi = 180°
+    % Phi = 180ï¿½
     % Load x and y data from IB and Int.Intensity plots
     PointsXIB = get(h.plotdataIBphi180,'xdata');
     PointsYIB = get(h.plotdataIBphi180,'ydata');
@@ -16870,7 +18952,7 @@ elseif CheckBoxesPhi(3) == 1
     elseif length(ia{1}) == 2
         PhiInd = find(PhiWinkel{1}==180);
         if PhiInd == 2
-            % Phi = 0°/180° or 90°/180°
+            % Phi = 0ï¿½/180ï¿½ or 90ï¿½/180ï¿½
 %             assignin('base','ParamsToFitBefore',h.ParamsToFit)
             h.ParamsToFit(2).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).FWHM{valueSlider}(pointslist) = [];
@@ -16884,7 +18966,7 @@ elseif CheckBoxesPhi(3) == 1
             h.ParamsToFit(2).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
 %             assignin('base','ParamsToFitAfter',h.ParamsToFit)
         elseif PhiInd == 1
-            % Phi = 180°/270°
+            % Phi = 180ï¿½/270ï¿½
             h.ParamsToFit(1).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(1).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16899,7 +18981,7 @@ elseif CheckBoxesPhi(3) == 1
     elseif length(ia{1}) == 3
         PhiInd = find(PhiWinkel{1}==180);
         if PhiInd == 3
-            % Phi = 0°/90°/180°
+            % Phi = 0ï¿½/90ï¿½/180ï¿½
             h.ParamsToFit(3).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(3).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(3).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16911,7 +18993,7 @@ elseif CheckBoxesPhi(3) == 1
             h.ParamsToFit(3).LatticeSpacingInterpol{valueSlider}(pointslist) = [];
             h.ParamsToFit(3).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
         elseif PhiInd == 2
-            % Phi = 0°/180°/270° or Phi = 90°/180°/270°
+            % Phi = 0ï¿½/180ï¿½/270ï¿½ or Phi = 90ï¿½/180ï¿½/270ï¿½
             h.ParamsToFit(2).Energy_Max{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).FWHM{valueSlider}(pointslist) = [];
             h.ParamsToFit(2).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16924,7 +19006,7 @@ elseif CheckBoxesPhi(3) == 1
             h.ParamsToFit(2).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
         end
     elseif length(ia{1}) == 4
-        % Phi = 0°/90°/180°/270°
+        % Phi = 0ï¿½/90ï¿½/180ï¿½/270ï¿½
         h.ParamsToFit(3).Energy_Max{valueSlider}(pointslist) = [];
         h.ParamsToFit(3).FWHM{valueSlider}(pointslist) = [];
         h.ParamsToFit(3).IntegralWidth{valueSlider}(pointslist) = [];
@@ -16937,7 +19019,7 @@ elseif CheckBoxesPhi(3) == 1
         h.ParamsToFit(3).LatticeSpacing_DeltaInterpol{valueSlider}(pointslist) = [];
     end
 elseif CheckBoxesPhi(4) == 1
-    % Phi = 270°
+    % Phi = 270ï¿½
     % Load x and y data from IB and Int.Intensity plots
     PointsXIB = get(h.plotdataIBphi270,'xdata');
     PointsYIB = get(h.plotdataIBphi270,'ydata');
@@ -17027,9 +19109,8 @@ end
 if length(ia{1}) ~= 1
     for j = 1:size(h.ParamsToFit,2)
         for k = 1:size(h.ParamsToFit(j).LatticeSpacing,2)
-                % linfit = polyfit(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},1);
-                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = polyval(linfit,h.PsiforInterpol{k});
-                h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
+                h.ParamsToFit(j).LatticeSpacingInterpol{k} = InterpolLatticeSpacingKeepData(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k});
+                % h.ParamsToFit(j).LatticeSpacingInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k},'linear','extrap');
                 h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},h.PsiforInterpol{k},'linear','extrap');
         end
     end
@@ -17053,657 +19134,11 @@ elseif length(ia{1}) == 1
 end
 % assignin('base','PsiforInterpol',h.PsiforInterpol)
 % Find indices of phi angles.
-h.idxphi0 = find(PhiWinkel{1}==0);
-h.idxphi90 = find(PhiWinkel{1}==90);
-h.idxphi180 = find(PhiWinkel{1}==180);
-h.idxphi270 = find(PhiWinkel{1}==270);
-% assignin('base','Params_mod',h.Params)
-% Create vectors with dspacings according to the number of phi angles used
-% in the measurement
-if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;  
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 || sigma22
-    h.sin2psi.dphi0 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.Params.LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.Params.LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.Params.LatticeSpacing_DeltaInterpol;     
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma13
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol;
-elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-    % sigma11 + sigma13 + sigma22 + sigma23
-    h.sin2psi.dphi0 = h.ParamsToFit(h.idxphi0).LatticeSpacingInterpol;
-    h.sin2psi.dphi90 = h.ParamsToFit(h.idxphi90).LatticeSpacingInterpol;
-    h.sin2psi.dphi180 = h.ParamsToFit(h.idxphi180).LatticeSpacingInterpol;
-    h.sin2psi.dphi270 = h.ParamsToFit(h.idxphi270).LatticeSpacingInterpol;
-    h.sin2psi.dphi0delta = h.ParamsToFit(h.idxphi0).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi90delta = h.ParamsToFit(h.idxphi90).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi180delta = h.ParamsToFit(h.idxphi180).LatticeSpacing_DeltaInterpol;
-    h.sin2psi.dphi270delta = h.ParamsToFit(h.idxphi270).LatticeSpacing_DeltaInterpol; 
-end
-
-if length(ia{1}) == 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi0m180{k} = (h.sin2psi.dphi0{k} - h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi90p270{k} = (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi90m270{k} = (h.sin2psi.dphi90{k} - h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi0p180p90p270{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k} + h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./4;
-        h.sin2psi.dphi0p180m90p270{k} = ((h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k}) - (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k}))./4;
-        h.sin2psi.dphi0p180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi0m180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi90p270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi90m270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180p90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180m90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-    end
-elseif length(ia{1}) ~= 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi0m180{k} = (h.sin2psi.dphi0{k} - h.sin2psi.dphi180{k})./2;
-        h.sin2psi.dphi90p270{k} = (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi90m270{k} = (h.sin2psi.dphi90{k} - h.sin2psi.dphi270{k})./2;
-        h.sin2psi.dphi0p180p90p270{k} = (h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k} + h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k})./4;
-        h.sin2psi.dphi0p180m90p270{k} = ((h.sin2psi.dphi0{k} + h.sin2psi.dphi180{k}) - (h.sin2psi.dphi90{k} + h.sin2psi.dphi270{k}))./4;
-        h.sin2psi.dphi0p180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi0m180delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2);
-        h.sin2psi.dphi90p270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi90m270delta{k} = sqrt(h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180p90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-        h.sin2psi.dphi0p180m90p270delta{k} = sqrt(h.sin2psi.dphi0delta{k}.^2 + h.sin2psi.dphi180delta{k}.^2 + h.sin2psi.dphi90delta{k}.^2 + h.sin2psi.dphi270delta{k}.^2);
-    end
-end
-
-% Prepare sin2psi data for regression
-if length(ia{1}) == 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0p180{k},h.sin2psi.dphi0p180delta{k}];
-        h.sin2psi.dphi0m180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi0m180sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi90p270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90p270{k},h.sin2psi.dphi90p270delta{k}];
-        h.sin2psi.dphi90m270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-        h.sin2psi.dphi90m270sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-    end
-elseif length(ia{1}) ~= 1
-    for k = 1:size(h.sin2psi.dphi0,2)
-        h.sin2psi.dphi0p180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0p180{k},h.sin2psi.dphi0p180delta{k}];
-        h.sin2psi.dphi0m180sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi0m180sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi0m180{k},h.sin2psi.dphi0m180delta{k}];
-        h.sin2psi.dphi90p270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90p270{k},h.sin2psi.dphi90p270delta{k}];
-        h.sin2psi.dphi90m270sinquadratpsi{k} = [sind(h.PsiforInterpol{k}).^2,h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-        h.sin2psi.dphi90m270sin2psi{k} = [sind(2.*h.PsiforInterpol{k}),h.sin2psi.dphi90m270{k},h.sin2psi.dphi90m270delta{k}];
-    end
-end
-
-% Perform linear regeression
-for k = 1:size(h.sin2psi.dphi0,2)
-    h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
-    h.sin2psi.dphi90p270sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi90p270sinquadratpsi{k}(:,1),h.sin2psi.dphi90p270sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi90p270sinquadratpsi{k}(:,3));
-    funsigmashear = @(m,x)(m.*x);
-    h.sin2psi.dphi0m180sin2psiregress{k} = fitnlm(h.sin2psi.dphi0m180sin2psi{k}(:,1),h.sin2psi.dphi0m180sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi0m180sin2psi{k}(:,3));
-    h.sin2psi.dphi90m270sin2psiregress{k} = fitnlm(h.sin2psi.dphi90m270sin2psi{k}(:,1),h.sin2psi.dphi90m270sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi90m270sin2psi{k}(:,3));
-end
-
-% % Calculate tau
-% if length(ia{1}) == 1
-%     % Calculate absorbtion coefficient for Emax values
-%     h.StressesMW.absorbcoeff = cell(1);
-%     for k = 1:size(h.Params.Energy_Max,2)
-%         h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.Params.Energy_Max{k});
-%     end
-%     % Calculate tau for Emax values
-%     h.StressesMW.temptau = cell(1);
-%     for k = 1:size(h.Params.Energy_Max,2)
-%         h.StressesMW.temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.Params.Psi_Winkel{k}))./(2.*h.StressesMW.absorbcoeff{k}./10000);
-%     end
-%     % Calculate average <tau>
-%     for ii = 1:size(h.Params.Energy_Max,2)
-%         h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
-%         h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
-%     end
-% elseif length(ia{1}) ~= 1
-%     % Calculate absorbtion coefficient for Emax values
-%     for j = 1:length(ia{1})
-%         h.StressesMW(j).absorbcoeff = cell(1);
-%         for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-%             h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.ParamsToFit(j).Energy_Max{k});
-%         end
-%     end
-% 
-%     for j = 1:length(ia{1})
-%         % Calculate tau for Emax values
-%         % Calculate average <tau>
-%         h.StressesMW(j).temptau = cell(1);
-%         for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-%             h.StressesMW(j).temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}))./(2.*h.StressesMW(j).absorbcoeff{k}./10000);
-%             h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
-% %             h.StressesMW(j).taupsizero(k) = h.StressesMW(j).temptau{k}(1);
-%             h.StressesMW(j).taupsizero(k) = (sind(h.Measurement(1).twotheta./2).*cosd(0))./(2.*h.StressesMW(j).absorbcoeff{k}(1)./10000);
-%         end
-%     end
-% end
-
-
-% Calculate tau
-if length(ia{1}) == 1
-    % Calculate absorbtion coefficient for Emax values
-    if strcmp(h.Diffsel,'ETA3000')
-        h.StressesMW.absorbcoeff = cell(1);
-%         h.XRay_Energy = 6.9257;
-        eta = 90;
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
-        end
-        h.StressesMW.temptau = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            beampath{k} = ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)) + ...
-                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)))./...
-                ((sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) - cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)).*...
-                (sind(h.Params.Energy_Max{k}/2).*cosd(h.Params.Psi_Winkel{k}) + cos(h.Params.Energy_Max{k}/2).*sind(h.Params.Psi_Winkel{k}).*cosd(eta)));     
-        end
-
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.temptau{k} = 1./(h.StressesMW.absorbcoeff{k}./10000.*beampath{k});
-        end
-        % Calculate average <tau>
-        for ii = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
-            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
-        end
-    else
-        % Calculate absorbtion coefficient for Emax values
-        h.StressesMW.absorbcoeff = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.absorbcoeff{k} = h.Sample.Materials(1).LAC(h.Params.Energy_Max{k});
-        end
-        % Calculate tau for Emax values
-        h.StressesMW.temptau = cell(1);
-        for k = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.Params.Psi_Winkel{k}))./(2.*h.StressesMW.absorbcoeff{k}./10000);
-        end
-        % Calculate average <tau>
-        for ii = 1:size(h.Params.Energy_Max,2)
-            h.StressesMW.tau(ii) = (h.StressesMW.temptau{ii}(1)+h.StressesMW.temptau{ii}(end))/2;
-            h.StressesMW.taupsizero(ii) = h.StressesMW.temptau{ii}(1);
-        end
-    end
-elseif length(ia{1}) ~= 1
-    % Calculate absorbtion coefficient for Emax values
-    if strcmp(h.Diffsel,'ETA3000')
-%         h.XRay_Energy = 6.9257;
-        eta = 90;
-        for j = 1:length(ia{1})
-            h.StressesMW(j).absorbcoeff = cell(1);
-            for k = 1:size(h.Params.Energy_Max,2)
-                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.XRay_Energy);
-            end
-
-        end
-%         assignin('base','ia',ia)
-%         assignin('base','hParamsToFit',h.ParamsToFit)
-        for j = 1:length(ia{1})
-            % Calculate tau for Emax values
-            % Calculate average <tau>
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
-                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
-            end
-        end
-
-        for j = 1:length(ia{1})
-            h.StressesMW(j).temptau = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).temptau{k} = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k});
-                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
-                beampath{j,k} = ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)) + ...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)))./...
-                    ((sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) - cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)).*...
-                    (sind(h.ParamsToFit(j).Energy_Max{k}/2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}) + cos(h.ParamsToFit(j).Energy_Max{k}/2).*sind(h.ParamsToFit(j).Psi_Winkel{k}).*cosd(eta)));
-%                 assignin('base','beampath1',beampath)
-                h.StressesMW(j).taupsizero(k) = 1./(h.StressesMW(j).absorbcoeff{k}./10000.*beampath{j,k}(1));
-            end
-        end
-    else
-        for j = 1:length(ia{1})
-            h.StressesMW(j).absorbcoeff = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).absorbcoeff{k} = h.Sample.Materials(1).LAC(h.ParamsToFit(j).Energy_Max{k});
-            end
-        end
-    
-        for j = 1:length(ia{1})
-            % Calculate tau for Emax values
-            % Calculate average <tau>
-            h.StressesMW(j).temptau = cell(1);
-            for k = 1:size(h.ParamsToFit(j).Energy_Max,2)
-                h.StressesMW(j).temptau{k} = (sind(h.Measurement(1).twotheta./2).*cosd(h.ParamsToFit(j).Psi_Winkel{k}))./(2.*h.StressesMW(j).absorbcoeff{k}./10000);
-                h.StressesMW(j).tau(k) = (h.StressesMW(j).temptau{k}(1)+h.StressesMW(j).temptau{k}(end))/2;
-    %             h.StressesMW(j).taupsizero(k) = h.StressesMW(j).temptau{k}(1);
-                h.StressesMW(j).taupsizero(k) = (sind(h.Measurement(1).twotheta./2).*cosd(0))./(2.*h.StressesMW(j).absorbcoeff{k}(1)./10000);
-            end
-        end
-    end
-end
-
-% Calculate aveerage tau from all measured azimuths
-for j = 1:size(h.StressesMW,2)
-    h.sin2psi.tautmp(:,j) = h.StressesMW(j).tau;
-    h.sin2psi.taupsizero(:,j) = h.StressesMW(j).taupsizero;
-end
-
-for k = 1:size(h.sin2psi.tautmp,1)
-    h.sin2psi.taumean(k) = mean(h.sin2psi.tautmp(k,:));
-    h.sin2psi.taupsizeromean(k) = mean(h.sin2psi.taupsizero(k,:));
-end
-
-% Load DEK data previously entered by user
-DEKdatatmp = get(h.loadDEKtable,'data');
-hklDEKtmp = zeros(1,size(DEKdatatmp,1));
-% Convert hkl to vector
-for k = 1:length(DEKdatatmp(:,1))
-    hklDEKtmp(k) = DEKdatatmp(k,1)*100 + DEKdatatmp(k,2)*10 + DEKdatatmp(k,3);
-end
-
-hklDEKtmp = hklDEKtmp';
-% Set DEK values to Params structure
-h.Params.DEK = [hklDEKtmp DEKdatatmp(:,4:5)];
-% assignin('base','PsiforInterpol',h.PsiforInterpol)
-assignin('base','ParamsDEK',h.Params.DEK)
-% Calculate dzero
-if length(ia{1}) == 1
-    for k = 1:size(h.Params.LatticeSpacing,2)
-        % Calculate dzero
-%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
-        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
-        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
-    end
-elseif length(ia{1}) ~= 1    
-    for k = 1:size(h.ParamsToFit(1).LatticeSpacingInterpol,2)
-        % Calculate dzero
-%         h.sin2psi.dzero(k) = interp1(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))),'linear','extrap');
-        p = polyfit(h.PsiforInterpol{k},h.sin2psi.dphi0p180p90p270{k},1);
-        h.sin2psi.dzero(k) = polyval(p,asind(sqrt(-2.*h.Params.DEK(k,2)./h.Params.DEK(k,3))));
-    end
-end
-
-% Calculate sigma11 and sigma22
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsi,2)
-    h.sin2psi.dphi0p180sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi0p180sinquadratpsi{k}(:,1),h.sin2psi.dphi0p180sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi0p180sinquadratpsi{k}(:,3));
-    h.sin2psi.dphi90p270sinquadratpsiregress{k} = fitlm(h.sin2psi.dphi90p270sinquadratpsi{k}(:,1),h.sin2psi.dphi90p270sinquadratpsi{k}(:,2),'Weight',1./h.sin2psi.dphi90p270sinquadratpsi{k}(:,3));
-end
-
-% Calculate sigma13 and sigma23
-for k = 1:size(h.sin2psi.dphi0m180sin2psi,2)
-	h.sin2psi.dphi0m180sin2psiregress{k} = fitnlm(h.sin2psi.dphi0m180sin2psi{k}(:,1),h.sin2psi.dphi0m180sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi0m180sin2psi{k}(:,3));
-	h.sin2psi.dphi90m270sin2psiregress{k} = fitnlm(h.sin2psi.dphi90m270sin2psi{k}(:,1),h.sin2psi.dphi90m270sin2psi{k}(:,2),funsigmashear,0,'Weights',1./h.sin2psi.dphi90m270sin2psi{k}(:,3));
-end
-% assignin('base','sin2psiMod',h.sin2psi)
-% assignin('base','ParamsToFit',h.ParamsToFit)
-
-% Create sigmatau list
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
-    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];      
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];                
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];   
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)]; 
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma23
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];  
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13, sigma23	
-        h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taupsizero(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-                        h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taumean(k)];
-    end
-%     if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];      
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];                
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-%         % sigma11, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];   
-%     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma13
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)]; 
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-%         % sigma11, sigma22, sigma23
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];  
-%     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-%         % sigma11, sigma22, sigma13, sigma23	
-%         h.sin2psi.sigmataulist(k,:) = [h.sin2psi.taumean(k),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.SE(2)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi0m180sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3), ...
-%                         h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.Estimate(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.dphi90m270sin2psiregress{k}.Coefficients.SE(1)./h.sin2psi.dzero(k)./h.Params.DEK(k,3),h.sin2psi.taupsizero(k)];
-%     end
-end
-
-% Calculate regression lines
-sinpsisquare = linspace(0,1,51);
-h.sinpsisquare = sinpsisquare;
-
-for k = 1:size(h.sin2psi.dphi0p180sinquadratpsiregress,2)
-    if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;    
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;     
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);				   
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi90(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;				   
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma13
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi90p270sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma22, sigma23
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,4).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*2.*(h.sin2psi.sigmataulist(k,2))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma23
-        h.sin2psi.reglinephi0(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);			   
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)	
-        % sigma11, sigma22, sigma23
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(1) + h.sin2psi.dphi0p180sinquadratpsiregress{k}.Coefficients.Estimate(2).*sinpsisquare;
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);                   
-    elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
-        % sigma11, sigma22, sigma13, sigma23
-        h.sin2psi.reglinephi0(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi90(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare + ...
-                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi180(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,2).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,6).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-        h.sin2psi.reglinephi270(:,k) = (h.Params.DEK(k,3).*(h.sin2psi.sigmataulist(k,4).*sinpsisquare - ...
-                           h.sin2psi.sigmataulist(k,8).*2.*sqrt(sinpsisquare.*(1-sinpsisquare))) + ...
-                           h.Params.DEK(k,2).*(h.sin2psi.sigmataulist(k,2) + h.sin2psi.sigmataulist(k,4))).*h.sin2psi.dzero(k) + h.sin2psi.dzero(k);
-    end
-end
-% assignin('base','sin2psiMod1',h.sin2psi)
+% Gemeinsame sin2psi-Regressionspipeline (siehe RecomputeSin2PsiStressRegression).
+% ResetCheckboxes=false: Checkbox-Zustand bleibt unangetastet, damit die
+% vom Nutzer bewusst eingestellte Phi-Sichtbarkeit fuer die Punktauswahl
+% in selectdatastressvalues (oben in dieser Funktion) erhalten bleibt.
+h = RecomputeSin2PsiStressRegression(h, PhiWinkel, ia, TwoThetaTau, false);
 % Get peak hkl and sort acording to tau value of peak
 if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
     if strcmp(h.Detsel,'Detector 1')
@@ -17795,7 +19230,7 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
             % Dabei wird eine Matrix erzeugt, die die abgewaehlten hkl als
             % 0 anzeigt. Hier an dieser Stelle sind die fehlenden hkl aber
             % erst garnicht aufgefuehrt. Daher gab es an dieser Stelle eine
-            % Fehlermeldung, dass die Groeßen nicht passen.
+            % Fehlermeldung, dass die Groeï¿½en nicht passen.
 %             h.PeaksforLabel = h.PeaksforLabel(h.KeepPeaksDEKLogical(:,1),:);
 %             h.PeaksforLabel = PeaksforLabeltmp;
         end
@@ -18403,9 +19838,1728 @@ assignin('base','sin2psimod',h.sin2psi)
 % assignin('base','StressesMW',h.StressesMW)
 assignin('base','ParamsToFitMod',h.ParamsToFit)
 
+% Fit-Plot-Slider (h.SliderFitData) und die zugehoerige Markierung im
+% d-sin2psi-Plot (h.plotdspacingHighlight) nach dem Loeschen auf den
+% verbliebenen vorherigen/naechsten Punkt setzen, statt den Kreis auf dem
+% geloeschten (nicht mehr existierenden) Punkt stehen zu lassen.
+% PhiIdxForFitSlider bestimmt, welcher h.ParamsToFit-Eintrag zur
+% ausgewaehlten Phi-Richtung gehoert -- die gleiche Zuordnung, die oben je
+% Checkbox-Fall bereits einzeln fuer das Loeschen der Rohdaten verwendet
+% wurde (0/90/180/270 an der Position ihres Auftretens in der sortierten,
+% fuer den Datensatz tatsaechlich vorhandenen Azimutliste PhiWinkel{1}).
+AzimuthValues = [0 90 180 270];
+ActiveAzIdx = find(CheckBoxesPhi==1,1);
+PhiIdxForFitSlider = find(PhiWinkel{1} == AzimuthValues(ActiveAzIdx));
+NumPointsAfterDelete = numel(h.ParamsToFit(PhiIdxForFitSlider).Psi_Winkel{valueSlider});
+if NumPointsAfterDelete == 0
+    % Keine Messpunkte mehr fuer diesen Peak/diese Phi-Richtung -- Fit-Plot
+    % und Markierung ausblenden.
+    set(h.plotdspacingHighlight, {'XData','YData','Visible'}, {NaN,NaN,'off'});
+    if isfield(h,'ptext')
+        delete(h.ptext)
+        h = rmfield(h,'ptext');
+    end
+    set(h.plotrawdata1,'Visible','off')
+    set(h.plotfitdata1,'Visible','off')
+    set(h.plotresiualdata1,'Visible','off')
+    title(h.axesplotfitdata,'No measurement data loaded')
+else
+    % Index des geloeschten Punktes relativ zum alten Slider-Wert
+    % beruecksichtigen: liegt er davor, ruecken alle nachfolgenden Punkte
+    % eine Position auf; war der aktuell betrachtete Punkt selbst der
+    % geloeschte, zeigt derselbe Index danach automatisch auf den
+    % naechsten Punkt, ans Ende geklemmt auf den vorherigen, falls es der
+    % letzte Punkt war.
+    NewValueFit = min(max(valueSliderFitOld - sum(pointslist < valueSliderFitOld), 1), NumPointsAfterDelete);
+    set(h.SliderFitData,'Value',NewValueFit);
+    guidata(hObj, h);
+    SliderCallbackFitData(h.SliderFitData, []);
+    h = guidata(hObj);
+end
+
 guidata(hObj, h);
 
-%% Export sin²psi plots button
+function h = BuildSin2PsiStressPlotData(h, ia, valueSliderStress)
+% Baut h.PeaksforLabel / h.ColorsUsed(tmp) / h.sin2psi.StressPlotDatatmpsorted
+% / h.ColorsUsedSorted / h.hkllabel neu auf -- das sind die Daten, die der
+% Spannungstiefenverlauf im sin2psi-Tab (h.axesplotstressdata, siehe
+% SliderCallbackPlotStressData) anzeigt. Setzt voraus, dass
+% h.sin2psi.sigmataulist bereits aktuell ist (siehe
+% RecomputeSin2PsiStressRegression).
+%
+% Identische Logik wie der entsprechende Abschnitt in
+% buttonmodifystressdata (dort inline, hier fuer die Wiederverwendung aus
+% buttonmodifypsistressdata extrahiert) -- buttonmodifystressdata selbst
+% wurde bewusst NICHT auf diese Funktion umgestellt, um an bereits
+% funktionierendem Code nichts zu riskieren.
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        % Check whether peaks where deselected by the user
+        if isfield(h, 'idxkeepPeaksDet1')
+            idx = find(h.FitPeaksLogicalDet1(:,1) == 1);
+            if length(idx) == length(h.idxkeepPeaksDet1)
+                FitPeaks = h.FitPeaksLogicalDet1(:,1);
+            else
+                FitPeakslogical = zeros(size(h.FitPeaksLogicalDet1,1),1);
+                FitPeakslogical(h.idxkeepPeaksDet1) = 1;
+                FitPeaks = logical(FitPeakslogical);
+            end
+        else
+            FitPeaks = h.FitPeaksLogicalDet1(:,1);
+        end
+
+        if size(FitPeaks,1) == 1
+            Peakstmp = h.TPeaksDet1.T.Peaks;
+            PeakstmpLogical = Peakstmp(:,5) > h.P.EnergyRangeDet1(1) & Peakstmp(:,5) < h.P.EnergyRangeDet1(2);
+            h.PeaksforLabel = h.TPeaksDet1.T.Peaks(PeakstmpLogical(:,1),1:5);
+        else
+            PeakstmpLogical = h.TPeaksDet1.T.Peaks(:,5) > h.P.EnergyRangeDet1(1) & h.TPeaksDet1.T.Peaks(:,5) < h.P.EnergyRangeDet1(2);
+            PeaksforLabeltmp = h.TPeaksDet1.T.Peaks(PeakstmpLogical(:,1),1:5);
+            h.PeaksforLabel = PeaksforLabeltmp(logical(FitPeaks),1:5);
+        end
+
+    elseif strcmp(h.Detsel,'Detector 2')
+        % Check whether peaks where deselected by the user
+        if isfield(h, 'idxkeepPeaksDet2')
+            idx = find(h.FitPeaksLogicalDet2(:,1) == 1);
+            if length(idx) == length(h.idxkeepPeaksDet2)
+                FitPeaks = h.FitPeaksLogicalDet2(:,1);
+            else
+                FitPeakslogical = zeros(size(h.FitPeaksLogicalDet2,1),1);
+                FitPeakslogical(h.idxkeepPeaksDet2) = 1;
+                FitPeaks = logical(FitPeakslogical);
+            end
+        else
+            FitPeaks = h.FitPeaksLogicalDet2(:,1);
+        end
+
+        if size(FitPeaks,1) == 1
+            Peakstmp = h.TPeaksDet2.T.Peaks;
+            PeakstmpLogical = Peakstmp(:,5) > h.P.EnergyRangeDet2(1) & Peakstmp(:,5) < h.P.EnergyRangeDet2(2);
+            h.PeaksforLabel = h.TPeaksDet2.T.Peaks(PeakstmpLogical(:,1),1:5);
+        else
+            PeakstmpLogical = h.TPeaksDet2.T.Peaks(:,5) > h.P.EnergyRangeDet2(1) & h.TPeaksDet2.T.Peaks(:,5) < h.P.EnergyRangeDet2(2);
+            PeaksforLabeltmp = h.TPeaksDet2.T.Peaks(PeakstmpLogical(:,1),1:5);
+            h.PeaksforLabel = PeaksforLabeltmp(FitPeaks,1:5);
+        end
+    end
+else
+    % Check whether peaks where deselected by the user
+    if isfield(h, 'idxkeepPeaks')
+        idx = find(h.FitPeaksLogical(:,1) == 1);
+        if length(idx) == length(h.idxkeepPeaks)
+            FitPeaks = h.FitPeaksLogical(:,1);
+        else
+            % Load fit data from fit results table
+            FitDatatmp = get(h.tablefitresults,'data');
+            % Load energy positions
+            EnergyPos = str2double(FitDatatmp(:,3));
+            EPosToKeep = EnergyPos(h.idxkeepPeaks);
+            EPosKeepCell = mat2cell(EPosToKeep,size(EPosToKeep,1),1);
+            EPosKeepCell{1} = EPosKeepCell{1}';
+            PeakstmpLogical = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
+            EPosTheo = h.TPeaks.T.Peaks(PeakstmpLogical,5);
+            [CompareFitPeaksLogical,~,~,~] = ComparePeaks(EPosKeepCell,EPosTheo);
+            FitPeaks = CompareFitPeaksLogical;
+            h.FitPeaksLogicalUser = CompareFitPeaksLogical;
+        end
+    else
+        FitPeaks = h.FitPeaksLogical(:,1);
+    end
+
+    if size(FitPeaks,1) == 1
+        Peakstmp = h.TPeaks.T.Peaks;
+        PeakstmpLogical = Peakstmp(:,5) > h.P.EnergyRange(1) & Peakstmp(:,5) < h.P.EnergyRange(2);
+        h.PeaksforLabel = h.TPeaks.T.Peaks(PeakstmpLogical(:,1),1:5);
+    else
+        PeakstmpLogical = h.TPeaks.T.Peaks(:,5) > h.P.EnergyRange(1) & h.TPeaks.T.Peaks(:,5) < h.P.EnergyRange(2);
+        PeaksforLabeltmp = h.TPeaks.T.Peaks(PeakstmpLogical(:,1),1:5);
+        h.PeaksforLabel = PeaksforLabeltmp(FitPeaks(:,1),1:5);
+
+        PeaksforLabeltmp = PeaksforLabeltmp(h.FitPeaksLogical(:,1),:);
+        PeaksforLabeltmp = PeaksforLabeltmp(h.KeepPeaksDEKLogical(:,1),:);
+        h.PeaksforLabel = PeaksforLabeltmp;
+    end
+end
+
+% Sort Colors according to energy positions of peaks
+if isfield(h, 'ColorsUsed')
+    h = rmfield(h,'ColorsUsed');
+end
+if isfield(h, 'ColorsUsedtmp')
+    h = rmfield(h,'ColorsUsedtmp');
+end
+for k = 1:size(h.Params.LatticeSpacing,2)
+    h.ColorsUsed{k} = h.Colors{k};
+end
+% Convert to integers
+for k = 1:size(h.Params.LatticeSpacing,2)
+    h.ColorsUsedtmp(k,:) = h.ColorsUsed{1,k}(:);
+end
+
+% Create array with tau, sigma, label and color data
+StressPlotDatatmp = [h.sin2psi.sigmataulist h.PeaksforLabel h.ColorsUsedtmp];
+% Sort array according to tau values
+h.sin2psi.StressPlotDatatmpsorted = sortrows(StressPlotDatatmp, 1);
+% Update hkl label order
+h.PeaksforLabel = h.sin2psi.StressPlotDatatmpsorted(:,(size(h.sin2psi.sigmataulist,2)+1:size(h.sin2psi.sigmataulist,2)+4));
+% Update color order if deleting data point caused a considerable shift of
+% tau
+h.ColorsUsedSorted = h.sin2psi.StressPlotDatatmpsorted(:,(size(h.sin2psi.sigmataulist,2)+6:size(h.sin2psi.sigmataulist,2)+8));
+% Convert back to cell array
+h.ColorsUsedSorted = num2cell(h.ColorsUsedSorted,2);
+% Create hkl label for plot of d-spacings (sorted according to d-value)
+Peaks = h.PeaksforLabel;
+
+% Test if l from hkl is larger than 9
+hkl_l_length = zeros(1,size(Peaks,1));
+for i = 1:size(Peaks,1)
+    hkl_l_length(i) = length(num2str(Peaks(i,3)));
+end
+
+if any(hkl_l_length > 1)
+    hkllabel = char(zeros(size(Peaks,1),6));
+else
+    hkllabel = char(zeros(size(Peaks,1),5));
+end
+
+% Read hkl values from array
+% Remove '[' and ']' from character array
+for ii = 1:size(Peaks,1)
+    hkllabeltmp = mat2str(Peaks(ii,(1:3)));
+    hkllabeltmp = regexprep(hkllabeltmp,'[','');
+    hkllabeltmp = regexprep(hkllabeltmp,']','');
+    % If l from hkl is two characters long
+    if any(hkl_l_length > 1)
+        if length(hkllabeltmp) == 5
+            hkllabeltmp = [hkllabeltmp ' '];
+        end
+    end
+    hkllabel(ii,:) = hkllabeltmp;
+end
+% Final output with hkl values
+h.hkllabel = cell(size(ia{1}));
+h.hkllabel{valueSliderStress} = hkllabel;
+
+%% Stress analysis - psi method (Klaus/Apel/Genzel, J. Appl. Cryst. 2025)
+function h = RecomputePsiRegression(h, ia)
+% Direkte psi-Methode: fitte a_hkl(psi) = b1*sin(psi)^2 + b2*sin(2*psi) + b3.
+% phi und phi+180 (bzw. phi und phi+180 fuer 90/270) werden zu EINEM Fit
+% kombiniert, da eine Messung bei phi+180 mit Kippwinkel psi geometrisch
+% exakt einer Messung bei phi mit Kippwinkel -psi entspricht (folgt direkt
+% aus Gl. 2a/2b: b1(phi+180)=b1(phi), b2(phi+180)=-b2(phi), und damit
+% a(psi,phi+180) = a(-psi,phi)). psi der 180/270-Seite wird daher vor dem
+% Fit gespiegelt. Ist nur eine der beiden Seiten vorhanden (geometrisch
+% eingeschraenkte Messung, der eigentliche Anwendungsfall dieser Methode),
+% wird einfach nur mit dieser einen Seite gefittet -- keine
+% Mittelung/Differenzbildung zwischen +psi/-psi-Aesten noetig (siehe
+% Gl. 1-4 im Paper).
+% Zusammenhang mit den Spannungen (Referenzrichtung phi=0/180:
+% sigma_par=sigma11, sigma_shear=sigma13; Referenzrichtung phi=90/270:
+% sigma_par=sigma22, sigma_shear=sigma23), hergeleitet direkt aus Gl.
+% 2a/2b im Paper (b1(phi)=DEK3*a0*(sigma11*cos^2(phi)+sigma22*sin^2(phi)+
+% sigma12*sin(2phi)), b2(phi)=DEK3*a0*(sigma13*cos(phi)+sigma23*sin(phi))
+% bei phi=0):
+%   sigma_par   = b1 / (d0 * DEK3)
+%   sigma_shear = b2 / (d0 * DEK3)
+% Benoetigt h.idxphi0/90/180/270, h.sin2psi.dzero und h.Params.DEK, die
+% bereits von RecomputeSin2PsiStressRegression gesetzt wurden -- daher
+% wird beim Laden zuerst buttonloadstressdata aufgerufen (siehe
+% buttonloadpsistressdata).
+AzimuthIdx = {h.idxphi0, h.idxphi90, h.idxphi180, h.idxphi270};
+RefPairs = {[1 3], [2 4]};   % {idxphi0,idxphi180}, {idxphi90,idxphi270}
+RefMirror = {[1 -1], [1 -1]};
+NumPeaks = size(h.Params.LatticeSpacing,2);
+% a=d*sqrt(H^2+K^2+L^2) gilt nur fuer kubische Symmetrie -- ueber
+% h.checkboxpsicubic abschaltbar (testweise Nutzung mit nicht-kubischen,
+% z.B. hexagonalen, Proben: dann HKLFactor=1, es wird direkt mit d
+% gearbeitet).
+CubicMode = get(h.checkboxpsicubic,'Value') == 1;
+
+h.psimethod.regress = cell(2,NumPeaks);
+h.psimethod.sigmapar = nan(2,NumPeaks);
+h.psimethod.SEpar = nan(2,NumPeaks);
+h.psimethod.sigmashear = nan(2,NumPeaks);
+h.psimethod.SEshear = nan(2,NumPeaks);
+h.psimethod.N = nan(2,NumPeaks);
+h.psimethod.fitcurvepsi = cell(2,NumPeaks);
+h.psimethod.fitcurvea = cell(2,NumPeaks);
+
+% sigma-Wertebereich JE hkl-Linie sammeln, damit die Achse von
+% h.axesplotpsideriv beim Wechseln der hkl-Linie per Slider auf den
+% jeweiligen Peak skaliert wird (nicht mehr global ueber alle Linien
+% hinweg, siehe Ruecksprache) -- Tick-Schritt bleibt dabei weiterhin auf
+% "glatten" Stufen (100/200/500/1000, siehe unten).
+sigmaPerPeak = cell(1,NumPeaks);
+psiderivGlobal = linspace(-90,90,181);
+
+for RefIdx = 1:2
+    Members = RefPairs{RefIdx};
+    MirrorSigns = RefMirror{RefIdx};
+    for k = 1:NumPeaks
+        % d->a Normierung: h.Params.LatticeSpacing ist die gemessene
+        % Netzebenenabstaende d_hkl, keine Gitterkonstante. Fuer kubische
+        % Symmetrie gilt a_hkl = d_hkl*sqrt(H^2+K^2+L^2); hkl wird aus dem
+        % DEK-Code (H*100+K*10+L, siehe buttonloadDEK) dekodiert. d0 wird
+        % mit demselben Faktor skaliert, sodass sigma_par/sigma_shear
+        % (b1bzw.b2 / d0) numerisch unveraendert bleiben -- nur die
+        % geplotteten/gefitteten Werte liegen jetzt in a- statt d-Einheiten.
+        HKLCode = h.Params.DEK(k,1);
+        HKLidx = [floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10)];
+        if CubicMode
+            HKLFactor = sqrt(sum(HKLidx.^2));
+        else
+            HKLFactor = 1;
+        end
+        psiAll = []; aAll = []; deltaAll = [];
+        for m = 1:2
+            idxphi = AzimuthIdx{Members(m)};
+            if isempty(idxphi)
+                continue
+            end
+            if length(ia{1}) == 1
+                psi = h.Params.Psi_Winkel{k};
+                a = h.Params.LatticeSpacing{k};
+                adelta = h.Params.LatticeSpacing_Delta{k};
+            else
+                psi = h.ParamsToFit(idxphi).Psi_Winkel{k};
+                a = h.ParamsToFit(idxphi).LatticeSpacing{k};
+                adelta = h.ParamsToFit(idxphi).LatticeSpacing_Delta{k};
+            end
+            psiAll = [psiAll; MirrorSigns(m).*psi(:)]; %#ok<AGROW>
+            aAll = [aAll; HKLFactor.*a(:)]; %#ok<AGROW>
+            deltaAll = [deltaAll; HKLFactor.*adelta(:)]; %#ok<AGROW>
+        end
+        if numel(psiAll) < 4
+            % Zu wenige Punkte fuer einen 3-Parameter-Fit (b1,b2,b3)
+            continue
+        end
+        X = [sind(psiAll).^2, sind(2.*psiAll)];
+        % Gewichtung mit 1/delta (nicht 1/delta^2), konsistent mit der
+        % gleichen Konvention in RecomputeSin2PsiStressRegression, die dem
+        % Mathematica-Original entspricht (siehe Ruecksprache).
+        mdl = fitlm(X, aAll, 'Weight', 1./deltaAll);
+        b1 = mdl.Coefficients.Estimate(2); SEb1 = mdl.Coefficients.SE(2);
+        b2 = mdl.Coefficients.Estimate(3); SEb2 = mdl.Coefficients.SE(3);
+        d0 = HKLFactor.*h.sin2psi.dzero(k);
+        DEK3 = h.Params.DEK(k,3);
+        h.psimethod.regress{RefIdx,k} = mdl;
+        h.psimethod.sigmapar(RefIdx,k) = b1./d0./DEK3;
+        h.psimethod.SEpar(RefIdx,k) = SEb1./d0./DEK3;
+        h.psimethod.sigmashear(RefIdx,k) = b2./d0./DEK3;
+        h.psimethod.SEshear(RefIdx,k) = SEb2./d0./DEK3;
+        h.psimethod.N(RefIdx,k) = numel(psiAll);
+        % Kurve immer ueber den vollen Achsenbereich zeichnen (nicht nur
+        % ueber den tatsaechlich gemessenen psi-Bereich), damit sie den
+        % ganzen -90..90-Grad-Plot abdeckt.
+        psifit = linspace(-90,90,181);
+        Xfit = [sind(psifit(:)).^2, sind(2.*psifit(:))];
+        h.psimethod.fitcurvepsi{RefIdx,k} = psifit;
+        h.psimethod.fitcurvea{RefIdx,k} = predict(mdl, Xfit)';
+        sigmapar = h.psimethod.sigmapar(RefIdx,k);
+        sigmashear = h.psimethod.sigmashear(RefIdx,k);
+        sigmaparcurve = sigmapar.*cosd(2.*psiderivGlobal) - 2.*sigmashear.*sind(2.*psiderivGlobal);
+        sigmashearcurve = 0.5.*sigmapar.*sind(2.*psiderivGlobal) + sigmashear.*cosd(2.*psiderivGlobal);
+        sigmaPerPeak{k} = [sigmaPerPeak{k}, sigmaparcurve, sigmashearcurve]; %#ok<AGROW>
+    end
+end
+% Symmetrischer Bereich um 0 (die sigma(psi)-Kurven oszillieren um 0), je
+% hkl-Linie einzeln. Tick-Schritt ueber denselben "nice numbers"-Algorithmus
+% wie beim a-/d-psi-Plot (NicePsiTickStep, 1/2/5*10^n) statt fester
+% Stufentabelle -- diese war zu grob (z.B. Maximum ~85 MPa ergab nur Ticks
+% bei -100/0/100 statt z.B. 50er-Schritten). Die Grenze ist per
+% Konstruktion (ceil auf ein Vielfaches des Schritts) immer exakt ein Tick.
+h.psimethod.YLimDerivPeak = cell(1,NumPeaks);
+h.psimethod.YTickDerivPeak = cell(1,NumPeaks);
+for k = 1:NumPeaks
+    if ~isempty(sigmaPerPeak{k})
+        sigmaAbsMax = max(abs(sigmaPerPeak{k}));
+        YTickStepDeriv = NicePsiTickStep(-sigmaAbsMax, sigmaAbsMax, 5);
+        YLimDerivMax = ceil(sigmaAbsMax/YTickStepDeriv)*YTickStepDeriv;
+        if YLimDerivMax == 0
+            YLimDerivMax = YTickStepDeriv;
+        end
+        h.psimethod.YLimDerivPeak{k} = [-YLimDerivMax, YLimDerivMax];
+        h.psimethod.YTickDerivPeak{k} = -YLimDerivMax:YTickStepDeriv:YLimDerivMax;
+    else
+        h.psimethod.YLimDerivPeak{k} = [-100,100];
+        h.psimethod.YTickDerivPeak{k} = -100:100:100;
+    end
+end
+
+% Anzahl der Slots fuer den tau0-Slot-Slider (h.SliderPsiTauSlot): 2, wenn
+% nur die Referenzrichtung 0/180 vorhanden ist (sigma11,sigma13), 4 wenn
+% zusaetzlich 90/270 gemessen wurde (sigma11,sigma13,sigma22,sigma23).
+h.psimethod.NumTauSlots = 2;
+if ~isempty(h.idxphi90) || ~isempty(h.idxphi270)
+    h.psimethod.NumTauSlots = 4;
+end
+
+function step = NicePsiTickStep(rawMin, rawMax, targetTicks)
+% Klassischer "nice numbers"-Algorithmus: liefert einen glatten
+% Tick-Schritt (1/2/5*10^n) fuer den Bereich [rawMin,rawMax], sodass ca.
+% targetTicks Ticks entstehen.
+range = rawMax - rawMin;
+if range <= 0
+    range = max(abs(rawMax), 1);
+end
+roughStep = range./targetTicks;
+magnitude = 10.^floor(log10(roughStep));
+residual = roughStep./magnitude;
+if residual > 5
+    niceResidual = 10;
+elseif residual > 2
+    niceResidual = 5;
+elseif residual > 1
+    niceResidual = 2;
+else
+    niceResidual = 1;
+end
+step = niceResidual.*magnitude;
+
+function h = RefreshLatticeSpacingInterpol(h, ia)
+% Baut h.ParamsToFit(*).LatticeSpacingInterpol/_DeltaInterpol (bzw.
+% h.Params.*Interpol im Einzelazimut-Fall) aus den aktuellen Rohdaten neu
+% auf -- identische Logik wie in buttonloadstressdata/
+% buttonmodifystressdata, hier separat aufrufbar, damit nach einem
+% Punkt-Loeschen ueber den psi-Tab die vom sin2psi-Tab benoetigten
+% interpolierten Felder konsistent bleiben (auch wenn die psi-Methode
+% selbst sie nicht braucht).
+if length(ia{1}) ~= 1
+    for j = 1:size(h.ParamsToFit,2)
+        for k = 1:size(h.ParamsToFit(j).LatticeSpacing,2)
+            % Schutz gegen ein leer- bzw. fastleer-geloeschtes Azimut (z.B.
+            % wenn im psi-Tab alle Punkte eines Astes einzeln geloescht
+            % wurden): polyfit/interp1 brauchen mindestens 2 Punkte fuer
+            % eine Gerade, sonst NaN statt Fehler/verfaelschter Koeffizienten.
+            if numel(h.ParamsToFit(j).Psi_Winkel{k}) < 2
+                h.ParamsToFit(j).LatticeSpacingInterpol{k} = nan(size(h.PsiforInterpol{k}));
+                h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = nan(size(h.PsiforInterpol{k}));
+                continue
+            end
+            h.ParamsToFit(j).LatticeSpacingInterpol{k} = InterpolLatticeSpacingKeepData(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing{k},h.PsiforInterpol{k});
+            h.ParamsToFit(j).LatticeSpacing_DeltaInterpol{k} = interp1(h.ParamsToFit(j).Psi_Winkel{k},h.ParamsToFit(j).LatticeSpacing_Delta{k},h.PsiforInterpol{k},'linear','extrap');
+        end
+    end
+else
+    for k = 1:size(h.Params.LatticeSpacing,2)
+        h.Params.LatticeSpacingInterpol{k} = h.Params.LatticeSpacing{k};
+        h.Params.LatticeSpacing_DeltaInterpol{k} = h.Params.LatticeSpacing_Delta{k};
+    end
+end
+
+function h = UpdatePsiPlotAndTable(h, valueSlider)
+% Aktualisiert Plot (h.axesplotpsi) und Ergebnistabelle
+% (h.tablepsiresults) fuer die aktuelle Slider-Position (Peak/hkl-Linie).
+%
+% phi=180/270 werden nur zur ANZEIGE bei -psi statt +psi geplottet (der
+% Fit selbst verwendet weiterhin die tatsaechlich gemessenen, positiven
+% psi-Werte -- das Spiegeln ist rein optisch, damit phi=0/180 bzw.
+% phi=90/270 wie beim klassischen +psi/-psi-Astkonzept auf derselben
+% Achse von -90 bis +90 liegen).
+AzimuthPlots = {h.plotdatapsiphi0, h.plotdatapsiphi90, h.plotdatapsiphi180, h.plotdatapsiphi270};
+AzimuthFits = {h.plotfitpsiphi0, h.plotfitpsiphi90, h.plotfitpsiphi180, h.plotfitpsiphi270};
+AzimuthIBPlots = {h.plotdataIBpsiphi0, h.plotdataIBpsiphi90, h.plotdataIBpsiphi180, h.plotdataIBpsiphi270};
+AzimuthIntPlots = {h.plotdataIntpsiphi0, h.plotdataIntpsiphi90, h.plotdataIntpsiphi180, h.plotdataIntpsiphi270};
+AzimuthIdx = {h.idxphi0, h.idxphi90, h.idxphi180, h.idxphi270};
+AzimuthMirror = [1 1 -1 -1];
+% Welcher der zwei kombinierten Fits (1: phi0/180, 2: phi90/270) gehoert
+% zu welcher rohen Azimut-Punktwolke -- die Fit-KURVE ist fuer beide
+% Mitglieder eines Paares identisch (ein gemeinsamer Fit, siehe
+% RecomputePsiRegression), nur die Rohdatenpunkte bleiben pro Azimut
+% getrennt (unterschiedliche Marker).
+AzimuthRefIdx = [1 2 1 2];
+RefLabels = {'0/180','90/270'};
+TableData = cell(2,6);
+% IB/Integrated Intensity: Y-Achse wird -- anders als beim a-vs-psi-Plot --
+% bewusst PRO hkl-Linie neu skaliert (nicht global ueber alle Peaks), da
+% sich die Werte zwischen Reflexen um Groessenordnungen unterscheiden
+% koennen; eine globale Skala wuerde feine Unterschiede unsichtbar machen.
+ibAllVisible = [];
+intAllVisible = [];
+% Auch die Y-Achse von h.axesplotpsi wird pro hkl-Linie neu skaliert (nicht
+% global ueber alle Peaks), damit bei geringen Spannungen die feinen
+% psi-abhaengigen Unterschiede sichtbar bleiben.
+aAllVisible = [];
+% Aktueller Checkbox-Status je Azimut wird respektiert -- nicht ueberschreiben
+% (relevant beim Aufruf aus buttonmodifypsistressdata: dort soll exakt die
+% vom Nutzer per Checkbox ausgewaehlte Azimut-Ansicht erhalten bleiben statt
+% nach dem Loeschen wieder alle Serien sichtbar zu machen).
+AzimuthCheckboxValue = [get(h.checkboxpsiphi0,'Value'), get(h.checkboxpsiphi90,'Value'), get(h.checkboxpsiphi180,'Value'), get(h.checkboxpsiphi270,'Value')];
+
+for AzIdx = 1:4
+    idxphi = AzimuthIdx{AzIdx};
+    RefIdx = AzimuthRefIdx(AzIdx);
+    if isempty(idxphi) || size(h.psimethod.regress,2) < valueSlider || isempty(h.psimethod.regress{RefIdx,valueSlider})
+        set(AzimuthPlots{AzIdx},'Visible','off')
+        set(AzimuthFits{AzIdx},'Visible','off')
+        set(AzimuthIBPlots{AzIdx},'Visible','off')
+        set(AzimuthIntPlots{AzIdx},'Visible','off')
+        continue
+    end
+    if isfield(h,'ParamsToFit') && numel(h.ParamsToFit) >= idxphi
+        psi = h.ParamsToFit(idxphi).Psi_Winkel{valueSlider};
+        a = h.ParamsToFit(idxphi).LatticeSpacing{valueSlider};
+        adelta = h.ParamsToFit(idxphi).LatticeSpacing_Delta{valueSlider};
+        ib = h.ParamsToFit(idxphi).IntegralWidth{valueSlider};
+        intint = h.ParamsToFit(idxphi).Intensity_Int{valueSlider};
+    else
+        psi = h.Params.Psi_Winkel{valueSlider};
+        a = h.Params.LatticeSpacing{valueSlider};
+        adelta = h.Params.LatticeSpacing_Delta{valueSlider};
+        ib = h.Params.IntegralWidth{valueSlider};
+        intint = h.Params.Intensity_Int{valueSlider};
+    end
+    % d->a Normierung wie in RecomputePsiRegression, damit die Rohdatenpunkte
+    % auf derselben Skala liegen wie die (bereits a-normierte) Fit-Kurve.
+    % Ueber h.checkboxpsicubic abschaltbar (siehe RecomputePsiRegression).
+    HKLCode = h.Params.DEK(valueSlider,1);
+    HKLidx = [floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10)];
+    if get(h.checkboxpsicubic,'Value') == 1
+        HKLFactor = sqrt(sum(HKLidx.^2));
+    else
+        HKLFactor = 1;
+    end
+    a = HKLFactor.*a;
+    adelta = HKLFactor.*adelta;
+    MirrorSign = AzimuthMirror(AzIdx);
+    if AzimuthCheckboxValue(AzIdx) == 1
+        VisibleAzimuth = 'on';
+    else
+        VisibleAzimuth = 'off';
+    end
+    set(AzimuthPlots{AzIdx}, {'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},'k'});
+    set(AzimuthPlots{AzIdx},'XData',MirrorSign.*psi,'YData',a,'YNegativeDelta',adelta,'YPositiveDelta',adelta,'Visible',VisibleAzimuth)
+    % Fit-Kurve liegt bereits im kombinierten (gespiegelten) psi-Bereich
+    % vor -- hier NICHT nochmal spiegeln, nur die Rohdatenpunkte oben.
+    set(AzimuthFits{AzIdx}, 'Color', h.Colors{valueSlider});
+    set(AzimuthFits{AzIdx},'XData',h.psimethod.fitcurvepsi{RefIdx,valueSlider},'YData',h.psimethod.fitcurvea{RefIdx,valueSlider},'Visible',VisibleAzimuth)
+    % IB/Integrated Intensity vs. psi: reine Rohdaten (keine Fit-Kurve,
+    % analog h.axesplotIB/h.axesplotInt im sin2psi-Tab).
+    set(AzimuthIBPlots{AzIdx}, 'MarkerFaceColor', h.Colors{valueSlider});
+    set(AzimuthIBPlots{AzIdx},'XData',MirrorSign.*psi,'YData',ib,'Visible',VisibleAzimuth)
+    set(AzimuthIntPlots{AzIdx}, 'MarkerFaceColor', h.Colors{valueSlider});
+    set(AzimuthIntPlots{AzIdx},'XData',MirrorSign.*psi,'YData',intint,'Visible',VisibleAzimuth)
+    ibAllVisible = [ibAllVisible; ib(:)]; %#ok<AGROW>
+    intAllVisible = [intAllVisible; intint(:)]; %#ok<AGROW>
+    aAllVisible = [aAllVisible; a(:)-adelta(:); a(:)+adelta(:); h.psimethod.fitcurvea{RefIdx,valueSlider}(:)]; %#ok<AGROW>
+    % Fehlerbalken-Spannweite UND die Fit-Kurve fliessen (unabhaengig von
+    % der Checkbox-Sichtbarkeit!) in aAllVisible ein -- die Checkboxen
+    % steuern nur, welche Serien angezeigt werden (z.B. zur Punktauswahl
+    % vor "Modify stress data"), nicht den Darstellungsbereich der Achse.
+end
+
+% Legende wie im d-sin2psi-Plot des sin2psi-Tabs (h.axesplotdspacing):
+% ein Eintrag je sichtbarer Azimutrichtung ("phi = 0 Grad" etc.), Titel =
+% hkl der aktuellen Slider-Position.
+LegHandlesPsi = [];
+LegLabelsPsi = {};
+AzimuthLegendLabels = {['\phi = 0',char(176)], ['\phi = 90',char(176)], ['\phi = 180',char(176)], ['\phi = 270',char(176)]};
+for AzIdx = 1:4
+    if strcmp(get(AzimuthPlots{AzIdx},'Visible'),'on')
+        LegHandlesPsi = [LegHandlesPsi, AzimuthPlots{AzIdx}]; %#ok<AGROW>
+        LegLabelsPsi{end+1} = AzimuthLegendLabels{AzIdx}; %#ok<AGROW>
+    end
+end
+if ~isempty(LegHandlesPsi)
+    h.legpsi = legend(h.axesplotpsi, LegHandlesPsi, LegLabelsPsi);
+    h.legpsi.Visible = 'on';
+    HKLCodeLegend = h.Params.DEK(valueSlider,1);
+    title(h.legpsi, sprintf('%d %d %d', floor(HKLCodeLegend/100), floor(mod(HKLCodeLegend,100)/10), mod(HKLCodeLegend,10)));
+elseif isfield(h,'legpsi') && isvalid(h.legpsi)
+    h.legpsi.Visible = 'off';
+end
+
+for RefIdx = 1:2
+    if size(h.psimethod.regress,2) < valueSlider || isempty(h.psimethod.regress{RefIdx,valueSlider})
+        TableData(RefIdx,:) = {RefLabels{RefIdx},'--','--','--','--','--'};
+    else
+        TableData(RefIdx,:) = {RefLabels{RefIdx}, ...
+            sprintf('%.1f',h.psimethod.sigmapar(RefIdx,valueSlider)), sprintf('%.1f',h.psimethod.SEpar(RefIdx,valueSlider)), ...
+            sprintf('%.1f',h.psimethod.sigmashear(RefIdx,valueSlider)), sprintf('%.1f',h.psimethod.SEshear(RefIdx,valueSlider)), ...
+            num2str(h.psimethod.N(RefIdx,valueSlider))};
+    end
+end
+
+% Textfeld mit sigma_par +- SE der aktuellen hkl-Linie im a-psi-Plot
+% (analog der Spannungs-Anzeige im sin2psi-Tab, dort nur fuer ETA3000).
+StressTextHandles = {h.textstresspsi1, h.textstresspsi2};
+StressParNames = {'\sigma_1_1','\sigma_2_2'};
+for RefIdx = 1:2
+    if size(h.psimethod.regress,2) < valueSlider || isempty(h.psimethod.regress{RefIdx,valueSlider})
+        set(StressTextHandles{RefIdx},'Visible','off')
+        continue
+    end
+    set(StressTextHandles{RefIdx}, 'String', ...
+        sprintf('%s = %.0f %s %.0f MPa', StressParNames{RefIdx}, h.psimethod.sigmapar(RefIdx,valueSlider), char(177), h.psimethod.SEpar(RefIdx,valueSlider)), ...
+        'Visible', 'on')
+end
+
+% Zusatzplot: sigma_par(psi)/sigma_shear(psi) als durchgehende Kurven
+% (siehe Herleitung beim Erzeugen von h.axesplotpsideriv weiter oben).
+DerivParPlots = {h.plotderivpar1, h.plotderivpar2};
+DerivShearPlots = {h.plotderivshear1, h.plotderivshear2};
+MarkerParPlots = {h.plotderivmarkerspar1, h.plotderivmarkerspar2};
+MarkerShearPlots = {h.plotderivmarkersshear1, h.plotderivmarkersshear2};
+TextLabels = {h.textderivlabels1, h.textderivlabels2};
+ParLabelNames = {'\sigma_1_1','\sigma_2_2'};
+ShearLabelNames = {'\sigma_1_3','\sigma_2_3'};
+psideriv = linspace(-90,90,181);
+% Vertikaler Textversatz relativ zum aktuellen Wertebereich, damit die
+% Beschriftung nicht auf der Kurve/den Markern liegt.
+if isfield(h.psimethod,'YLimDerivPeak') && numel(h.psimethod.YLimDerivPeak) >= valueSlider && ~isempty(h.psimethod.YLimDerivPeak{valueSlider})
+    YLimDerivForLabels = h.psimethod.YLimDerivPeak{valueSlider};
+else
+    YLimDerivForLabels = [-1,1];
+end
+LabelOffset = 0.04.*diff(YLimDerivForLabels);
+% Fallback-Richtung (zur Achsenmitte hin, weg vom naeheren Rand), falls die
+% kurvenbewusste Richtung unten unentschieden ist.
+LabelOffsetDir = @(v) sign(YLimDerivForLabels(1)+YLimDerivForLabels(2)-2.*v);
+% Horizontaler Versatz der Beschriftung vom jeweiligen Schnittpunkt weg
+% (0 Grad bzw. -90 Grad), damit sie nicht direkt auf dem Marker sitzt.
+LabelDx = 6;
+for RefIdx = 1:2
+    if size(h.psimethod.regress,2) < valueSlider || isempty(h.psimethod.regress{RefIdx,valueSlider})
+        set(DerivParPlots{RefIdx},'Visible','off')
+        set(DerivShearPlots{RefIdx},'Visible','off')
+        set(MarkerParPlots{RefIdx},'Visible','off')
+        set(MarkerShearPlots{RefIdx},'Visible','off')
+        set(TextLabels{RefIdx},'Visible','off')
+        continue
+    end
+    sigmapar = h.psimethod.sigmapar(RefIdx,valueSlider);
+    sigmashear = h.psimethod.sigmashear(RefIdx,valueSlider);
+    sigmaparcurve = sigmapar.*cosd(2.*psideriv) - 2.*sigmashear.*sind(2.*psideriv);
+    sigmashearcurve = 0.5.*sigmapar.*sind(2.*psideriv) + sigmashear.*cosd(2.*psideriv);
+    set(DerivParPlots{RefIdx},'XData',psideriv,'YData',sigmaparcurve,'Visible','on')
+    set(DerivShearPlots{RefIdx},'XData',psideriv,'YData',sigmashearcurve,'Visible','on')
+    % Schnittpunkte bei psi=-90/0/90: dort ist sigma_par(psi) bzw.
+    % sigma_shear(psi) = +-sigma_par bzw. +-sigma_shear (siehe Herleitung
+    % oben), also direkt aus den bereits berechneten Werten, ohne die
+    % Kurve an diesen Stellen erneut auszuwerten.
+    set(MarkerParPlots{RefIdx}, 'XData', [-90,0,90], 'YData', [-sigmapar,sigmapar,-sigmapar], 'Visible', 'on')
+    set(MarkerShearPlots{RefIdx}, 'XData', [-90,0,90], 'YData', [-sigmashear,sigmashear,-sigmashear], 'Visible', 'on')
+    % Beschriftung: sigma_par/sigma_shear bei psi=0, -sigma_par/-sigma_shear
+    % am linken Rand (psi=-90) -- rechter Rand zeigt denselben Wert, daher
+    % dort keine zweite (redundante) Beschriftung. Die Versatzrichtung wird
+    % kurvenbewusst gewaehlt: an der x-Position des Labels (Schnittpunkt +
+    % LabelDx) wird die jeweilige Kurve selbst ausgewertet; das Label wird
+    % auf die Seite gesetzt, auf der die Kurve DORT nicht ist (statt pauschal
+    % zur Achsenmitte hin, was bei einem lokalen Extremum genau auf die
+    % Kurve fuehren kann). Fallback (Achsenmitte-Richtung) nur falls die
+    % Kurve am Label-x zufaellig denselben Wert wie der Marker hat.
+    xLabelCenter = LabelDx;
+    xLabelEdge = -90 + LabelDx;
+    curveParAtCenter = sigmapar.*cosd(2.*xLabelCenter) - 2.*sigmashear.*sind(2.*xLabelCenter);
+    curveShearAtCenter = 0.5.*sigmapar.*sind(2.*xLabelCenter) + sigmashear.*cosd(2.*xLabelCenter);
+    curveParAtEdge = sigmapar.*cosd(2.*xLabelEdge) - 2.*sigmashear.*sind(2.*xLabelEdge);
+    curveShearAtEdge = 0.5.*sigmapar.*sind(2.*xLabelEdge) + sigmashear.*cosd(2.*xLabelEdge);
+    DirParCenter = sign(sigmapar-curveParAtCenter); if DirParCenter==0; DirParCenter = LabelOffsetDir(sigmapar); end
+    DirShearCenter = sign(sigmashear-curveShearAtCenter); if DirShearCenter==0; DirShearCenter = LabelOffsetDir(sigmashear); end
+    DirParEdge = sign(-sigmapar-curveParAtEdge); if DirParEdge==0; DirParEdge = LabelOffsetDir(-sigmapar); end
+    DirShearEdge = sign(-sigmashear-curveShearAtEdge); if DirShearEdge==0; DirShearEdge = LabelOffsetDir(-sigmashear); end
+    set(TextLabels{RefIdx}(1), 'Position', [xLabelCenter, sigmapar+DirParCenter.*LabelOffset, 0], ...
+        'String', ParLabelNames{RefIdx}, 'HorizontalAlignment','left', 'Visible','on')
+    set(TextLabels{RefIdx}(2), 'Position', [xLabelCenter, sigmashear+DirShearCenter.*LabelOffset, 0], ...
+        'String', ShearLabelNames{RefIdx}, 'HorizontalAlignment','left', 'Visible','on')
+    set(TextLabels{RefIdx}(3), 'Position', [xLabelEdge, -sigmapar+DirParEdge.*LabelOffset, 0], ...
+        'String', ['-',ParLabelNames{RefIdx}], 'HorizontalAlignment','left', 'Visible','on')
+    set(TextLabels{RefIdx}(4), 'Position', [xLabelEdge, -sigmashear+DirShearEdge.*LabelOffset, 0], ...
+        'String', ['-',ShearLabelNames{RefIdx}], 'HorizontalAlignment','left', 'Visible','on')
+end
+% Achsengrenzen je Peak (siehe RecomputePsiRegression), mit "glattem"
+% Tick-Schritt (100/200/500/1000).
+if isfield(h.psimethod,'YLimDerivPeak') && numel(h.psimethod.YLimDerivPeak) >= valueSlider && ~isempty(h.psimethod.YLimDerivPeak{valueSlider})
+    h.axesplotpsideriv.YLim = h.psimethod.YLimDerivPeak{valueSlider};
+    h.axesplotpsideriv.YTick = h.psimethod.YTickDerivPeak{valueSlider};
+else
+    h.axesplotpsideriv.YLim = [-1,1];
+end
+
+% Y-Achse des a-/d-psi-Plots wird pro hkl-Linie skaliert (nicht global):
+% bei geringen Spannungen waeren die psi-abhaengigen Unterschiede sonst
+% neben den Unterschieden zwischen den Reflexen kaum sichtbar.
+if ~isempty(aAllVisible)
+    YTickStepA = NicePsiTickStep(min(aAllVisible), max(aAllVisible), 6);
+    YLimAlocal = [floor(min(aAllVisible)/YTickStepA)*YTickStepA, ceil(max(aAllVisible)/YTickStepA)*YTickStepA];
+    if diff(YLimAlocal) == 0
+        YLimAlocal = YLimAlocal + [-YTickStepA YTickStepA];
+    end
+    h.axesplotpsi.YLim = YLimAlocal;
+    h.axesplotpsi.YTick = YLimAlocal(1):YTickStepA:YLimAlocal(2);
+else
+    h.axesplotpsi.YLim = [0,1];
+end
+% Wie bei h.axesplotpsi/h.axesplotpsideriv: Tick-Schritt per "nice
+% numbers"-Algorithmus (NicePsiTickStep) bestimmen und die obere Grenze
+% exakt auf ein Vielfaches davon runden, damit die Achse immer auf einem
+% ganzzahligen Tick endet (nicht mittendrin).
+if ~isempty(ibAllVisible)
+    % Untere Grenze jetzt variabel (nicht mehr fest bei 0), damit feine
+    % Unterschiede besser sichtbar sind -- mit 10% Rand nach unten/oben,
+    % auf glatte Ticks gerundet. Nur bei negativem Ergebnis auf 0 geklemmt
+    % (IB ist physikalisch nicht negativ).
+    IBRange = [min(ibAllVisible), max(ibAllVisible)];
+    IBPad = 0.1.*diff(IBRange);
+    if IBPad == 0
+        IBPad = 0.1.*max(abs(IBRange(1)),1);
+    end
+    IBRawMin = IBRange(1) - IBPad;
+    IBRawMax = IBRange(2) + IBPad;
+    YTickStepIB = NicePsiTickStep(IBRawMin, IBRawMax, 5);
+    IBMin = floor(IBRawMin./YTickStepIB).*YTickStepIB;
+    IBMax = ceil(IBRawMax./YTickStepIB).*YTickStepIB;
+    if IBMin < 0
+        IBMin = 0;
+    end
+    if IBMax <= IBMin
+        IBMax = IBMin + YTickStepIB;
+    end
+    h.axesplotpsiIB.YLim = [IBMin, IBMax];
+    h.axesplotpsiIB.YTick = IBMin:YTickStepIB:IBMax;
+else
+    h.axesplotpsiIB.YLim = [0,1];
+    h.axesplotpsiIB.YTick = 0:0.2:1;
+end
+if ~isempty(intAllVisible)
+    YTickStepInt = NicePsiTickStep(0, max(intAllVisible).*1.1, 5);
+    IntMax = ceil(max(intAllVisible).*1.1./YTickStepInt).*YTickStepInt;
+    if IntMax == 0
+        IntMax = YTickStepInt;
+    end
+    h.axesplotpsiInt.YLim = [0, IntMax];
+    h.axesplotpsiInt.YTick = 0:YTickStepInt:IntMax;
+else
+    h.axesplotpsiInt.YLim = [0,1];
+    h.axesplotpsiInt.YTick = 0:0.2:1;
+end
+set(h.tablepsiresults,'data',TableData)
+if get(h.checkboxpsicubic,'Value') == 1
+    ylabel(h.axesplotpsi,'a^{hkl}_{\psi} [nm]','FontSize', 12);
+else
+    ylabel(h.axesplotpsi,'d^{hkl}_{\psi} [nm]','FontSize', 12);
+end
+title(h.axesplotpsi, sprintf('Peak %d/%d (\\sigma_p_a_r: 0/180=\\sigma_1_1, 90/270=\\sigma_2_2)', valueSlider, size(h.Params.LatticeSpacing,2)));
+title(h.axesplotpsiIB, sprintf('IB data for Peak %d',valueSlider),'FontSize',8)
+title(h.axesplotpsiInt, sprintf('Integrated Int. data for Peak %d',valueSlider),'FontSize',8)
+
+% Uebersichtsplot sigma(tau0): ausgelagert in UpdatePsiTauPlot, da er
+% unabhaengig vom hkl-Slider (valueSlider) ist und auch direkt vom
+% Slot-Slider (h.SliderPsiTauSlot) aus aktualisiert werden muss, ohne den
+% Rest von UpdatePsiPlotAndTable erneut auszufuehren.
+h = UpdatePsiTauPlot(h);
+
+function h = UpdatePsiTauPlot(h)
+% Aktualisiert den tau0-Uebersichtsplot (h.axesplotpsitau) fuer den aktuell
+% per h.SliderPsiTauSlot gewaehlten Slot -- analog h.SliderPlotStressData/
+% SliderCallbackPlotStressData im sin2psi-Tab, hier mit den eigenen
+% (kombinierten) psi-Methode-Ergebnissen: Slot 1=sigma11 (par, 0/180),
+% 2=sigma13 (shear, 0/180), 3=sigma22 (par, 90/270), 4=sigma23 (shear,
+% 90/270) -- Slots 3/4 nur wenn h.psimethod.NumTauSlots==4. Je hkl-Linie
+% ein Punkt (tau0, Wert+-SE), farblich nach hkl (h.Colors{k}). X/Y-Skala:
+% per Slot merkbare Ueberschreibung ueber "Change X/Y-scale" (siehe
+% modpsitauXlim/acceptpsiTauXlimEdit), sonst automatisch aus den Daten.
+if isfield(h,'psimethod') && isfield(h.psimethod,'tauplothandles')
+    delete(h.psimethod.tauplothandles(isgraphics(h.psimethod.tauplothandles)))
+end
+if isfield(h,'psimethod') && isfield(h.psimethod,'sin2psitauplothandles')
+    delete(h.psimethod.sin2psitauplothandles(isgraphics(h.psimethod.sin2psitauplothandles)))
+end
+if ~isfield(h,'psimethod') || ~isfield(h.psimethod,'sigmapar')
+    legend(h.axesplotpsitau,'off')
+    h.axesplotpsitau.XLim = [0,1];
+    h.axesplotpsitau.YLim = [-1,1];
+    title(h.axesplotpsitau,'No measurement data loaded')
+    return
+end
+NumPeaksTau = size(h.psimethod.sigmapar,2);
+Slot = round(get(h.SliderPsiTauSlot,'Value'));
+SlotRefIdx = [1,1,2,2];
+SlotIsShear = [0,1,0,1];
+SlotLabel = {'\sigma_{11}','\sigma_{13}','\sigma_{22}','\sigma_{23}'};
+RefIdxTau = SlotRefIdx(Slot);
+ScatterHandlesTau = gobjects(0);
+LegendLabelsTau = {};
+TauAllVisible = []; SigmaAllVisible = [];
+hold(h.axesplotpsitau,'on')
+for kTau = 1:NumPeaksTau
+    if size(h.psimethod.regress,2) < kTau || isempty(h.psimethod.regress{RefIdxTau,kTau})
+        continue
+    end
+    tau0 = h.sin2psi.taupsizero(kTau);
+    if SlotIsShear(Slot)
+        val = h.psimethod.sigmashear(RefIdxTau,kTau);
+        valSE = h.psimethod.SEshear(RefIdxTau,kTau);
+    else
+        val = h.psimethod.sigmapar(RefIdxTau,kTau);
+        valSE = h.psimethod.SEpar(RefIdxTau,kTau);
+    end
+    sc = errorbar(h.axesplotpsitau, tau0, val, valSE, 'LineStyle','none', ...
+        'Marker','s', 'MarkerSize', 12, 'MarkerFaceColor', h.Colors{kTau}, ...
+        'MarkerEdgeColor','k','Color','k','LineWidth',1,'CapSize',6);
+    ScatterHandlesTau(end+1) = sc; %#ok<AGROW>
+    HKLCodeTau = h.Params.DEK(kTau,1);
+    LegendLabelsTau{end+1} = sprintf('%d %d %d', floor(HKLCodeTau/100), floor(mod(HKLCodeTau,100)/10), mod(HKLCodeTau,10)); %#ok<AGROW>
+    TauAllVisible = [TauAllVisible, tau0]; %#ok<AGROW>
+    SigmaAllVisible = [SigmaAllVisible, val-valSE, val+valSE]; %#ok<AGROW>
+end
+
+% Optional: zum Vergleich die entsprechenden sin2psi-Ergebnisse als
+% zusaetzliche (hohle Rauten-)Marker einblenden (h.checkboxpsishowsin2psi).
+% Sigma11/22 kommen aus der sin2psi-sin2psi-Regression (Estimate/SE(2)),
+% sigma13/23 aus der sin2psi-sin|2psi|-Regression (Estimate/SE(1)) -- exakt
+% dieselben Felder, aus denen RecomputeSin2PsiStressRegression auch
+% h.sin2psi.sigmataulist aufbaut. tau0 ist fuer beide Methoden identisch
+% (h.sin2psi.taupsizero), daher liegen beide Punkte eines hkl beim selben
+% x-Wert. sigma13/23 nur anzeigen, wenn wirklich BEIDE Azimute (0 UND 180
+% bzw. 90 UND 270) gemessen wurden -- sonst ist die sin2psi-Scherspannung
+% aus baugleichen d-Werten trivial nah bei Null und nicht aussagekraeftig.
+Sin2PsiScatterHandlesTau = gobjects(0);
+ShowSin2Psi = isfield(h,'checkboxpsishowsin2psi') && get(h.checkboxpsishowsin2psi,'Value') == 1;
+if ShowSin2Psi && isfield(h,'sin2psi')
+    ParRegressField = {'dphi0p180sinquadratpsiregress','dphi90p270sinquadratpsiregress'};
+    ShearRegressField = {'dphi0m180sin2psiregress','dphi90m270sin2psiregress'};
+    PairIdxA = {h.idxphi0, h.idxphi90};
+    PairIdxB = {h.idxphi180, h.idxphi270};
+    if SlotIsShear(Slot)
+        RegField = ShearRegressField{RefIdxTau};
+        CoeffIdx = 1;
+        GateOK = ~isempty(PairIdxA{RefIdxTau}) && ~isempty(PairIdxB{RefIdxTau});
+    else
+        RegField = ParRegressField{RefIdxTau};
+        CoeffIdx = 2;
+        GateOK = ~isempty(PairIdxA{RefIdxTau}) || ~isempty(PairIdxB{RefIdxTau});
+    end
+    if GateOK && isfield(h.sin2psi,RegField)
+        for kTau = 1:NumPeaksTau
+            if numel(h.sin2psi.(RegField)) < kTau || isempty(h.sin2psi.(RegField){kTau})
+                continue
+            end
+            tau0_2 = h.sin2psi.taupsizero(kTau);
+            val2 = h.sin2psi.(RegField){kTau}.Coefficients.Estimate(CoeffIdx)./h.sin2psi.dzero(kTau)./h.Params.DEK(kTau,3);
+            valSE2 = h.sin2psi.(RegField){kTau}.Coefficients.SE(CoeffIdx)./h.sin2psi.dzero(kTau)./h.Params.DEK(kTau,3);
+            sc2 = errorbar(h.axesplotpsitau, tau0_2, val2, valSE2, 'LineStyle','none', ...
+                'Marker','d', 'MarkerSize', 10, 'MarkerFaceColor', 'none', ...
+                'MarkerEdgeColor', h.Colors{kTau}, 'Color', h.Colors{kTau}, ...
+                'LineWidth', 1.2, 'CapSize', 5, 'HandleVisibility', 'off');
+            Sin2PsiScatterHandlesTau(end+1) = sc2; %#ok<AGROW>
+            TauAllVisible = [TauAllVisible, tau0_2]; %#ok<AGROW>
+            SigmaAllVisible = [SigmaAllVisible, val2-valSE2, val2+valSE2]; %#ok<AGROW>
+        end
+    end
+end
+hold(h.axesplotpsitau,'off')
+h.psimethod.tauplothandles = ScatterHandlesTau;
+h.psimethod.sin2psitauplothandles = Sin2PsiScatterHandlesTau;
+ylabel(h.axesplotpsitau, [SlotLabel{Slot},' [MPa]'], 'FontSize', 10);
+if ~isempty(ScatterHandlesTau)
+    if ~isempty(Sin2PsiScatterHandlesTau)
+        % Zwei zusaetzliche, hkl-unabhaengige Legendeneintraege, die die
+        % Markerform (nicht die Farbe) erklaeren: Farbe = hkl (wie gehabt),
+        % Form = Methode (gefuelltes Quadrat = psi-Methode, hohle Raute =
+        % sin2psi-Methode). hold kurz wieder an, da plot() bei hold 'off'
+        % sonst die Achse leeren und die bereits gezeichneten Punkte
+        % entfernen wuerde.
+        hold(h.axesplotpsitau,'on')
+        hLegPsi = plot(h.axesplotpsitau, NaN, NaN, 's', 'MarkerSize',10, ...
+            'MarkerFaceColor',[0.5 0.5 0.5],'MarkerEdgeColor','k','LineStyle','none');
+        hLegSin2Psi = plot(h.axesplotpsitau, NaN, NaN, 'd', 'MarkerSize',10, ...
+            'MarkerFaceColor','none','MarkerEdgeColor',[0.5 0.5 0.5],'LineStyle','none');
+        hold(h.axesplotpsitau,'off')
+        h.psimethod.sin2psitauplothandles = [Sin2PsiScatterHandlesTau, hLegPsi, hLegSin2Psi];
+        legend(h.axesplotpsitau, [ScatterHandlesTau, hLegPsi, hLegSin2Psi], ...
+            [LegendLabelsTau, {['\psi method'],['sin',char(178),'\psi method']}], ...
+            'Location','northeast','FontSize',7)
+    else
+        legend(h.axesplotpsitau, ScatterHandlesTau, LegendLabelsTau, 'Location','northeast','FontSize',7)
+    end
+    title(h.axesplotpsitau,'')
+else
+    legend(h.axesplotpsitau,'off')
+    title(h.axesplotpsitau,'No data for this component')
+end
+[TauXLim, TauXTick, TauYLim, TauYTick] = PsiTauAxisLimits(h, Slot, TauAllVisible, SigmaAllVisible);
+h.axesplotpsitau.XLim = TauXLim;
+if ~isempty(TauXTick)
+    h.axesplotpsitau.XTick = TauXTick;
+end
+h.axesplotpsitau.YLim = TauYLim;
+if ~isempty(TauYTick)
+    h.axesplotpsitau.YTick = TauYTick;
+end
+
+function [XLim, XTick, YLim, YTick] = PsiTauAxisLimits(h, Slot, TauAllVisible, SigmaAllVisible)
+% Achsengrenzen/Ticks des sigma-tau0-Plots fuer einen Slot: per Slot
+% gemerkte manuelle Werte ("Change X/Y-scale", h.psiTau*lim*), sonst
+% automatisch per "nice numbers"-Algorithmus (NicePsiTickStep). Wird von
+% der GUI (UpdatePsiTauPlot) UND vom Export (buttoncreatepsitaufile)
+% genutzt, damit exportierte Plots dieselben Grenzen wie die GUI haben.
+XTick = []; YTick = [];
+if isfield(h,'psiTauXlimChanged') && numel(h.psiTauXlimChanged) >= Slot && h.psiTauXlimChanged(Slot) == 1
+    XLim = [h.psiTauXlimMinnew(Slot), h.psiTauXlimMaxnew(Slot)];
+    XTick = h.psiTauXlimMinnew(Slot):h.psiTauXlimXTicknew(Slot):h.psiTauXlimMaxnew(Slot);
+elseif ~isempty(TauAllVisible)
+    XMaxRaw = max(TauAllVisible).*1.15;
+    XTickStepTau = NicePsiTickStep(0, XMaxRaw, 6);
+    XMaxTau = ceil(XMaxRaw./XTickStepTau).*XTickStepTau;
+    if XMaxTau == 0
+        XMaxTau = XTickStepTau;
+    end
+    XLim = [0, XMaxTau];
+    XTick = 0:XTickStepTau:XMaxTau;
+else
+    XLim = [0,1];
+end
+if isfield(h,'psiTauYlimChanged') && numel(h.psiTauYlimChanged) >= Slot && h.psiTauYlimChanged(Slot) == 1
+    YLim = [h.psiTauYlimMinnew(Slot), h.psiTauYlimMaxnew(Slot)];
+    YTick = h.psiTauYlimMinnew(Slot):h.psiTauYlimXTicknew(Slot):h.psiTauYlimMaxnew(Slot);
+elseif ~isempty(SigmaAllVisible)
+    YLimtauRaw = [min(SigmaAllVisible), max(SigmaAllVisible)];
+    if diff(YLimtauRaw) == 0
+        YLimtauRaw = YLimtauRaw + [-1 1];
+    else
+        YLimtauRaw = YLimtauRaw + 0.1.*diff(YLimtauRaw).*[-1 1];
+    end
+    YTickStepTau = NicePsiTickStep(YLimtauRaw(1), YLimtauRaw(2), 6);
+    YLim = [floor(YLimtauRaw(1)/YTickStepTau)*YTickStepTau, ceil(YLimtauRaw(2)/YTickStepTau)*YTickStepTau];
+    YTick = YLim(1):YTickStepTau:YLim(2);
+else
+    YLim = [-1,1];
+end
+
+function buttonloadpsistressdata(hObj,~)
+% Callback fuer "Load stress data" auf dem psi-method Tab. Nutzt
+% dieselbe Rohdaten-Ladelogik wie der sin2psi-Tab (h.Params,
+% h.ParamsToFit, h.idxphi*, h.sin2psi.dzero, DEK-Zuordnung) -- ein Klick
+% hier aktualisiert daher auch den sin2psi-Tab mit (bewusst so gewaehlt,
+% siehe Ruecksprache: gemeinsame Rohdaten fuer beide Tabs).
+h = guidata(hObj);
+buttonloadstressdata(h.buttonloadstressdata1, []);
+h = guidata(hObj);
+
+PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
+ia = cell(1,size(h.Params.Phi_Winkel,2));
+for k = 1:size(h.Params.Phi_Winkel,2)
+    [PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+end
+
+h = RecomputePsiRegression(h, ia);
+
+NumPeaks = size(h.Params.LatticeSpacing,2);
+if NumPeaks == 1
+    set(h.SliderPsiStressData,'Min',0,'Max',1,'Value',1,'SliderStep',[1 1]);
+else
+    set(h.SliderPsiStressData,'Min',1,'Max',NumPeaks,'Value',1,'SliderStep',[1/(NumPeaks-1) 1/(NumPeaks-1)]);
+end
+
+% Slot-Slider fuer den tau0-Plot (sigma11/sigma13/sigma22/sigma23), analog
+% h.SliderPlotStressData im sin2psi-Tab; Anzahl Slots kommt aus
+% RecomputePsiRegression (2 oder 4, je nachdem ob 90/270 gemessen wurde).
+% Zuvor gemerkte X/Y-Achsenueberschreibungen (siehe modpsitauXlim/Ylim)
+% werden bei einem frischen Laden verworfen, da sich der Datensatz aendert.
+set(h.SliderPsiTauSlot,'Min',1,'Max',h.psimethod.NumTauSlots,'Value',1,'SliderStep',[1/(h.psimethod.NumTauSlots-1) 1/(h.psimethod.NumTauSlots-1)]);
+h.psiTauXlimChanged = zeros(1,h.psimethod.NumTauSlots);
+h.psiTauYlimChanged = zeros(1,h.psimethod.NumTauSlots);
+h.psiTauXlimMinnew = nan(1,h.psimethod.NumTauSlots); h.psiTauXlimMaxnew = nan(1,h.psimethod.NumTauSlots); h.psiTauXlimXTicknew = nan(1,h.psimethod.NumTauSlots);
+h.psiTauYlimMinnew = nan(1,h.psimethod.NumTauSlots); h.psiTauYlimMaxnew = nan(1,h.psimethod.NumTauSlots); h.psiTauYlimXTicknew = nan(1,h.psimethod.NumTauSlots);
+
+set(h.checkboxpsiphi0,'Value',~isempty(h.idxphi0));
+set(h.checkboxpsiphi90,'Value',~isempty(h.idxphi90));
+set(h.checkboxpsiphi180,'Value',~isempty(h.idxphi180));
+set(h.checkboxpsiphi270,'Value',~isempty(h.idxphi270));
+
+h = UpdatePsiPlotAndTable(h, 1);
+guidata(hObj, h);
+
+function buttonmodifypsistressdata(hObj,~)
+% Callback fuer "Modify stress data" auf dem psi-method Tab: Punkt(e) im
+% aktuell angezeigten a-vs-psi-Plot anklicken und loeschen, danach die
+% Regression fuer den aktuellen Peak live neu berechnen. Aendert
+% h.Params/h.ParamsToFit (gemeinsam mit dem sin2psi-Tab, siehe oben) und
+% baut deshalb zusaetzlich die interpolierten Felder neu auf, damit der
+% sin2psi-Tab konsistent bleibt.
+h = guidata(hObj);
+
+if ~isfield(h,'Params')
+    msgbox('Bitte zuerst "Load stress data" ausfuehren.');
+    return
+end
+
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+if valueSlider < 1
+    valueSlider = 1;
+end
+
+PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
+ia = cell(1,size(h.Params.Phi_Winkel,2));
+for k = 1:size(h.Params.Phi_Winkel,2)
+    [PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+end
+
+CheckBoxesPsi = [get(h.checkboxpsiphi0,'Value'),get(h.checkboxpsiphi90,'Value'),get(h.checkboxpsiphi180,'Value'),get(h.checkboxpsiphi270,'Value')];
+if sum(CheckBoxesPsi) ~= 1
+    msgbox('Bitte genau eine Azimut-Checkbox aktivieren, aus der ein Punkt geloescht werden soll.');
+    guidata(hObj, h);
+    return
+end
+
+% Punkt(e) im aktuell sichtbaren psi-Plot auswaehlen und loeschen
+[pointslist,~,~] = selectdatastressvalues('Handle',h.axesplotpsi,'CheckBoxesPhi',CheckBoxesPsi,'PhiWinkel',PhiWinkel,'sel','closest','action','delete','verify','on');
+if isempty(pointslist)
+    guidata(hObj, h);
+    return
+end
+
+AzimuthIdx = {h.idxphi0, h.idxphi90, h.idxphi180, h.idxphi270};
+AzIdx = find(CheckBoxesPsi==1);
+idxphi = AzimuthIdx{AzIdx};
+
+RawFields = {'Energy_Max','FWHM','IntegralWidth','Intensity_Int','LatticeSpacing','LatticeSpacing_Delta','Psi_Winkel','Phi_Winkel'};
+if length(ia{1}) == 1
+    for f = 1:numel(RawFields)
+        h.Params.(RawFields{f}){valueSlider}(pointslist) = [];
+    end
+else
+    for f = 1:numel(RawFields)
+        h.ParamsToFit(idxphi).(RawFields{f}){valueSlider}(pointslist) = [];
+    end
+end
+
+h = RefreshLatticeSpacingInterpol(h, ia);
+h = RecomputePsiRegression(h, ia);
+% sin2psi-Regression (h.sin2psi.*, h.StressesMW) ebenfalls neu berechnen,
+% da h.Params/h.ParamsToFit gemeinsam genutzt werden -- ohne diesen Aufruf
+% wuerde die sin2psi-Auswertung nach einem Loeschen hier auf veralteten
+% Daten sitzen bleiben. ResetCheckboxes=false wie beim Modify im
+% sin2psi-Tab selbst, damit der dortige Checkbox-Zustand unangetastet
+% bleibt. Aktualisiert NUR die Daten (h.sin2psi/h.StressesMW), nicht die
+% bereits gezeichneten Plot-Objekte im sin2psi-Tab (h.axesplotdspacing/
+% h.axesplotstressdata) -- die zeigen bis zur naechsten Interaktion dort
+% (z.B. erneutes Modify oder Peak-Slider) noch den alten Stand.
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET') && strcmp(h.Detsel,'Detector 1')
+    TwoThetaTau = h.Measurement(2).twotheta;
+else
+    TwoThetaTau = h.Measurement(1).twotheta;
+end
+h = RecomputeSin2PsiStressRegression(h, PhiWinkel, ia, TwoThetaTau, false);
+% h.sin2psi.StressPlotDatatmpsorted (Grundlage fuer den Spannungstiefen-
+% verlauf h.axesplotstressdata im sin2psi-Tab) wird NICHT von
+% RecomputeSin2PsiStressRegression gebaut, sondern separat -- deshalb hier
+% zusaetzlich aufrufen, damit auch dieser Plot nach dem Loeschen in der
+% psi-Methode konsistent bleibt (die eigentliche Grafik im sin2psi-Tab
+% zeigt das erst bei der naechsten Interaktion dort, z.B. Peak-Slider).
+% valueSliderStress: der sin2psi-Tab hat einen eigenen Slider
+% (h.SliderPlotStressData) fuer die aktuell angezeigte
+% Spannungskomponente; dessen zuletzt gesetzter Wert bleibt unabhaengig
+% vom Tab-Wechsel erhalten und wird hier unveraendert uebernommen.
+valueSliderStress = get(h.SliderPlotStressData, 'Value');
+h = BuildSin2PsiStressPlotData(h, ia, valueSliderStress);
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiPhi0Callback(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiPhi90Callback(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiPhi180Callback(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiPhi270Callback(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiShowSin2PsiCallback(hObj, ~)
+% Callback fuer h.checkboxpsishowsin2psi: blendet die sin2psi-Vergleichs-
+% marker im Sigma-tau0-Plot (h.axesplotpsitau) ein/aus.
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+h = UpdatePsiTauPlot(h);
+guidata(hObj, h);
+
+function SliderCallbackPsiStressData(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+valueSlider = round(get(hObj,'Value'));
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function ClickPsiCubicCallback(hObj, ~)
+% Umschalten der kubischen a=d*sqrt(H^2+K^2+L^2)-Normierung (testweise
+% Nutzung mit nicht-kubischen Proben, siehe Ruecksprache). Betrifft den
+% Fit selbst (RecomputePsiRegression liest die Checkbox), daher hier eine
+% vollstaendige Neuberechnung noetig -- nicht nur ein Anzeige-Update wie
+% bei den Azimut-Checkboxen.
+h = guidata(hObj);
+if ~isfield(h,'Params')
+    return
+end
+PhiWinkel = cell(1,size(h.Params.Phi_Winkel,2));
+ia = cell(1,size(h.Params.Phi_Winkel,2));
+for k = 1:size(h.Params.Phi_Winkel,2)
+    [PhiWinkel{k},ia{k},~] = unique(sort(h.Params.Phi_Winkel{k}));
+end
+h = RecomputePsiRegression(h, ia);
+valueSlider = round(get(h.SliderPsiStressData,'Value'));
+if valueSlider < 1
+    valueSlider = 1;
+end
+h = UpdatePsiPlotAndTable(h, valueSlider);
+guidata(hObj, h);
+
+function SliderCallbackPsiTauSlot(hObj, ~)
+% Slot-Slider fuer h.axesplotpsitau (sigma11/13/22/23), analog
+% h.SliderPlotStressData/SliderCallbackPlotStressData im sin2psi-Tab.
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+h = UpdatePsiTauPlot(h);
+guidata(hObj, h);
+
+%% Change X/Y-scale (psi tau0 plot) -- analog modstressXlim/modstressYlim
+function modpsitauXlim(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+Slot = round(get(h.SliderPsiTauSlot,'Value'));
+set(h.editpsiTauXlimMin,'String',num2str(h.axesplotpsitau.XLim(1)));
+set(h.editpsiTauXlimMax,'String',num2str(h.axesplotpsitau.XLim(2)));
+XTick = h.axesplotpsitau.XTick;
+if numel(XTick) >= 2
+    set(h.editpsiTauXlimTick,'String',num2str(XTick(2)-XTick(1)));
+else
+    set(h.editpsiTauXlimTick,'String','10');
+end
+h.psiTauXlimEditSlot = Slot;
+guidata(hObj, h);
+set(h.psiTauXlimfig,'Visible','on');
+
+function modpsitauYlim(hObj, ~)
+h = guidata(hObj);
+if ~isfield(h,'psimethod')
+    return
+end
+Slot = round(get(h.SliderPsiTauSlot,'Value'));
+set(h.editpsiTauYlimMin,'String',num2str(h.axesplotpsitau.YLim(1)));
+set(h.editpsiTauYlimMax,'String',num2str(h.axesplotpsitau.YLim(2)));
+YTick = h.axesplotpsitau.YTick;
+if numel(YTick) >= 2
+    set(h.editpsiTauYlimTick,'String',num2str(YTick(2)-YTick(1)));
+else
+    set(h.editpsiTauYlimTick,'String','100');
+end
+h.psiTauYlimEditSlot = Slot;
+guidata(hObj, h);
+set(h.psiTauYlimfig,'Visible','on');
+
+function acceptpsiTauXlimEdit(hObj, ~)
+% hObj ist ein Button auf der separaten Dialog-Figur (h.psiTauXlimfig),
+% nicht auf der Haupt-GUI-Figur -- guidata(hObj) haette hier also keine
+% Handles-Struktur (Grund fuer "Dot indexing is not supported..."). Wie im
+% sin2psi-Tab (acceptXlimEdit) wird die Haupt-GUI-Figur stattdessen ueber
+% ihren Tag 'MainGUI' gefunden.
+hMainGUI = findobj('Tag','MainGUI');
+h = guidata(hMainGUI);
+Slot = h.psiTauXlimEditSlot;
+XMin = str2double(get(h.editpsiTauXlimMin,'String'));
+XMax = str2double(get(h.editpsiTauXlimMax,'String'));
+XTickStep = str2double(get(h.editpsiTauXlimTick,'String'));
+if isnan(XMin) || isnan(XMax) || isnan(XTickStep) || XMax <= XMin || XTickStep <= 0
+    msgbox('Bitte gueltige Werte fuer Min/Max/Tick eingeben (Max > Min, Tick > 0).');
+    return
+end
+h.psiTauXlimChanged(Slot) = 1;
+h.psiTauXlimMinnew(Slot) = XMin;
+h.psiTauXlimMaxnew(Slot) = XMax;
+h.psiTauXlimXTicknew(Slot) = XTickStep;
+set(h.psiTauXlimfig,'Visible','off');
+h = UpdatePsiTauPlot(h);
+guidata(hMainGUI, h);
+
+function cancelpsiTauXlimEdit(hObj, ~) %#ok<INUSD>
+hMainGUI = findobj('Tag','MainGUI');
+h = guidata(hMainGUI);
+set(h.psiTauXlimfig,'Visible','off');
+guidata(hMainGUI, h);
+
+function acceptpsiTauYlimEdit(hObj, ~)
+hMainGUI = findobj('Tag','MainGUI');
+h = guidata(hMainGUI);
+Slot = h.psiTauYlimEditSlot;
+YMin = str2double(get(h.editpsiTauYlimMin,'String'));
+YMax = str2double(get(h.editpsiTauYlimMax,'String'));
+YTickStep = str2double(get(h.editpsiTauYlimTick,'String'));
+if isnan(YMin) || isnan(YMax) || isnan(YTickStep) || YMax <= YMin || YTickStep <= 0
+    msgbox('Bitte gueltige Werte fuer Min/Max/Tick eingeben (Max > Min, Tick > 0).');
+    return
+end
+h.psiTauYlimChanged(Slot) = 1;
+h.psiTauYlimMinnew(Slot) = YMin;
+h.psiTauYlimMaxnew(Slot) = YMax;
+h.psiTauYlimXTicknew(Slot) = YTickStep;
+set(h.psiTauYlimfig,'Visible','off');
+h = UpdatePsiTauPlot(h);
+guidata(hMainGUI, h);
+
+function cancelpsiTauYlimEdit(hObj, ~) %#ok<INUSD>
+hMainGUI = findobj('Tag','MainGUI');
+h = guidata(hMainGUI);
+set(h.psiTauYlimfig,'Visible','off');
+guidata(hMainGUI, h);
+
+%% Export psi plots button (vereinfachte Portierung von buttonexportplots)
+function buttonexportpsiplots(hObj, ~)
+% Export der psi-Methode-Plots (a vs. psi mit Fit-Kurve, IB vs. psi,
+% Integrated Intensity vs. psi) je hkl-Linie als TIFF + Rohdaten-txt.
+% Vereinfacht gegenueber buttonexportplots (sin2psi-Tab): keine
+% ETA3000-2theta-Sonderbeschriftung, keine Filterung ausgeschlossener
+% hkl-Linien -- exportiert immer alle aktuell geladenen Peaks.
+h = guidata(hObj);
+if ~isfield(h,'psimethod') || ~isfield(h.psimethod,'sigmapar')
+    msgbox('Bitte zuerst "Load stress data" ausfuehren.');
+    return
+end
+col = get(hObj,'backg');
+set(hObj,'str','Exporting','backg',[1 .6 .6])
+drawnow
+
+NumPeaks = size(h.psimethod.sigmapar,2);
+% Gemeinsamer Basisordner wie im sin2psi-Tab (h.PathName, siehe
+% buttonexportplots/buttoncreatetaufile): einmal pro Sitzung gesetzt und
+% danach von ALLEN Export-Funktionen wiederverwendet, damit alle Exporte
+% (sin2psi UND psi-Methode) im selben "..._added_plots_<Datum>"-Ordner
+% landen, nur in eigenen Unterordnern -- statt jedesmal einen neuen
+% Einzelordner anzulegen.
+if ~isfield(h,'PathName')
+    DateStr = datestr(now,'ddmmyyyy');
+    name = TruncateForFilename(strtrim(h.Measurement(1).MeasurementSeries), 120);
+    h.PathName = [General.ProgramInfo.Path,'\Data\Results\',h.Diffsel,'\',[name,'_added_plots_',DateStr]];
+end
+FolderName = fullfile(h.PathName,'\Plots_psi-method\');
+if exist(FolderName,'dir') ~= 7
+    mkdir(FolderName);
+end
+
+AzimuthIdx = {h.idxphi0, h.idxphi90, h.idxphi180, h.idxphi270};
+AzimuthMirror = [1 1 -1 -1];
+AzimuthMarker = {'s','o','d','p'};
+PhiNames = {'0','90','180','270'};
+% a=d*sqrt(H^2+K^2+L^2) gilt nur fuer kubische Symmetrie -- ueber
+% h.checkboxpsicubic abschaltbar (siehe RecomputePsiRegression).
+CubicMode = get(h.checkboxpsicubic,'Value') == 1;
+if CubicMode
+    AUnitLabel = 'a';
+else
+    AUnitLabel = 'd';
+end
+% Fuer die .txt-Kopfzeile bleibt AUnitLabel Klartext ("a"/"d"); fuer den
+% Ylabel des Plots wird zusaetzlich hkl/psi als hoch-/tiefgestellt
+% angezeigt (TeX-Interpreter).
+AUnitLabelTex = [AUnitLabel,'^{hkl}_{\psi}'];
+
+for k = 1:NumPeaks
+    HKLCode = h.Params.DEK(k,1);
+    HKLidx = [floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10)];
+    HKLstr = sprintf('%d%d%d', HKLidx(1), HKLidx(2), HKLidx(3));
+    if CubicMode
+        HKLFactor = sqrt(sum(HKLidx.^2));
+    else
+        HKLFactor = 1;
+    end
+
+    % --- a vs. psi (mit Fit-Kurve) ---
+    figA = figure('Visible','off','Units','centimeters','Position',[0 0 18 12]);
+    axA = axes('Parent',figA); hold(axA,'on');
+    LegHandles = gobjects(0); LegLabels = {};
+    fid = fopen([FolderName,'a_vs_psi_peak',num2str(k),'_',HKLstr,PsiExportDetSuffix(h),'.txt'],'w');
+    fprintf(fid,'psi [deg]\t%s [nm]\tdelta_%s [nm]\tphi\n', AUnitLabel, AUnitLabel);
+    for AzIdx = 1:4
+        idxphi = AzimuthIdx{AzIdx};
+        if isempty(idxphi)
+            continue
+        end
+        if isfield(h,'ParamsToFit') && numel(h.ParamsToFit) >= idxphi
+            psi = h.ParamsToFit(idxphi).Psi_Winkel{k};
+            a = h.ParamsToFit(idxphi).LatticeSpacing{k};
+            adelta = h.ParamsToFit(idxphi).LatticeSpacing_Delta{k};
+        else
+            psi = h.Params.Psi_Winkel{k};
+            a = h.Params.LatticeSpacing{k};
+            adelta = h.Params.LatticeSpacing_Delta{k};
+        end
+        a = HKLFactor.*a; adelta = HKLFactor.*adelta;
+        MirrorSign = AzimuthMirror(AzIdx);
+        pt = errorbar(axA, MirrorSign.*psi, a, adelta, 'LineStyle','none','Marker',AzimuthMarker{AzIdx},'MarkerSize',10,'MarkerFaceColor',h.Colors{k},'MarkerEdgeColor','k','Color','k');
+        LegHandles(end+1) = pt; %#ok<AGROW>
+        LegLabels{end+1} = ['\phi = ',PhiNames{AzIdx},char(176)]; %#ok<AGROW>
+    for pIdx = 1:numel(psi)
+            fprintf(fid,'%g\t%g\t%g\t%s\n', MirrorSign*psi(pIdx), a(pIdx), adelta(pIdx), PhiNames{AzIdx});
+        end
+    end
+    fclose(fid);
+    for RefIdx = 1:2
+        if size(h.psimethod.regress,2) >= k && ~isempty(h.psimethod.regress{RefIdx,k})
+            plot(axA, h.psimethod.fitcurvepsi{RefIdx,k}, h.psimethod.fitcurvea{RefIdx,k}, 'LineWidth',2,'Color',h.Colors{k});
+        end
+    end
+    xline(axA, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+    box(axA,'on'); grid(axA,'on'); axA.TickDir = 'out';
+    axA.XLim = [-90,90]; axA.XTick = -90:10:90;
+    xlabel(axA,['\psi [',char(176),']'],'FontSize',12);
+    ylabel(axA,[AUnitLabelTex,' [nm]'],'FontSize',12);
+    % Titel mit den ermittelten Spannungen je Referenzrichtung:
+    % 0/180 -> sigma_11/sigma_13, 90/270 -> sigma_22/sigma_23 (eine Zeile
+    % pro vorhandener Referenzrichtung; nur die erste Zeile mit "Linie k (hkl)").
+    TitleLinesA = {};
+    ParTitleNames = {'11','22'};
+    ShearTitleNames = {'13','23'};
+    for RefIdx = 1:2
+        if size(h.psimethod.regress,2) < k || isempty(h.psimethod.regress{RefIdx,k})
+            continue
+        end
+        StressStr = sprintf('\\sigma_{%s} = %.0f %s %.0f MPa / \\sigma_{%s} = %.0f %s %.0f MPa', ...
+            ParTitleNames{RefIdx}, h.psimethod.sigmapar(RefIdx,k), char(177), h.psimethod.SEpar(RefIdx,k), ...
+            ShearTitleNames{RefIdx}, h.psimethod.sigmashear(RefIdx,k), char(177), h.psimethod.SEshear(RefIdx,k));
+        if isempty(TitleLinesA)
+            StressStr = ['Linie ',num2str(k),' (',HKLstr,') / ',StressStr];
+        end
+        TitleLinesA{end+1} = StressStr; %#ok<AGROW>
+    end
+    if isempty(TitleLinesA)
+        TitleLinesA = {['Linie ',num2str(k),' (',HKLstr,')']};
+    end
+    % Leerzeile(n) anhaengen: MATLAB rendert die letzte Zeile eines
+    % mehrzeiligen Titels am naechsten zur Achsenbox -- so bleibt ein
+    % Abstand zwischen der eigentlichen Titelzeile (mit tiefgestellten
+    % Indizes wie sigma_{11}) und der oberen Achslinie, statt dass sich
+    % beide ueberlappen. Eine wirklich LEERE Zeile ('') wird von manchen
+    % Renderern mit kaum Hoehe dargestellt -- daher hier eine Zeile mit
+    % einem Leerzeichen, die garantiert die volle Zeilenhoehe einnimmt.
+    TitleLinesA{end+1} = ' ';
+    title(axA, TitleLinesA, 'FontSize', 10);
+    if ~isempty(LegHandles)
+        legend(axA, LegHandles, LegLabels, 'Location','best');
+    end
+    print(figA,[FolderName,'a_vs_psi_peak',num2str(k),'_',HKLstr,PsiExportDetSuffix(h)],'-painters','-dtiff','-r300');
+    close(figA);
+
+    % --- IB vs. psi und Integrated Intensity vs. psi (nur Rohdaten) ---
+    ExportPsiRawVsPsi(h, k, HKLstr, FolderName, 'IB', 'IntegralWidth', 'IB [keV]', AzimuthIdx, AzimuthMirror, AzimuthMarker, PhiNames);
+    ExportPsiRawVsPsi(h, k, HKLstr, FolderName, 'IntegratedIntensity', 'Intensity_Int', 'Integrated Int. [cts*keV]', AzimuthIdx, AzimuthMirror, AzimuthMarker, PhiNames);
+end
+
+set(hObj,'str',['Export',' psi',' plots'],'backg',col)
+msgbox(['Export abgeschlossen: ',FolderName]);
+guidata(hObj, h);
+
+function ExportPsiRawVsPsi(h, k, HKLstr, FolderName, NameTag, FieldName, YLabelStr, AzimuthIdx, AzimuthMirror, AzimuthMarker, PhiNames)
+% Hilfsfunktion fuer buttonexportpsiplots: exportiert eine Rohdaten-Groesse
+% (IB oder Integrated Intensity) vs. psi als TIFF + txt, ohne Fit-Kurve
+% (analog h.axesplotpsiIB/h.axesplotpsiInt).
+fig = figure('Visible','off','Units','centimeters','Position',[0 0 18 12]);
+ax = axes('Parent',fig); hold(ax,'on');
+LegHandles = gobjects(0); LegLabels = {};
+fid = fopen([FolderName,NameTag,'_vs_psi_peak',num2str(k),'_',HKLstr,PsiExportDetSuffix(h),'.txt'],'w');
+fprintf(fid,'psi [deg]\t%s\tphi\n',NameTag);
+for AzIdx = 1:4
+    idxphi = AzimuthIdx{AzIdx};
+    if isempty(idxphi)
+        continue
+    end
+    if isfield(h,'ParamsToFit') && numel(h.ParamsToFit) >= idxphi
+        psi = h.ParamsToFit(idxphi).Psi_Winkel{k};
+        val = h.ParamsToFit(idxphi).(FieldName){k};
+    else
+        psi = h.Params.Psi_Winkel{k};
+        val = h.Params.(FieldName){k};
+    end
+    MirrorSign = AzimuthMirror(AzIdx);
+    pt = plot(ax, MirrorSign.*psi, val, 'LineStyle','--','Marker',AzimuthMarker{AzIdx},'MarkerSize',10,'MarkerFaceColor',h.Colors{k},'MarkerEdgeColor','k','Color','k');
+    LegHandles(end+1) = pt; %#ok<AGROW>
+    LegLabels{end+1} = ['\phi = ',PhiNames{AzIdx},char(176)]; %#ok<AGROW>
+    for pIdx = 1:numel(psi)
+        fprintf(fid,'%g\t%g\t%s\n', MirrorSign*psi(pIdx), val(pIdx), PhiNames{AzIdx});
+    end
+end
+fclose(fid);
+xline(ax, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+box(ax,'on'); grid(ax,'on'); ax.TickDir = 'out';
+ax.XLim = [-90,90]; ax.XTick = -90:10:90;
+xlabel(ax,['\psi [',char(176),']'],'FontSize',12);
+ylabel(ax,YLabelStr,'FontSize',12);
+% Leerzeichen-Zeile fuer etwas Abstand zur oberen Achslinie (analog zum
+% Titel des a-psi-Plots in buttonexportpsiplots).
+title(ax, {['Peak ',num2str(k),' (',HKLstr,')'], ' '});
+if ~isempty(LegHandles)
+    legend(ax, LegHandles, LegLabels, 'Location','best');
+end
+print(fig,[FolderName,NameTag,'_vs_psi_peak',num2str(k),'_',HKLstr,PsiExportDetSuffix(h)],'-painters','-dtiff','-r300');
+close(fig);
+
+%% Export stress plots button (psi method, vereinfachte Portierung von
+%% buttoncreatetaufile)
+function buttoncreatepsitaufile(hObj, ~)
+% Schreibt eine .tau-Textdatei (hkl, d0, tau0, sigma11/13/22/23 +- SE) und
+% exportiert Balken- sowie Spannung-vs-tau0-Plots je Slot. Vereinfacht
+% gegenueber buttoncreatetaufile (sin2psi-Tab): keine ETA3000-Annotation-
+% Box, keine LEDDI-Det1/2-Dateinamens-Suffixe.
+h = guidata(hObj);
+if ~isfield(h,'psimethod') || ~isfield(h.psimethod,'sigmapar')
+    msgbox('Bitte zuerst "Load stress data" ausfuehren.');
+    return
+end
+col = get(hObj,'backg');
+set(hObj,'str','Exporting','backg',[1 .6 .6])
+drawnow
+
+NumPeaks = size(h.psimethod.sigmapar,2);
+% Gemeinsamer Basisordner wie im sin2psi-Tab und in buttonexportpsiplots
+% (h.PathName), nur eigener Unterordner "StressPlots_psi-method" -- damit
+% alle Exporte einer Sitzung im selben "..._added_plots_<Datum>"-Ordner
+% landen.
+if ~isfield(h,'PathName')
+    DateStr = datestr(now,'ddmmyyyy');
+    name = TruncateForFilename(strtrim(h.Measurement(1).MeasurementSeries), 120);
+    h.PathName = [General.ProgramInfo.Path,'\Data\Results\',h.Diffsel,'\',[name,'_added_plots_',DateStr]];
+end
+DateStr = datestr(now,'ddmmyyyy');
+FolderName = fullfile(h.PathName,'\StressPlots_psi-method\');
+if exist(FolderName,'dir') ~= 7
+    mkdir(FolderName);
+end
+% Die .tau-Datei selbst (anders als die Balken-/tau0-Plots) kommt in einen
+% eigenen Unterordner, damit sie sich im gemeinsamen "..._added_plots_"-
+% Ordner leichter wiederfinden laesst.
+TauFolderName = fullfile(h.PathName,'\Psi_and_tau_File\');
+if exist(TauFolderName,'dir') ~= 7
+    mkdir(TauFolderName);
+end
+
+% a=d*sqrt(H^2+K^2+L^2) gilt nur fuer kubische Symmetrie -- ueber
+% h.checkboxpsicubic abschaltbar (siehe RecomputePsiRegression). Betrifft
+% hier nur die informative d0/a0-Spalte der .tau-Datei, nicht sigma_par/
+% sigma_shear selbst (die kommen bereits fertig aus h.psimethod).
+CubicMode = get(h.checkboxpsicubic,'Value') == 1;
+if CubicMode
+    D0ColLabel = 'a0[nm]';
+else
+    D0ColLabel = 'd0[nm]';
+end
+% Gleiches Dateiformat wie die .tau-Datei des sin2psi-Tabs
+% (buttoncreatetaufile): "Filename:"/"2Theta"/"Measured azimuths"-
+% Kopfzeilen, feste Spaltenbreiten (Sigma11,Error,Sigma22,Error,Sigma13,
+% Error,Sigma23,Error -- diese Spaltenreihenfolge!), fehlende Werte als
+% "--" statt "NaN", hkl ohne Leerzeichen (z.B. "104").
+PhiWinkelAll = cell(1,size(h.Params.Phi_Winkel,2));
+for kPhi = 1:size(h.Params.Phi_Winkel,2)
+    PhiWinkelAll{kPhi} = unique(sort(h.Params.Phi_Winkel{kPhi}));
+end
+TauFileName = TruncateForFilename(strrep(h.Measurement(1).MeasurementSeries,' ',''), 200);
+fid = fopen([TauFolderName,TauFileName,'_psi-method',PsiExportDetSuffix(h),'_',DateStr,'.tau'],'w');
+fprintf(fid,'Filename: %s.\n\n',strrep(h.Measurement(1).MeasurementSeries,' ',''));
+if strcmp(h.Diffsel,'ETA3000')
+    fprintf(fid, ['2Theta range [Degree]:', ' ', num2str(h.Measurement(1).twotheta(1)),' - ', num2str(h.Measurement(1).twotheta(end)),'\n']);
+else
+    fprintf(fid, ['2Theta [Degree]:', ' ', num2str(h.Measurement(1).twotheta),'\n']);
+end
+fprintf(fid, ['Measured azimuths [Degree]:', ' ', '{',strrep(strrep(num2str(PhiWinkelAll{1}'),'  ',','),',,',','),'}','\n\n']);
+fprintf(fid, ['hkl   ', D0ColLabel,'    tau0    ','Sigma11  ','Error  ','Sigma22  ','Error  ','Sigma13  ','Error  ','Sigma23  ','Error  ','\n']);
+for k = 1:NumPeaks
+    HKLCode = h.Params.DEK(k,1);
+    HKLidx = [floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10)];
+    if CubicMode
+        HKLFactor = sqrt(sum(HKLidx.^2));
+    else
+        HKLFactor = 1;
+    end
+    d0 = HKLFactor.*h.sin2psi.dzero(k);
+    tau0 = h.sin2psi.taupsizero(k);
+    hklstr = sprintf('%d%d%d', HKLidx(1), HKLidx(2), HKLidx(3));
+    fprintf(fid,'%-5s %-9.5f %-7.2f %s %s %s %s %s %s %s %s\n', ...
+        hklstr, d0, tau0, ...
+        FormatTauValue(h.psimethod.sigmapar(1,k), 7), FormatTauValue(h.psimethod.SEpar(1,k), 6), ...
+        FormatTauValue(h.psimethod.sigmapar(2,k), 8), FormatTauValue(h.psimethod.SEpar(2,k), 6), ...
+        FormatTauValue(h.psimethod.sigmashear(1,k), 8), FormatTauValue(h.psimethod.SEshear(1,k), 6), ...
+        FormatTauValue(h.psimethod.sigmashear(2,k), 8), FormatTauValue(h.psimethod.SEshear(2,k), 6));
+end
+fclose(fid);
+% Textdatei mit den verwendeten DEK-Werten (und DEK-Dateiname, falls
+% bekannt) neben die .tau-Datei schreiben (Nutzerwunsch).
+WriteDEKInfoFile(h, TauFolderName, [TauFileName,'_psi-method',PsiExportDetSuffix(h),'_',DateStr]);
+
+SlotRefIdx = [1,1,2,2];
+SlotIsShear = [0,1,0,1];
+% SlotLabel bleibt dateinamentauglich (Klartext, keine Backslashes/
+% geschweifte Klammern); SlotLabelTex ist nur fuer Ylabel/Titel gedacht
+% (TeX-Interpreter, "\sigma_{11}" statt "\sigma_1_1" fuer eine korrekt
+% tiefgestellte "11").
+SlotLabel = {'sigma11','sigma13','sigma22','sigma23'};
+SlotLabelTex = {'\sigma_{11}','\sigma_{13}','\sigma_{22}','\sigma_{23}'};
+for Slot = 1:h.psimethod.NumTauSlots
+    RefIdxSlot = SlotRefIdx(Slot);
+    tau0list = nan(NumPeaks,1); vallist = nan(NumPeaks,1); SElist = nan(NumPeaks,1); hkllabels = cell(NumPeaks,1);
+    for k = 1:NumPeaks
+        if size(h.psimethod.regress,2) < k || isempty(h.psimethod.regress{RefIdxSlot,k})
+            continue
+        end
+        tau0list(k) = h.sin2psi.taupsizero(k);
+        if SlotIsShear(Slot)
+            vallist(k) = h.psimethod.sigmashear(RefIdxSlot,k);
+            SElist(k) = h.psimethod.SEshear(RefIdxSlot,k);
+        else
+            vallist(k) = h.psimethod.sigmapar(RefIdxSlot,k);
+            SElist(k) = h.psimethod.SEpar(RefIdxSlot,k);
+        end
+        HKLCode = h.Params.DEK(k,1);
+        hkllabels{k} = sprintf('%d %d %d', floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10));
+    end
+    ValidIdx = ~isnan(vallist);
+    if ~any(ValidIdx)
+        continue
+    end
+    idxlist = find(ValidIdx);
+
+    % Export des Balkendiagramms ("bar_...tif") auf Nutzerwunsch
+    % auskommentiert, da nicht mehr verwendet (analog zum sin2psi-Tab,
+    % buttonexportplots). Der eigentliche, weiterhin exportierte Plot
+    % (Spannung vs. tau0, figTau) folgt direkt im Anschluss unten.
+%     figBar = figure('Visible','off','Units','centimeters','Position',[0 0 18 12]);
+%     axBar = axes('Parent',figBar);
+%     bh = bar(axBar, vallist(ValidIdx));
+%     bh.FaceColor = 'flat';
+%     for bIdx = 1:numel(idxlist)
+%         bh.CData(bIdx,:) = h.Colors{idxlist(bIdx)};
+%     end
+%     set(axBar,'XTickLabel',hkllabels(ValidIdx));
+%     box(axBar,'on'); axBar.TickDir = 'out';
+%     ylabel(axBar,[SlotLabelTex{Slot},' [MPa]']);
+%     title(axBar, SlotLabelTex{Slot});
+%     print(figBar,[FolderName,'bar_',SlotLabel{Slot},PsiExportDetSuffix(h)],'-painters','-dtiff','-r300');
+%     close(figBar);
+
+    figTau = figure('Visible','off','Units','centimeters','Position',[0 0 18 12]);
+    axTau = axes('Parent',figTau); hold(axTau,'on');
+    % Breiterer Plotbereich (weniger weisser Rand rechts), wie im
+    % sin2psi-Tab (gleicher OuterPosition-Wert) -- Nutzerwunsch.
+    axTau.OuterPosition = [0 0 1.0625 0.98];
+    LegHandles = gobjects(0); LegLabels = {};
+    for bIdx = 1:numel(idxlist)
+        k = idxlist(bIdx);
+        pt = errorbar(axTau, tau0list(k), vallist(k), SElist(k), 'LineStyle','none','Marker','s','MarkerSize',12,'MarkerFaceColor',h.Colors{k},'MarkerEdgeColor','k','Color','k','CapSize',6);
+        LegHandles(end+1) = pt; %#ok<AGROW>
+        LegLabels{end+1} = hkllabels{k}; %#ok<AGROW>
+    end
+    yline(axTau, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
+    box(axTau,'on'); grid(axTau,'on'); axTau.TickDir = 'out';
+    % Gleiche Achsengrenzen/Ticks wie in der GUI (inkl. manuell per "Change
+    % X/Y-scale" gesetzter Werte des jeweiligen Slots).
+    [ExpXLim, ExpXTick, ExpYLim, ExpYTick] = PsiTauAxisLimits(h, Slot, tau0list(idxlist)', [vallist(idxlist)-SElist(idxlist); vallist(idxlist)+SElist(idxlist)]');
+    axTau.XLim = ExpXLim;
+    if ~isempty(ExpXTick)
+        axTau.XTick = ExpXTick;
+    end
+    axTau.YLim = ExpYLim;
+    if ~isempty(ExpYTick)
+        axTau.YTick = ExpYTick;
+    end
+    xlabel(axTau,['\tau_0 [',char(181),'m]']);
+    ylabel(axTau,[SlotLabelTex{Slot},' [MPa]']);
+    % Schriftgroesse von Achsenbeschriftung und Achsenwerten vergroessert
+    % (Nutzerwunsch), analog zum sin2psi-Tab (buttonexportplots) auf den
+    % gleichen Wert gesetzt, damit beide Exporte einheitlich aussehen.
+    axTau.FontSize = 18;
+    axTau.XLabel.FontSize = 18;
+    axTau.YLabel.FontSize = 18;
+    % 60 statt 45 Zeichen: der Schwellwert war auf die laengere Kombination
+    % mit dem inzwischen entfernten "Residual stress data for "-Praefix
+    % ausgelegt, dadurch wurde ohne Praefix zu frueh umgebrochen.
+    % Titel- und Legenden-Schriftgroesse explizit wie im sin2psi-Tab
+    % gesetzt (11 bzw. 12) -- sonst erben beide die groessere, gerade
+    % gesetzte Achsen-Schriftgroesse (axTau.FontSize = 18) ueber deren
+    % Standard-Multiplikatoren und wirken dadurch zu groÃŸ (Nutzerwunsch).
+    % Leerzeichen-Zeile fuer etwas Abstand zur oberen Achslinie angehaengt
+    % (analog zum sin2psi-Tab), sonst sitzt der Titel zu nah an der Achse
+    % (Nutzerwunsch).
+    title(axTau, [WrapExportTitle(strrep(h.Measurement(1).MeasurementSeries,' ',''), 60), {' '}], 'Interpreter','none', 'FontSize', 11);
+    % Feste Position statt 'best', da 'best' bei diesem Plot haeufig eine
+    % Stelle mitten im Plot statt in der Ecke waehlte.
+    legend(axTau, LegHandles, LegLabels, 'Location','northeast', 'FontSize', 12);
+    print(figTau,[FolderName,'tau0_',SlotLabel{Slot},PsiExportDetSuffix(h)],'-painters','-dtiff','-r300');
+    print(figTau,[FolderName,'tau0_',SlotLabel{Slot},PsiExportDetSuffix(h)],'-painters','-djpeg','-r600');
+    close(figTau);
+end
+
+set(hObj,'str','Export stress plots','backg',col)
+msgbox({['Plots: ',FolderName]; ['Tau-Datei: ',TauFolderName]});
+guidata(hObj, h);
+
+function dI = InterpolLatticeSpacingKeepData(psi, d, psiGrid)
+% d-Werte eines Azimuts auf das gemeinsame psi-Raster bringen. An gemessenen
+% psi-Punkten bleibt der echte Messwert erhalten (sonst wuerde die
+% Regression nur noch eine geglaettete Gerade fitten und die Fehler der
+% Spannung waeren viel zu klein). Nur fuer psi-Werte, die in diesem Azimut
+% nicht gemessen wurden, wird die Ausgleichsgerade (linear in psi) als
+% Ersatz verwendet.
+linfit = polyfit(psi, d, 1);
+dI = polyval(linfit, psiGrid);
+[tf, loc] = ismember(round(psiGrid,6), round(psi,6));
+dI(tf) = d(loc(tf));
+
+function str = PsiExportDetSuffix(h)
+% Dateinamens-Suffix "_Det1"/"_Det2" fuer Exporte der psi-Methode beim
+% LEDDI (zwei Detektoren): beide Detektoren landen im selben
+% "..._added_plots_"-Ordner, ohne Suffix wuerden sich die Dateien
+% gegenseitig ueberschreiben. Bei anderen Diffraktometern leer.
+str = '';
+if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+    if strcmp(h.Detsel,'Detector 1')
+        str = '_Det1';
+    elseif strcmp(h.Detsel,'Detector 2')
+        str = '_Det2';
+    end
+end
+
+function str = FormatTauValue(val, width)
+% Formatiert einen sigma/SE-Wert fuer die .tau-Datei wie im sin2psi-Tab:
+% vorhandene Werte rechtsbuendig als gerundete Ganzzahl (Breite width),
+% fehlende (NaN, z.B. wenn nur 0/180 oder nur 90/270 gemessen wurde) als
+% "--" in derselben Breite -- statt "NaN" auszugeben.
+if isnan(val)
+    str = sprintf(['%',num2str(width),'s'], '--');
+else
+    str = sprintf(['%',num2str(width),'d'], round(val));
+end
+
+function out = TruncateForFilename(str, maxLen)
+% Kuerzt einen fuer Datei-/Ordnernamen verwendeten String (z.B. den
+% Messreihen-Namen) auf maxLen Zeichen, damit einzelne Pfadkomponenten
+% die Windows-Grenze von 255 Zeichen pro Datei-/Ordnername nicht
+% ueberschreiten (relevant bei sehr langen Messreihen-Namen, da an
+% h.PathName/die .tau-Datei noch Suffixe wie "_added_plots_ddmmyyyy"
+% angehaengt werden).
+if numel(str) > maxLen
+    out = str(1:maxLen);
+else
+    out = str;
+end
+
+function TitleLines = WrapExportTitle(TitleStr, MaxCharsPerLine)
+% Bricht einen langen Plot-Titel (z.B. mit Messreihen-Name) bei Bedarf auf
+% zwei Zeilen um, damit er in exportierten Abbildungen nicht ueber den
+% Achsenrand hinaus abgeschnitten wird. title() akzeptiert dafuer ein
+% Cell-Array mit einer Zeile pro Eintrag. Der Umbruch erfolgt am
+% naechstgelegenen Leerzeichen/Unterstrich zur Mitte hin (Messreihen-Namen
+% verwenden meist Unterstriche statt Leerzeichen), nicht mitten im Wort.
+if numel(TitleStr) <= MaxCharsPerLine
+    TitleLines = {TitleStr};
+    return
+end
+MidPoint = round(numel(TitleStr)/2);
+SplitChars = find(TitleStr == ' ' | TitleStr == '_');
+if isempty(SplitChars)
+    SplitPos = MaxCharsPerLine;
+else
+    [~,idx] = min(abs(SplitChars-MidPoint));
+    SplitPos = SplitChars(idx);
+end
+TitleLines = {strtrim(TitleStr(1:SplitPos)), strtrim(TitleStr(SplitPos+1:end))};
+
+function TitleLines = BuildSin2PsiStressTitleLines(sigmataulistRow, PhiWinkel1)
+% Baut Titelzeilen mit den fuer eine hkl-Linie ermittelten Spannungen
+% (sigma11/22/13/23, je nachdem welche Phi-Winkel gemessen wurden) --
+% analog zum Titel des a-psi-Plots (buttonexportpsiplots) bzw. zur
+% .tau-Datei-Tabelle in buttoncreatetaufile, deren Spalten-zu-Name-
+% Zuordnung hier exakt gespiegelt wird (Nutzerwunsch: Spannungswerte wie
+% bei der psi-Methode ueber den Plot schreiben).
+% sigmataulistRow = h.sin2psi.sigmataulist(k,:) (ggf. gefiltert):
+% [tau0, Sigma1, Error1, Sigma2, Error2, ..., taumean].
+NExtra = numel(sigmataulistRow) - 2;
+Names = {};
+if NExtra == 2
+    if PhiWinkel1(1) == 0 || PhiWinkel1(1) == 180
+        Names = {'11'};
+    else
+        Names = {'22'};
+    end
+elseif NExtra == 4
+    if PhiWinkel1(1) == 0 && PhiWinkel1(2) == 90
+        Names = {'11','22'};
+    elseif PhiWinkel1(1) == 0 && PhiWinkel1(2) == 180
+        Names = {'11','13'};
+    elseif PhiWinkel1(1) == 0 && PhiWinkel1(2) == 270
+        Names = {'11','22'};
+    elseif PhiWinkel1(1) == 90 && PhiWinkel1(2) == 180
+        Names = {'11','22'};
+    elseif PhiWinkel1(1) == 90 && PhiWinkel1(2) == 270
+        Names = {'22','23'};
+    elseif PhiWinkel1(1) == 180 && PhiWinkel1(2) == 270
+        Names = {'11','22'};
+    end
+elseif NExtra == 6
+    if PhiWinkel1(1) == 0 && PhiWinkel1(2) == 90 && PhiWinkel1(3) == 180
+        Names = {'11','22','13'};
+    elseif PhiWinkel1(1) == 0 && PhiWinkel1(2) == 90 && PhiWinkel1(3) == 270
+        Names = {'11','22','23'};
+    elseif PhiWinkel1(1) == 0 && PhiWinkel1(2) == 180 && PhiWinkel1(3) == 270
+        Names = {'11','22','13'};
+    elseif PhiWinkel1(1) == 90 && PhiWinkel1(2) == 180 && PhiWinkel1(3) == 270
+        Names = {'11','22','23'};
+    end
+elseif NExtra == 8
+    Names = {'11','22','13','23'};
+end
+
+Parts = {};
+for i = 1:numel(Names)
+    Parts{end+1} = sprintf('\\sigma_{%s} = %.0f %s %.0f MPa', Names{i}, sigmataulistRow(2*i), char(177), sigmataulistRow(2*i+1)); %#ok<AGROW>
+end
+
+% Je zwei Werte pro Zeile (wie beim a-psi-Plot: par + shear in einer
+% Zeile), damit der Titel bei vier Werten nicht zu breit wird.
+TitleLines = {};
+for i = 1:2:numel(Parts)
+    if i+1 <= numel(Parts)
+        TitleLines{end+1} = [Parts{i}, ' / ', Parts{i+1}]; %#ok<AGROW>
+    else
+        TitleLines{end+1} = Parts{i}; %#ok<AGROW>
+    end
+end
+if isempty(TitleLines)
+    TitleLines = {''};
+end
+
+%% Export sinï¿½psi plots button
 function buttonexportplots(hObj, ~)
 % Function to export plots of d-spacing, Emax, IB and Int.Int.
 h = guidata(hObj);
@@ -18723,18 +21877,18 @@ for k = 1:size(h.plotData.dataEmax{1,1},2)
     ax.GridAlpha = 0.3;
     if strcmp(h.Diffsel,'ETA3000')
         ax.YLabel.String = ['2\theta [',char(181),']'];
-        ax.YLabel.FontSize = 24;
+        ax.YLabel.FontSize = 16;
         ax.XLabel.String = ['sin',char(178),'\psi'];
-        ax.XLabel.FontSize = 24;
+        ax.XLabel.FontSize = 16;
     else
         ax.YLabel.String = 'Energy [keV]';
-        ax.YLabel.FontSize = 24;
+        ax.YLabel.FontSize = 16;
         ax.XLabel.String = ['sin',char(178),'\psi'];
-        ax.XLabel.FontSize = 24;
+        ax.XLabel.FontSize = 16;
     end
     ax.LabelFontSizeMultiplier = 1.3;
     ax.LineWidth = 1.3;
-    set(gca,'FontSize',18)
+    set(gca,'FontSize',14)
     hold on
     set(fig, 'Visible', 'off');
     % FaceColor of markers, order changes when measured under four azimuths
@@ -18761,21 +21915,22 @@ for k = 1:size(h.plotData.dataEmax{1,1},2)
         Ymax = Ymax + 0.025;
     end
     
+    % Die Y-Ticks wurden vorher je nach Groesse von (Ymax-Ymin) ueber eine
+    % manuelle Fallunterscheidung mit fester Schrittweite (0.01/0.025/
+    % 0.05/0.1/0.25) gesetzt -- das ergab oft nur wenige grobe Ticks.
+    % Jetzt wird wie bei den psi-Methode-Exporten kein eigenes YTick mehr
+    % gesetzt, sondern die automatische MATLAB-Tickvergabe innerhalb der
+    % weiterhin "nice" gerundeten YLim genutzt (Nutzerwunsch).
     if (Ymax - Ymin) <= 0.11
         ax.YLim = [floor(Ymin./0.01)*0.01 ceil(Ymax/0.01).*0.01];
-        ax.YTick = ax.YLim(1):0.01:ax.YLim(2);
     elseif (Ymax - Ymin) > 0.11 && (Ymax - Ymin) <= 0.19
         ax.YLim = [floor(Ymin./0.025)*0.025 ceil(Ymax/0.025).*0.025];
-        ax.YTick = ax.YLim(1):0.025:ax.YLim(2);
     elseif (Ymax - Ymin) > 0.19 && (Ymax - Ymin) <= 0.49
         ax.YLim = [floor(Ymin./0.05)*0.05 ceil(Ymax/0.05).*0.05];
-        ax.YTick = ax.YLim(1):0.05:ax.YLim(2);
     elseif (Ymax - Ymin) > 0.5 && (Ymax - Ymin) <= 0.99
         ax.YLim = [floor(Ymin./0.1)*0.1 ceil(Ymax/0.1).*0.1];
-        ax.YTick = ax.YLim(1):0.1:ax.YLim(2);
     elseif (Ymax - Ymin) >= 1
         ax.YLim = [floor(Ymin./0.25)*0.25 ceil(Ymax/0.25).*0.25];
-        ax.YTick = ax.YLim(1):0.25:ax.YLim(2);    
     end
     
     % Create legend
@@ -18844,7 +21999,7 @@ if size(DatahklPsitmp{1},2) == 1
         
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -18871,8 +22026,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -18901,9 +22056,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -18934,10 +22089,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -18990,32 +22145,34 @@ for k = 1:size(h.plotData.dataIB{1,1},2)
     Ymax = ceil((Ymax)/0.05).*0.05;
     
     ax.YLim = [Ymin, Ymax];
-    
+
+    % Die Y-Ticks wurden vorher je nach Groesse von (Ymax-Ymin) ueber eine
+    % manuelle Fallunterscheidung mit fester Schrittweite (0.01/0.025/
+    % 0.05/0.1/0.25) gesetzt -- das ergab oft nur wenige grobe Ticks.
+    % Jetzt wird wie bei den psi-Methode-Exporten kein eigenes YTick mehr
+    % gesetzt, sondern die automatische MATLAB-Tickvergabe innerhalb der
+    % YLim genutzt (Nutzerwunsch); das passende Nachkommastellenformat
+    % bleibt weiterhin von (Ymax-Ymin) abhaengig.
     if (Ymax - Ymin) <= 0.1
-        ax.YTick = ax.YLim(1):0.01:ax.YLim(2);
         ax.YAxis.TickLabelFormat = '   %.2f ';
     elseif (Ymax - Ymin) > 0.1 && (Ymax - Ymin) < 0.25
-        ax.YTick = ax.YLim(1):0.025:ax.YLim(2);
         ax.YAxis.TickLabelFormat = '  %.3f';
     elseif (Ymax - Ymin) >= 0.25 && (Ymax - Ymin) < 0.79
-        ax.YTick = ax.YLim(1):0.05:ax.YLim(2);
         ax.YAxis.TickLabelFormat = '   %.2f ';
     elseif (Ymax - Ymin) >= 0.8 && (Ymax - Ymin) < 1.5
-        ax.YTick = ax.YLim(1):0.1:ax.YLim(2);
         ax.YAxis.TickLabelFormat = '   %.2f ';
     elseif (Ymax - Ymin) >= 1.5
-        ax.YTick = ax.YLim(1):0.25:ax.YLim(2);
         ax.YAxis.TickLabelFormat = '   %.2f ';
     end
     
     ax.YLabel.String = 'IB [keV]';
-    ax.YLabel.FontSize = 24;
+    ax.YLabel.FontSize = 16;
     ax.XLabel.String = ['sin',char(178),'\psi'];
-    ax.XLabel.FontSize = 24;
+    ax.XLabel.FontSize = 16;
     ax.LabelFontSizeMultiplier = 1.3;
     ax.LineWidth = 1.3;
 %     assignin('base','ax',ax)
-    set(gca,'FontSize',18)
+    set(gca,'FontSize',14)
     hold on
     set(fig, 'Visible', 'off');
     % FaceColor of markers, order changes when measured under four azimuths
@@ -19088,7 +22245,7 @@ if size(DatahklPsitmp{1},2) == 1
         
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19116,8 +22273,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19147,9 +22304,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19181,10 +22338,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19249,12 +22406,12 @@ for k = 1:size(h.plotData.dataIntensity_Int{1,1},2)
     ax.XLim = [0 1];
     ax.YLim = [0 ceil(maxYlimdataInt(k)/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1))];
     ax.YLabel.String = 'Int.Intensity [cts]';
-    ax.YLabel.FontSize = 24;
+    ax.YLabel.FontSize = 16;
     ax.XLabel.String = ['sin',char(178),'\psi'];
-    ax.XLabel.FontSize = 24;
+    ax.XLabel.FontSize = 16;
     ax.LabelFontSizeMultiplier = 1.3;
     ax.LineWidth = 1.3;
-    set(gca,'FontSize',18)
+    set(gca,'FontSize',14)
     hold on
     set(fig, 'Visible', 'off');
     % FaceColor of markers, order changes when measured under four azimuths
@@ -19328,7 +22485,7 @@ if size(DatahklPsitmp{1},2) == 1
         
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19356,8 +22513,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19387,9 +22544,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19421,10 +22578,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19453,7 +22610,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     fig.PaperUnits = 'centimeters';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.085 1.025];
+    ax.OuterPosition = [0 0 1.085 0.98];
     ax.TickDir = 'out';
     ax.YAxis.TickLabelFormat = '%.4f';
     ax.Box = 'on';
@@ -19478,52 +22635,21 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     % Create Y limits
     YLimLow = dmintmp - 0.0001;
     YLimHigh = dmaxtmp + 0.0001;
-    % Calculate difference
-    Ylimdiff = YLimHigh - YLimLow;
-    % Calculate Ytick marks
-    if Ylimdiff >= 8e-4
-        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
-                YLimHigh = YLimHigh + 0.0001;
-                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-                    YLimHigh = YLimHigh + 0.0001;
-                end
-                ax.YTick = 10*YLimLow:0.01:10*YLimHigh;
-            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
-                YLimLow = YLimLow - 0.0001;
-                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-                    YLimLow = YLimLow - 0.0001;
-                end
-                ax.YTick = 10*YLimLow:0.01:10*YLimHigh;
-            end
-        else
-            ax.YTick = 10*YLimLow:0.005:10*YLimHigh;
-        end
-    elseif Ylimdiff < 8e-4 && Ylimdiff > 4e-4
-        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
-                YLimHigh = YLimHigh + 0.0001;
-                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
-                YLimLow = YLimLow - 0.0001;
-                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-            end
-        else
-            ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-        end
-    elseif Ylimdiff <= 4e-4
-        ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
-    end
-
-%     ax.YTick = 10*YLimLow:0.005:10*YLimHigh;
-    ax.YLim = [10*YLimLow, 10*YLimHigh]; 
+    % Die Y-Ticks wurden vorher ueber eine manuelle Fallunterscheidung
+    % (feste Schrittweiten 0.01/0.005/0.001 je nach Groesse von
+    % Ylimdiff) berechnet -- das ergab oft nur 3-4 grobe Ticks. Jetzt wird
+    % wie bei den psi-Methode-Exporten (z.B. a-psi-Plot in
+    % buttonexportpsiplots) kein eigenes YTick mehr gesetzt, sondern die
+    % automatische MATLAB-Tickvergabe innerhalb der festen YLim genutzt
+    % (Nutzerwunsch: feinere, weniger "grobe" Achsenticks).
+    ax.YLim = [10*YLimLow, 10*YLimHigh];
     ax.YLabel.String = ['d [',char(197),']'];
-    ax.YLabel.FontSize = 24;
+    ax.YLabel.FontSize = 16;
     ax.XLabel.String = ['sin',char(178),'\psi'];
-    ax.XLabel.FontSize = 24;
+    ax.XLabel.FontSize = 16;
     ax.LabelFontSizeMultiplier = 1.3;
     ax.LineWidth = 1.3;
-    set(gca,'FontSize',18)
+    set(gca,'FontSize',14)
     hold on
     set(fig, 'Visible', 'off');
 %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
@@ -19647,7 +22773,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     l.LineWidth = 0.5;
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
-    set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+    % Ermittelte Spannungswerte als Achsentitel anzeigen, analog zum
+    % a-psi-Plot der psi-Methode (Nutzerwunsch). Die vorherige manuelle
+    % Titel-Position (Normalized [0.5 1.05]) wurde entfernt -- sie war nur
+    % fuer den vorher leeren Titel unsichtbar folgenlos, haette aber in
+    % Kombination mit der reduzierten OuterPosition (siehe unten) den
+    % jetzt sichtbaren Titel falsch/abgeschnitten platzieren koennen;
+    % title() positioniert automatisch.
+    StressTitleLines = BuildSin2PsiStressTitleLines(sin2psi_tmp.sigmataulist(k,:), PhiWinkel{1});
+    StressTitleLines{end+1} = ' ';
+    title(ax, StressTitleLines, 'FontSize', 10);
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Line_','%d','_Det1'],k);
@@ -19679,7 +22814,7 @@ if size(DatahklPsitmp{1},2) == 1
         
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19696,7 +22831,7 @@ if size(DatahklPsitmp{1},2) == 1
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_LR_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -19725,8 +22860,8 @@ elseif size(DatahklPsitmp{1},2) == 2
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19746,8 +22881,8 @@ elseif size(DatahklPsitmp{1},2) == 2
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -19778,9 +22913,9 @@ elseif size(DatahklPsitmp{1},2) == 3
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19803,9 +22938,9 @@ elseif size(DatahklPsitmp{1},2) == 3
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -19838,10 +22973,10 @@ elseif size(DatahklPsitmp{1},2) == 4
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -19867,10 +23002,10 @@ elseif size(DatahklPsitmp{1},2) == 4
         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-            ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+            ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -19900,7 +23035,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     fig.PaperUnits = 'centimeters';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.085 1.025];
+    ax.OuterPosition = [0 0 1.085 0.98];
     ax.TickDir = 'out';
     ax.YAxis.TickLabelFormat = '%.4f';
     ax.Box = 'on';
@@ -19925,51 +23060,21 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     % Create Y limits
     YLimLow = dmintmp - 0.0001;
     YLimHigh = dmaxtmp + 0.0001;
-    % Calculate difference
-    Ylimdiff = YLimHigh - YLimLow;
-    % Calculate Ytick marks
-    if Ylimdiff >= 8e-4
-        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
-                YLimHigh = YLimHigh + 0.0001;
-                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-                    YLimHigh = YLimHigh + 0.0001;
-                end
-                ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
-            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
-                YLimLow = YLimLow - 0.0001;
-                if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-                    YLimLow = YLimLow - 0.0001;
-                end
-                ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
-            end
-        else
-            ax.YTick = 10*YLimLow:0.002:10*YLimHigh;
-        end
-    elseif Ylimdiff < 8e-4 && Ylimdiff > 4e-4
-        if mod(round((YLimHigh - YLimLow)*10000),2e-4*10000) >= 1
-            if abs(YLimLow-min(dmin)) > abs(YLimHigh-max(dmax))
-                YLimHigh = YLimHigh + 0.0001;
-                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-            elseif abs(YLimLow-min(dmin)) < abs(YLimHigh-max(dmax))
-                YLimLow = YLimLow - 0.0001;
-                ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-            end
-        else
-            ax.YTick = 10*YLimLow:0.001:10*YLimHigh;
-        end
-    elseif Ylimdiff <= 4e-4
-        ax.YTick = 10*YLimLow:0.001:10*YLimHigh;  
-    end
-
-    ax.YLim = [10*YLimLow, 10*YLimHigh]; 
+    % Die Y-Ticks wurden vorher ueber eine manuelle Fallunterscheidung
+    % (feste Schrittweiten 0.002/0.001 je nach Groesse von Ylimdiff)
+    % berechnet -- das ergab oft nur wenige grobe Ticks. Jetzt wird wie
+    % bei den psi-Methode-Exporten (z.B. a-psi-Plot in
+    % buttonexportpsiplots) kein eigenes YTick mehr gesetzt, sondern die
+    % automatische MATLAB-Tickvergabe innerhalb der festen YLim genutzt
+    % (Nutzerwunsch: feinere, weniger "grobe" Achsenticks).
+    ax.YLim = [10*YLimLow, 10*YLimHigh];
     ax.YLabel.String = ['d [',char(197),']'];
-    ax.YLabel.FontSize = 24;
+    ax.YLabel.FontSize = 16;
     ax.XLabel.String = ['sin',char(178),'\psi'];
-    ax.XLabel.FontSize = 24;
+    ax.XLabel.FontSize = 16;
     ax.LabelFontSizeMultiplier = 1.3;
     ax.LineWidth = 1.3;
-    set(gca,'FontSize',18)
+    set(gca,'FontSize',14)
     hold on
     set(fig, 'Visible', 'off');
 %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
@@ -20008,7 +23113,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(xdataphi0phi180,1)
@@ -20034,7 +23139,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -20074,7 +23179,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(xdataphi90phi270,1)
@@ -20099,7 +23204,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         end
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -20148,7 +23253,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
 
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(xdataphi0phi180,1)
@@ -20175,7 +23280,7 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
         end
         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 
-        fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+        fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
         
         PsiPlottmp = linspace(0,1,51);
             % In case measurements where performed under four different phi angles
@@ -20223,7 +23328,16 @@ for k = 1:size(h.plotData.dataLatticeSpacing{1,1},2)
     l.LineWidth = 0.5;
     
     title(l,[label(k,:),' ','Reflex'],'FontSize',11,'FontWeight','normal')
-    set(get(gca,'title'),'Units', 'Normalized', 'Position',[0.5 1.05]);
+    % Ermittelte Spannungswerte als Achsentitel anzeigen, analog zum
+    % a-psi-Plot der psi-Methode (Nutzerwunsch). Die vorherige manuelle
+    % Titel-Position (Normalized [0.5 1.05]) wurde entfernt -- sie war nur
+    % fuer den vorher leeren Titel unsichtbar folgenlos, haette aber in
+    % Kombination mit der reduzierten OuterPosition (siehe unten) den
+    % jetzt sichtbaren Titel falsch/abgeschnitten platzieren koennen;
+    % title() positioniert automatisch.
+    StressTitleLines = BuildSin2PsiStressTitleLines(sin2psi_tmp.sigmataulist(k,:), PhiWinkel{1});
+    StressTitleLines{end+1} = ' ';
+    title(ax, StressTitleLines, 'FontSize', 10);
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_Line_','%d','_Det1'],k);
@@ -20502,18 +23616,18 @@ end
 %     ax.GridAlpha = 0.3;
 %     if strcmp(h.Diffsel,'ETA3000')
 %         ax.YLabel.String = ['2\theta [',char(181),']'];
-%         ax.YLabel.FontSize = 24;
+%         ax.YLabel.FontSize = 16;
 %         ax.XLabel.String = ['sin',char(178),'\psi'];
-%         ax.XLabel.FontSize = 24;
+%         ax.XLabel.FontSize = 16;
 %     else
 %         ax.YLabel.String = 'Energy [keV]';
-%         ax.YLabel.FontSize = 24;
+%         ax.YLabel.FontSize = 16;
 %         ax.XLabel.String = ['sin',char(178),'\psi'];
-%         ax.XLabel.FontSize = 24;
+%         ax.XLabel.FontSize = 16;
 %     end
 %     ax.LabelFontSizeMultiplier = 1.3;
 %     ax.LineWidth = 1.3;
-%     set(gca,'FontSize',18)
+%     set(gca,'FontSize',14)
 %     hold on
 %     set(fig, 'Visible', 'off');
 %     % FaceColor of markers, order changes when measured under four azimuths
@@ -20605,7 +23719,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_Energy_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20625,8 +23739,8 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20648,9 +23762,9 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20674,10 +23788,10 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-%             ['sin²psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Energy [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20750,13 +23864,13 @@ end
 %     end
 %     
 %     ax.YLabel.String = 'IB [keV]';
-%     ax.YLabel.FontSize = 24;
+%     ax.YLabel.FontSize = 16;
 %     ax.XLabel.String = ['sin',char(178),'\psi'];
-%     ax.XLabel.FontSize = 24;
+%     ax.XLabel.FontSize = 16;
 %     ax.LabelFontSizeMultiplier = 1.3;
 %     ax.LineWidth = 1.3;
 % %     assignin('base','ax',ax)
-%     set(gca,'FontSize',18)
+%     set(gca,'FontSize',14)
 %     hold on
 %     set(fig, 'Visible', 'off');
 %     % FaceColor of markers, order changes when measured under four azimuths
@@ -20810,7 +23924,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_IB_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20830,8 +23944,8 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20853,9 +23967,9 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20879,10 +23993,10 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-%             ['sin²psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integral Breadth [keV]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -20947,12 +24061,12 @@ end
 %     ax.XLim = [0 1];
 %     ax.YLim = [0 ceil(maxYlimdataInt(k)/(10^(ExpInt(k)-1))).*(10^(ExpInt(k)-1))];
 %     ax.YLabel.String = 'Int.Intensity [cts]';
-%     ax.YLabel.FontSize = 24;
+%     ax.YLabel.FontSize = 16;
 %     ax.XLabel.String = ['sin',char(178),'\psi'];
-%     ax.XLabel.FontSize = 24;
+%     ax.XLabel.FontSize = 16;
 %     ax.LabelFontSizeMultiplier = 1.3;
 %     ax.LineWidth = 1.3;
-%     set(gca,'FontSize',18)
+%     set(gca,'FontSize',14)
 %     hold on
 %     set(fig, 'Visible', 'off');
 %     % FaceColor of markers, order changes when measured under four azimuths
@@ -21008,7 +24122,7 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21028,8 +24142,8 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21051,9 +24165,9 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21077,10 +24191,10 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-%             ['sin²psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['Integrated Intensity [a.u.]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21173,12 +24287,12 @@ end
 % 
 %     ax.YLim = [10*YLimLow, 10*YLimHigh]; 
 %     ax.YLabel.String = ['d [',char(197),']'];
-%     ax.YLabel.FontSize = 24;
+%     ax.YLabel.FontSize = 16;
 %     ax.XLabel.String = ['sin',char(178),'\psi'];
-%     ax.XLabel.FontSize = 24;
+%     ax.XLabel.FontSize = 16;
 %     ax.LabelFontSizeMultiplier = 1.3;
 %     ax.LineWidth = 1.3;
-%     set(gca,'FontSize',18)
+%     set(gca,'FontSize',14)
 %     hold on
 %     set(fig, 'Visible', 'off');
 % %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
@@ -21317,7 +24431,7 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21334,7 +24448,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_LR_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21355,8 +24469,8 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21376,8 +24490,8 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21400,9 +24514,9 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21425,9 +24539,9 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21452,10 +24566,10 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],['d-spacing error [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(DatahklPsitmp{k}{1},1)
@@ -21481,10 +24595,10 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_Fit_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
-%             ['sin²psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(1)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(2)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(3)),char(176),')    '],...
+%             ['sinï¿½psi','   '],['d-spacing Fit [A]','(phi=',num2str(PhiWinkel{1}(4)),char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21578,12 +24692,12 @@ end
 % 
 %     ax.YLim = [10*YLimLow, 10*YLimHigh]; 
 %     ax.YLabel.String = ['d [',char(197),']'];
-%     ax.YLabel.FontSize = 24;
+%     ax.YLabel.FontSize = 16;
 %     ax.XLabel.String = ['sin',char(178),'\psi'];
-%     ax.XLabel.FontSize = 24;
+%     ax.XLabel.FontSize = 16;
 %     ax.LabelFontSizeMultiplier = 1.3;
 %     ax.LineWidth = 1.3;
-%     set(gca,'FontSize',18)
+%     set(gca,'FontSize',14)
 %     hold on
 %     set(fig, 'Visible', 'off');
 % %     FaceColor = {h.Colors{k},h.Colors{k},'w','w'};
@@ -21613,7 +24727,7 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(xdataphi0phi180,1)
@@ -21630,7 +24744,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21662,7 +24776,7 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(xdataphi90phi270,1)
@@ -21679,7 +24793,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21720,7 +24834,7 @@ end
 % 
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing [A]','(phi= 0/180',char(176),')    '],['d-spacing error [A]','(phi= 0/180',char(176),')    '],['d-spacing [A]','(phi= 90/270',char(176),')    '],['d-spacing error [A]','(phi= 90/270',char(176),')    '],'\n']);
 % 
 %             % In case measurements where performed under four different phi angles
 %             for m = 1:size(xdataphi0phi180,1)
@@ -21739,7 +24853,7 @@ end
 %         FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_dspacing_phi_avg_LR_Line_','%d'],k);
 %         fid = fopen([[Path,'\'],FileName,'_',d,'.txt'],'w');
 % 
-%         fprintf(fid, [['sin²psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
+%         fprintf(fid, [['sinï¿½psi','   '],['d-spacing Fit [A]','(phi= 0/180',char(176),')    '],['d-spacing Fit [A]','(phi= 90/270',char(176),')    '],'\n']);
 %         
 %         PsiPlottmp = linspace(0,1,51);
 %             % In case measurements where performed under four different phi angles
@@ -21796,6 +24910,31 @@ end
 set(hObj,'str',['Export ',['sin',char(178)],char(968),' ','plots'],'backg',col)  % Now reset the button features.
 
 guidata(hObj, h);
+
+function WriteDEKInfoFile(h, Path, FileName)
+% Schreibt eine Textdatei mit den fuer die Spannungsauswertung
+% verwendeten DEK-Werten (S1, 1/2 S2 je hkl, siehe Spaltenkoepfe der
+% "Load DEK"-Tabelle) und, falls bekannt, dem Namen der geladenen
+% DEK-Datei (h.DEKFileName wird beim Laden in buttonloadDEK bzw.
+% buttonDEKtableload gesetzt). Gemeinsam genutzt vom sin2psi- und vom
+% psi-Methode-Export, damit beide dieselbe Datei erzeugen.
+fid = fopen(fullfile(Path, [FileName,'_DEK.txt']), 'w');
+if isfield(h,'DEKFileName')
+    fprintf(fid, 'DEK-Datei: %s\n\n', h.DEKFileName);
+else
+    fprintf(fid, 'DEK-Datei: unbekannt (nicht aus einer Datei geladen)\n\n');
+end
+fprintf(fid, '%-7s %-14s %-14s\n', 'hkl', 'S1', '1/2 S2');
+for k = 1:size(h.Params.DEK,1)
+    % Spalte 1 ist der kombinierte hkl-Code (h*100+k*10+l, siehe
+    % buttonloadstressdata/HKLCode-Dekodierung in buttoncreatepsitaufile),
+    % nicht drei einzelne hkl-Spalten -- erst wieder in h,k,l zerlegen.
+    HKLCode = h.Params.DEK(k,1);
+    HKLidx = [floor(HKLCode/100), floor(mod(HKLCode,100)/10), mod(HKLCode,10)];
+    hklstr = sprintf('%d%d%d', HKLidx(1), HKLidx(2), HKLidx(3));
+    fprintf(fid, '%-7s %-14.6g %-14.6g\n', hklstr, h.Params.DEK(k,2), h.Params.DEK(k,3));
+end
+fclose(fid);
 
 %% Export stress plots button
 function buttoncreatetaufile(hObj, ~)
@@ -22089,6 +25228,10 @@ end
 
 fclose(fid);
 %--------------------------------------------------------------------------
+% Textdatei mit den verwendeten DEK-Werten (und DEK-Dateiname, falls
+% bekannt) neben die .tau-Datei schreiben (Nutzerwunsch).
+WriteDEKInfoFile(h, Path, [FileName,'_phi',phianglesstr,'_',d]);
+%--------------------------------------------------------------------------
 % Save data from tau file in case it should be loaded again
 t.PeaksforLabel = h.PeaksforLabel;
 t.sin2psi = h.sin2psi;
@@ -22117,183 +25260,199 @@ end
 
 %% Create stress plots
 for j = 1:(size(taudata,2)-5)/2
-    figure
-
-    fig = gcf;
-    fig.PaperUnits = 'centimeters';
-    fig.PaperPosition = [0 0 18 12];
-    ax = gca;
-    ax.OuterPosition = [0 0 1.085 1.025];
-
-    set(fig, 'Visible', 'off');
-
-    for k = 1:size(taudata,1)
-        % Check number of characters of l from hkl
-        if length(strrep(num2str(taudata(k,1:3)),' ','')) < 4
-            hkl_tmp = strrep(num2str(taudata(k,1:3)),' ','');
-            hkl_tmp = [hkl_tmp ' '];
-            hkl(k,:) = hkl_tmp;
-        else
-            hkl(k,:) = strrep(num2str(taudata(k,1:3)),' ','');
-        end
-    end
-
-    for ii = length(ExportData{1,j}(:,2)):-1:1
-        h.barplots = bar(ax, ExportData{1,j}(1:ii,2), 'FaceColor', h.Colors{ii});
-        hold on;
-    end
-
-    h.barplots.BaseLine.LineWidth = 1.3;
-
-    ax.XLim = ([0.25 length(ExportData{1,j}(:,2))+0.75]);
-    ax.TickDir = 'in';
-    labels = arrayfun(@(value) num2str(value,'%d'),round(ExportData{1,j}(:,3)),'UniformOutput',false);
-
-    for k = 1:length(ExportData{1,j}(:,2))
-        if ExportData{1,j}(k,2) < 0
-            yPos(1,k) = -(max(abs(ExportData{1,j}(:,2)))/10)-5;
-        else
-            yPos(1,k) = 10;
-        end
-    end
-
-    text((1:length(ExportData{1,j}(:,2))),yPos,labels,...
-        'FontSize', 14,...
-        'Color', 'k',...
-        'EdgeColor', 'k',...
-        'BackgroundColor', 'w',...
-        'Margin', 2,...
-        'HorizontalAlignment','center',...
-        'VerticalAlignment','bottom');
-
-    xlabel('Interference hkl','FontSize', 16)
-    xl = get(gca,'XLabel');
-    xlFontSize = get(xl,'FontSize');
-    set(gca, 'xticklabel', hkl);
-    xAX = get(gca,'XAxis');
-    set(xAX, 'FontSize', 16)
-    set(xl, 'FontSize', xlFontSize);
-
-%     if length(PhiWinkel{1}) == 1
-%         if PhiWinkel{1}(j) == 0 || PhiWinkel{1}(j) == 180
-%             ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-%         elseif PhiWinkel{1}(j) == 90 || PhiWinkel{1}(j) == 270
-%             ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-%         end
-%     elseif length(PhiWinkel{1}) == 2
-%         if PhiWinkel{1}(1) == 0
-%             ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-%         elseif PhiWinkel{1}(j) == 90
-%             ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-%         elseif PhiWinkel{1}(j) == 180
-%             ylabel('<\sigma_{13} - \sigma_{33}> [MPa]','FontSize', 20)
-%         elseif PhiWinkel{1}(j) == 270
-%             ylabel('<\sigma_{23} - \sigma_{33}> [MPa]','FontSize', 20)
-%         end
-%     end
-    
-    if length(PhiWinkel{1}) == 1
-        if PhiWinkel{1}(1) == 0 || PhiWinkel{1}(1) == 180
-            ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-        elseif PhiWinkel{1}(1) == 90 || PhiWinkel{1}(1) == 270
-            ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-        end
-    elseif length(PhiWinkel{1}) == 2
-        if j == 1
-            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            end
-        elseif j == 2
-            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
-                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            end
-        end
-    elseif length(PhiWinkel{1}) == 3
-        if j == 1
-            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-            end
-        elseif j == 2
-            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-            end
-        elseif j == 3
-            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
-                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
-            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
-                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
-            end
-        end
-    elseif length(PhiWinkel{1}) == 4
-         if j == 1
-            ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
-        elseif j == 2
-            ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
-        elseif j == 3
-            ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
-        elseif j == 4
-            ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
-        end
-    end
-
-    yl = get(gca,'XLabel');
-    ylFontSize = get(yl,'FontSize');
-    yAX = get(gca,'YAxis');
-    set(yAX, 'FontSize', 16)
-    set(yl, 'FontSize', ylFontSize);
-    set(gca, 'LineWidth', 1.3)
-
-    title([strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name])
-    
-    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
-        if strcmp(h.Detsel,'Detector 1')
-            % Save taudata to file
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_stress_barplot_','%d'],j);
-        elseif strcmp(h.Detsel,'Detector 2')
-            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det2_stress_barplot_','%d'],j);
-        end
-    else
-        % Save taudata to file
-        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_stress_barplot_','%d'],j);
-    end
-    
-    print(fig,[Path,FileName],'-painters','-dtiff','-r300')
+    % Export der Balkendiagramme ("..._stress_barplot_N.tif") auf
+    % Nutzerwunsch auskommentiert, da nicht mehr verwendet. Der
+    % eigentliche, weiterhin exportierte Plot (Spannung vs. tau0) folgt
+    % direkt im Anschluss unten.
+%    figure
+%
+%    fig = gcf;
+%    fig.PaperUnits = 'centimeters';
+%    fig.PaperPosition = [0 0 18 12];
+%    ax = gca;
+%    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+%    % (Dateiname/Material + Leerzeichen-Puffer) nicht oben herausragt.
+%    ax.OuterPosition = [0 0 1.085 0.98];
+%
+%    set(fig, 'Visible', 'off');
+%
+%    for k = 1:size(taudata,1)
+%        % Check number of characters of l from hkl
+%        if length(strrep(num2str(taudata(k,1:3)),' ','')) < 4
+%            hkl_tmp = strrep(num2str(taudata(k,1:3)),' ','');
+%            hkl_tmp = [hkl_tmp ' '];
+%            hkl(k,:) = hkl_tmp;
+%        else
+%            hkl(k,:) = strrep(num2str(taudata(k,1:3)),' ','');
+%        end
+%    end
+%
+%    for ii = length(ExportData{1,j}(:,2)):-1:1
+%        h.barplots = bar(ax, ExportData{1,j}(1:ii,2), 'FaceColor', h.Colors{ii});
+%        hold on;
+%    end
+%
+%    h.barplots.BaseLine.LineWidth = 1.3;
+%
+%    ax.XLim = ([0.25 length(ExportData{1,j}(:,2))+0.75]);
+%    ax.TickDir = 'in';
+%    labels = arrayfun(@(value) num2str(value,'%d'),round(ExportData{1,j}(:,3)),'UniformOutput',false);
+%
+%    for k = 1:length(ExportData{1,j}(:,2))
+%        if ExportData{1,j}(k,2) < 0
+%            yPos(1,k) = -(max(abs(ExportData{1,j}(:,2)))/10)-5;
+%        else
+%            yPos(1,k) = 10;
+%        end
+%    end
+%
+%    text((1:length(ExportData{1,j}(:,2))),yPos,labels,...
+%        'FontSize', 14,...
+%        'Color', 'k',...
+%        'EdgeColor', 'k',...
+%        'BackgroundColor', 'w',...
+%        'Margin', 2,...
+%        'HorizontalAlignment','center',...
+%        'VerticalAlignment','bottom');
+%
+%    xlabel('Interference hkl','FontSize', 16)
+%    xl = get(gca,'XLabel');
+%    xlFontSize = get(xl,'FontSize');
+%    set(gca, 'xticklabel', hkl);
+%    xAX = get(gca,'XAxis');
+%    set(xAX, 'FontSize', 16)
+%    set(xl, 'FontSize', xlFontSize);
+%
+%%     if length(PhiWinkel{1}) == 1
+%%         if PhiWinkel{1}(j) == 0 || PhiWinkel{1}(j) == 180
+%%             ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         elseif PhiWinkel{1}(j) == 90 || PhiWinkel{1}(j) == 270
+%%             ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         end
+%%     elseif length(PhiWinkel{1}) == 2
+%%         if PhiWinkel{1}(1) == 0
+%%             ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         elseif PhiWinkel{1}(j) == 90
+%%             ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         elseif PhiWinkel{1}(j) == 180
+%%             ylabel('<\sigma_{13} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         elseif PhiWinkel{1}(j) == 270
+%%             ylabel('<\sigma_{23} - \sigma_{33}> [MPa]','FontSize', 20)
+%%         end
+%%     end
+%    
+%    if length(PhiWinkel{1}) == 1
+%        if PhiWinkel{1}(1) == 0 || PhiWinkel{1}(1) == 180
+%            ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%        elseif PhiWinkel{1}(1) == 90 || PhiWinkel{1}(1) == 270
+%            ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%        end
+%    elseif length(PhiWinkel{1}) == 2
+%        if j == 1
+%            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            end
+%        elseif j == 2
+%            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180
+%                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 180 && PhiWinkel{1}(2) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            end
+%        end
+%    elseif length(PhiWinkel{1}) == 3
+%        if j == 1
+%            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%            end
+%        elseif j == 2
+%            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%            end
+%        elseif j == 3
+%            if PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 180
+%                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 90 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 0 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
+%            elseif PhiWinkel{1}(1) == 90 && PhiWinkel{1}(2) == 180 && PhiWinkel{1}(3) == 270
+%                ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
+%            end
+%        end
+%    elseif length(PhiWinkel{1}) == 4
+%         if j == 1
+%            ylabel('<\sigma_{11} - \sigma_{33}> [MPa]','FontSize', 20)
+%        elseif j == 2
+%            ylabel('<\sigma_{22} - \sigma_{33}> [MPa]','FontSize', 20)
+%        elseif j == 3
+%            ylabel('<\sigma_{13}> [MPa]','FontSize', 20)
+%        elseif j == 4
+%            ylabel('<\sigma_{23}> [MPa]','FontSize', 20)
+%        end
+%    end
+%
+%    yl = get(gca,'XLabel');
+%    ylFontSize = get(yl,'FontSize');
+%    yAX = get(gca,'YAxis');
+%    set(yAX, 'FontSize', 16)
+%    set(yl, 'FontSize', ylFontSize);
+%    set(gca, 'LineWidth', 1.3)
+%
+%    % h.Sample.Materials.Name kann noch Unterstriche enthalten, die der
+%    % Tex-Interpreter sonst als Tiefstellung interpretiert (z.B.
+%    % "SiC_hex_neu1_1" -> "SiC" mit tiefgestelltem "h","ex","neu1","1").
+%    % Escapen ("\_" statt "_") zeigt den Unterstrich als normales Zeichen,
+%    % ohne den Tex-Interpreter ganz abzuschalten.
+%    % Unterstriche in Dateiname UND Materialname escapen ("\_" statt "_"),
+%    % damit sie als normales Zeichen erscheinen statt als Tiefstellung,
+%    % ohne sie durch Leerzeichen zu ersetzen (Nutzerwunsch: Unterstriche im
+%    % Titel sollen sichtbar bleiben, z.B. "...-tth39_21_18092026").
+%    % Leerzeichen-Zeile fuer etwas Abstand zur oberen Achslinie.
+%    title({[strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '})
+%
+%    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+%        if strcmp(h.Detsel,'Detector 1')
+%            % Save taudata to file
+%            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det1_stress_barplot_','%d'],j);
+%        elseif strcmp(h.Detsel,'Detector 2')
+%            FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_','Det2_stress_barplot_','%d'],j);
+%        end
+%    else
+%        % Save taudata to file
+%        FileName = sprintf([strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',h.Sample.Materials.Name,'_stress_barplot_','%d'],j);
+%    end
+%    
+%    print(fig,[Path,FileName],'-painters','-dtiff','-r300')
 
     figure
     fig = gcf;
@@ -22301,14 +25460,21 @@ for j = 1:(size(taudata,2)-5)/2
     fig.PaperPositionMode = 'auto';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.0625 1.025];
+    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+    % (Dateiname/Material + Leerzeichen-Puffer, siehe title(...) weiter
+    % unten) nicht mehr oben aus der Abbildung herausragt.
+    ax.OuterPosition = [0 0 1.0625 0.98];
     ax.TickDir = 'out';
     ax.Box = 'on';
-    ax.XGrid = 'on';
-    ax.YGrid = 'on';
-    ax.GridLineStyle = '-';
-    ax.GridColor = 'k';
-    ax.GridAlpha = 0.3;
+    % Gitternetz ohne eigene Farb-/Alpha-/Stil-Vorgabe (vorher GridColor
+    % 'k'/GridAlpha 0.15/GridLineStyle '-') -- nutzt jetzt wie im
+    % Sigma-tau0-Plot der psi-Methode (figTau) die MATLAB-Standardoptik,
+    % damit beide Exporte identisch aussehen (Nutzerwunsch: Design der
+    % psi-Methode uebernehmen).
+    grid(ax,'on');
+    % Feste Linie bei sigma=0, nicht in der Legende (analog zum
+    % Sigma-tau0-Plot der psi-Methode).
+    yline(ax, 0, 'LineWidth', 1.5, 'Color', [0.4 0.4 0.4], 'HandleVisibility', 'off');
     if isfield(h, 'XlimMaxnew')
         if h.XlimChanged(j) ~= 0
             ax.XLim = ([h.XlimMinnew(j) h.XlimMaxnew(j)]); 
@@ -22416,17 +25582,17 @@ for j = 1:(size(taudata,2)-5)/2
         end
     end
 
-    ax.YLabel.FontSize = 16;
+    ax.YLabel.FontSize = 18;
 %     if valuecheckboxTauData == 0
-%         ax.XLabel.String = '<\tau> [µm]';
+%         ax.XLabel.String = '<\tau> [ï¿½m]';
     ax.XLabel.String = ['\tau_{0} [',char(181),'m]'];
 %     else
-%         ax.XLabel.String = '\tau_{0} [µm]';
+%         ax.XLabel.String = '\tau_{0} [ï¿½m]';
 %     end
-    ax.XLabel.FontSize = 16;
-    ax.LabelFontSizeMultiplier = 1.3;
-    ax.LineWidth = 1.3;
-    set(gca,'FontSize',16)
+    ax.XLabel.FontSize = 18;
+    % LineWidth nicht mehr eigens auf 1.3 gesetzt (MATLAB-Standard 0.5,
+    % wie im Sigma-tau0-Plot der psi-Methode) -- Design-Angleichung.
+    set(gca,'FontSize',18)
     hold on
     set(fig, 'Visible', 'off');
     
@@ -22434,10 +25600,15 @@ for j = 1:(size(taudata,2)-5)/2
     y = ExportData{1,j}(:,2);
     err = ExportData{1,j}(:,3);
 
-    errorbar(x,y,err,'Linestyle','--','Color','k','Marker','s','MarkerSize',1,'Clipping','off','Visible','on');
+    % Keine verbindende gestrichelte Linie zwischen den Peaks mehr (vorher
+    % 'Linestyle','--') -- Design an die psi-Methode angeglichen
+    % (Nutzerwunsch), dort stehen die Messpunkte ohne Verbindungslinie.
+    errorbar(x,y,err,'Linestyle','none','Color','k','Marker','s','MarkerSize',1,'CapSize',6,'Clipping','off','Visible','on');
 
     for k=1:numel(h.ScatterData(1).StressesPhi)
-        ScatterData(j).StressesPhi(:,k) = scatter(ExportData{1,j}(k,1),ExportData{1,j}(k,2),200,'Marker','s','MarkerFaceColor',h.Colors{k},'MarkerEdgeColor',h.Colors{k},'LineWidth',1.5);
+        % Markergroesse verkleinert (200 -> 120), damit die Punkte aehnlich
+        % gross wirken wie in der psi-Methode (Nutzerwunsch).
+        ScatterData(j).StressesPhi(:,k) = scatter(ExportData{1,j}(k,1),ExportData{1,j}(k,2),120,'Marker','s','MarkerFaceColor',h.Colors{k},'MarkerEdgeColor',h.Colors{k},'LineWidth',1.5);
     end
 
     label = CreateHKLlabel(h);
@@ -22463,7 +25634,10 @@ for j = 1:(size(taudata,2)-5)/2
         legstressdata.Location = 'SouthEast';
     end
     
-    title([strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+    % Unterstriche escapen statt durch Leerzeichen zu ersetzen (siehe oben).
+    % Leerzeichen-Zeile fuer etwas Abstand zur oberen Achslinie (analog zu
+    % den a-psi-/IB-/Int-Plot-Titeln im psi-Tab).
+    title({[strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '},'Fontsize', 11)
 
     if strcmp(h.Diffsel,'ETA3000')
         p=get(ax,'Position');
@@ -23142,7 +26316,7 @@ msgbox('Fitting data saved.');
 
 save(fullfile(filepath, filename), 's');
 
-%% Button to switch plot mode for d-sin²psi
+%% Button to switch plot mode for d-sinï¿½psi
 function buttonswitchstressdata(hObj, ~)
 % Function to load data for the "Stress Analysis" tab.
 h = guidata(hObj);
@@ -23272,7 +26446,7 @@ elseif h.plotdatadspacingphi0.Visible == 0 || h.plotdatadspacingphi90.Visible ==
         set(h.plotreglinedspacingphi0,'Visible','on')
         set(h.plotdatadspacingphi180,'Visible','on')
         set(h.plotreglinedspacingphi180,'Visible','on')
-        % get d-sin²psi data and calculate average
+        % get d-sinï¿½psi data and calculate average
         % get regline data and calculate average
         % set plot data and change visibility
     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
@@ -23299,7 +26473,7 @@ elseif h.plotdatadspacingphi0.Visible == 0 || h.plotdatadspacingphi90.Visible ==
         set(h.plotreglinedspacingphi90,'Visible','on')
         set(h.plotdatadspacingphi270,'Visible','on')
         set(h.plotreglinedspacingphi270,'Visible','on')
-        % get d-sin²psi data and calculate average
+        % get d-sinï¿½psi data and calculate average
         % get regline data and calculate average
         % set plot data and change visibility
     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
@@ -23402,12 +26576,49 @@ set(h.plotdata,{'xdata','ydata'},{0 0})
 set(h.plotdataZoom,{'xdata','ydata'},{0 0})
 set(h.plotdataZoomCH,{'xdata','ydata'},{0 0})
 set(h.plotEtheo,{'xdata','ydata'},{0 0})
+if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+    delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+end
+h.EtheoMainLabelHandles = [];
 set(h.plotEtheoSub,{'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd1, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd2, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd3, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd4, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd5, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd1, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd2, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd3, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd4, {'xdata','ydata'},{0 0})
+set(h.textFluorLabel1,'Visible','off','String','')
+set(h.textFluorLabel2,'Visible','off','String','')
+set(h.textFluorLabel3,'Visible','off','String','')
+set(h.textFluorLabel4,'Visible','off','String','')
+% Zusatzphasen- und Fluoreszenz-Slots (1-4) zuruecksetzen
+set(h.checkboxEtheoSlot1,'Value',1)
+set(h.checkboxEtheoSlot2,'Value',0)
+set(h.checkboxEtheoSlot3,'Value',0)
+set(h.checkboxEtheoSlot4,'Value',0)
+h.ActiveEtheoSlot = 1;
+for k = 1:4
+    h.P.EtheoSlot(k).ElementalFormula = '';
+    h.P.EtheoSlot(k).MPDValue = 1;
+    h.P.EtheoSlot(k).MPDFileName = '';
+    h.P.EtheoSlot(k).TableData = [];
+    OldLabels = h.EtheoLabelHandles{k};
+    delete(OldLabels(ishandle(OldLabels)));
+    h.EtheoLabelHandles{k} = [];
+end
+set(h.checkboxFluorSlot1,'Value',1)
+set(h.checkboxFluorSlot2,'Value',0)
+set(h.checkboxFluorSlot3,'Value',0)
+set(h.checkboxFluorSlot4,'Value',0)
+h.ActiveFluorSlot = 1;
+for k = 1:4
+    h.P.FluorSlot(k).Element = '';
+    h.P.FluorSlot(k).PopupValue = 1;
+end
+set(h.popupmenudataFluorescence,'Value',1)
 set(h.axesplotRawData.Title,'String','No measurement data loaded')
 h.axesplotRawData.XLim = [0,100];
 h.axesplotRawData.YLim = [0,Inf];
@@ -23429,7 +26640,10 @@ set(h.editfieldselectmeas3,'String','')
 set(h.editfieldselectmeas4,'String','Emin')
 set(h.editfieldselectmeas5,'String','Emax')
 set(h.checkboxselectmeas1,'Value',0)
+set(h.popupmenuintegratemode,'Value',1)
 set(h.checkboxselectmeas2,'Value',0)
+h.IsIntegrated = false;
+h.SNIPRanFullRange = false;
 % Set Background Correction fields
 set(h.tablebkgdata,'data', [zeros(1,6);zeros(1,6)])
 set(h.checkboxBKG,'Value', 0)
@@ -23497,10 +26711,13 @@ set(h.plotdatadspacingphi180,{'xdata','ydata','YNegativeDelta','YPositiveDelta',
 set(h.plotreglinedspacingphi180,{'xdata','ydata','Visible'},{0,0,'off'})
 set(h.plotdatadspacingphi270,{'xdata','ydata','YNegativeDelta','YPositiveDelta','Visible'},{0,0,0,0,'off'})
 set(h.plotreglinedspacingphi270,{'xdata','ydata','Visible'},{0,0,'off'})
+set(h.plotdspacingHighlight,{'XData','YData','Visible'},{NaN,NaN,'off'})
 
 if isfield(h,'plotfits')
     set(h.plotfits,{'xdata','ydata','Visible'},{0,0,'off'})
-    set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
+    if isfield(h,'plotfitsSinglePeaks') && all(isgraphics(h.plotfitsSinglePeaks))
+        set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
+    end
     set(h.plotfitresidual,{'xdata','ydata','Visible'},{0,0,'off'})
 end
 
@@ -23655,8 +26872,8 @@ end
 
 
 % Remove all fields from structure not needed
-% tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Substrate';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'checkboxsubstrate1';'editfieldelement2';'textmpd2';'popupmenumpd2';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'checkboxtheopeaks2';'checkboxshifttheopeaks2';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'checkboxcorrEpos1';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270'};
-tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
+% tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'FluorCellArray';'ElementsString';'Tolerance';'Colors';'T';'Sample';'Measurement';'Substrate';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'checkboxsubstrate1';'editfieldelement2';'textmpd2';'popupmenumpd2';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'checkboxtheopeaks2';'checkboxshifttheopeaks2';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'popupmenuintegratemode';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'checkboxcorrEpos1';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270'};
+tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'popupmenuintegratemode';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'buttoncreatepsi4';'buttoncreatepsi5';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
 
 % tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';...
 % 'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';...
@@ -23664,7 +26881,7 @@ tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'Diffr
 % 'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';...
 % 'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';...
 % 'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';...
-% 'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';...
+% 'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'popupmenuintegratemode';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';...
 % 'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';...
 % 'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';...
 % 'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';...
@@ -23838,7 +27055,6 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         s.YPlotDet1 = h.YPlotDet1;
         s.SEDet1 = h.SEDet1;
         s.CIDet1 = h.CIDet1;
-        s.SinglePlot_tmpDet1 = h.SinglePlot_tmp;
     end
     
     if isfield(h, 'PeaksDet2')
@@ -23855,7 +27071,6 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         s.YPlotDet2 = h.YPlotDet2;
         s.SEDet2 = h.SEDet2;
         s.CIDet2 = h.CIDet2;
-        s.SinglePlot_tmpDet2 = h.SinglePlot_tmp;
     end
 else
     s.TPeaks = h.TPeaks;
@@ -23871,7 +27086,6 @@ else
     s.YPlot = h.YPlot;
     s.SE = h.SE;
     s.CI = h.CI;
-    s.SinglePlot_tmp = h.SinglePlot_tmp;
 end
 
 s.PopupValueFitFunc = h.P.PopupValueFitFunc;
@@ -24447,6 +27661,17 @@ elseif h.P.PopupValueFitFunc == 4 || h.P.PopupValueFitFunc == 5 %PV-Func
 set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,6), FittedPeaksCalctmp{1,valueSlider}(:,1),...
     FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
     FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5)])
+elseif h.P.PopupValueFitFunc == 6 %AsymPV
+    set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,8), FittedPeaksCalctmp{1,valueSlider}(:,1),...
+        FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
+        FittedPeaksCalctmp{1,valueSlider}(:,6),FittedPeaksCalctmp{1,valueSlider}(:,7),...
+        FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5)])
+elseif h.P.PopupValueFitFunc == 7 %Split-PV
+    set(h.tablefitresults,'data',[FittedPeaksCalctmp{1,valueSlider}(:,9), FittedPeaksCalctmp{1,valueSlider}(:,1),...
+        FittedPeaksCalctmp{1,valueSlider}(:,2),FittedPeaksCalctmp{1,valueSlider}(:,3),...
+        FittedPeaksCalctmp{1,valueSlider}(:,7),FittedPeaksCalctmp{1,valueSlider}(:,8),...
+        FittedPeaksCalctmp{1,valueSlider}(:,4),FittedPeaksCalctmp{1,valueSlider}(:,5),...
+        FittedPeaksCalctmp{1,valueSlider}(:,6)])
 end
 
 % Set theoretical Peak Pos table title
@@ -24534,12 +27759,49 @@ set(h.plotdata,{'xdata','ydata'},{0 0})
 set(h.plotdataZoom,{'xdata','ydata'},{0 0})
 set(h.plotdataZoomCH,{'xdata','ydata'},{0 0})
 set(h.plotEtheo,{'xdata','ydata'},{0 0})
+if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+    delete(h.EtheoMainLabelHandles(ishandle(h.EtheoMainLabelHandles)));
+end
+h.EtheoMainLabelHandles = [];
 set(h.plotEtheoSub,{'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd1, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd2, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd3, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd4, {'xdata','ydata'},{0 0})
 set(h.plotEtheoAdd5, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd1, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd2, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd3, {'xdata','ydata'},{0 0})
+set(h.plotFluorAdd4, {'xdata','ydata'},{0 0})
+set(h.textFluorLabel1,'Visible','off','String','')
+set(h.textFluorLabel2,'Visible','off','String','')
+set(h.textFluorLabel3,'Visible','off','String','')
+set(h.textFluorLabel4,'Visible','off','String','')
+% Zusatzphasen- und Fluoreszenz-Slots (1-4) zuruecksetzen
+set(h.checkboxEtheoSlot1,'Value',1)
+set(h.checkboxEtheoSlot2,'Value',0)
+set(h.checkboxEtheoSlot3,'Value',0)
+set(h.checkboxEtheoSlot4,'Value',0)
+h.ActiveEtheoSlot = 1;
+for k = 1:4
+    h.P.EtheoSlot(k).ElementalFormula = '';
+    h.P.EtheoSlot(k).MPDValue = 1;
+    h.P.EtheoSlot(k).MPDFileName = '';
+    h.P.EtheoSlot(k).TableData = [];
+    OldLabels = h.EtheoLabelHandles{k};
+    delete(OldLabels(ishandle(OldLabels)));
+    h.EtheoLabelHandles{k} = [];
+end
+set(h.checkboxFluorSlot1,'Value',1)
+set(h.checkboxFluorSlot2,'Value',0)
+set(h.checkboxFluorSlot3,'Value',0)
+set(h.checkboxFluorSlot4,'Value',0)
+h.ActiveFluorSlot = 1;
+for k = 1:4
+    h.P.FluorSlot(k).Element = '';
+    h.P.FluorSlot(k).PopupValue = 1;
+end
+set(h.popupmenudataFluorescence,'Value',1)
 
 % Delete graphic and text objects from axes
 axesLineObjects = findobj(h.axesplotRawData,'Tag','plotbkgpoints');
@@ -24571,7 +27833,10 @@ set(h.editfieldselectmeas1,'String','')
 set(h.editfieldselectmeas2,'String','')
 set(h.editfieldselectmeas3,'String','')
 set(h.checkboxselectmeas1,'Value',0)
+set(h.popupmenuintegratemode,'Value',1)
 set(h.checkboxselectmeas2,'Value',0)
+h.IsIntegrated = false;
+h.SNIPRanFullRange = false;
 % Set Background Correction fields
 set(h.tablebkgdata,'data', [zeros(1,6);zeros(1,6)])
 set(h.checkboxBKG,'Value', 0)
@@ -24636,10 +27901,13 @@ set(h.plotdatadspacingphi180,{'xdata','ydata','YNegativeDelta','YPositiveDelta',
 set(h.plotreglinedspacingphi180,{'xdata','ydata','Visible'},{0,0,'off'})
 set(h.plotdatadspacingphi270,{'xdata','ydata','YNegativeDelta','YPositiveDelta','Visible'},{0,0,0,0,'off'})
 set(h.plotreglinedspacingphi270,{'xdata','ydata','Visible'},{0,0,'off'})
+set(h.plotdspacingHighlight,{'XData','YData','Visible'},{NaN,NaN,'off'})
 
 if isfield(h,'plotfits')
     set(h.plotfits,{'xdata','ydata','Visible'},{0,0,'off'})
-    set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
+    if isfield(h,'plotfitsSinglePeaks') && all(isgraphics(h.plotfitsSinglePeaks))
+        set(h.plotfitsSinglePeaks,{'xdata','ydata','Visible'},{0,0,'off'})
+    end
     set(h.plotfitresidual,{'xdata','ydata','Visible'},{0,0,'off'})
 end
 
@@ -24793,7 +28061,7 @@ if isfield(h,'legendplotfitdata4')
 end
 
 % Remove all fields from structure not needed
-tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
+tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';'selectbins';'textLoadMeas3';'selectblurring';'correctionspanel';'textcorr1';'checkboxcorrections1';'checkboxcorrections2';'checkboxcorrections3';'textcorr2';'popupmenumeasmode';'samplethickness';'checkboxcorrectionsExportData';'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'popupmenuintegratemode';'textselectmeas7';'textselectmeas8';'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';'textcreatepsi2';'editfieldcreatepsi1';'textcreatepsi3';'editfieldcreatepsi2';'textcreatepsi4';'editfieldcreatepsi3';'textcreatepsi5';'editfieldcreatepsi4';'textcreatepsi6';'editfieldcreatepsi5';'textcreatepsi7';'editfieldcreatepsi6';'textcreatepsi8';'editfieldcreatepsi7';'buttoncreatepsi1';'buttoncreatepsi2';'buttoncreatepsi3';'buttoncreatepsi4';'buttoncreatepsi5';'checkboxEditTableData';'tablepsifile';'optionspanel';'buttonoptions1';'buttonoptions2';'buttonoptions3';'buttonoptions4';'calibangEpospanel';'TabGroupCalib';'TabCalib';'textcalibangEpos1';'buttoncalibangEpos1';'buttoncalibangEpos2';'buttoncalibangEpos3';'textcalibangEpos2';'tablecalibangEpos1';'textcalibangEpos3';'texteditfieldcalibangEpos1';'textcalibangEpos4';'texteditfieldcalibangEpos2';'checkboxcalibangEpos1';'textcalibangEpos5';'texteditfieldcalibangEpos3';'checkboxcalibangEpos2';'checkboxcalibangEpos3';'textcalibangEpos6';'buttoncalibangEpos4';'buttoncalibangEpos5';'textfield1';'textfield2';'textfield3';'textfield4';'textfield5';'textfieldpwparam1';'texteditfieldpwparam1';'textfieldpwparam2';'texteditfieldpwparam2';'textfieldpwparam3';'texteditfieldpwparam3';'textfieldpwparam4';'texteditfieldpwparam4';'textfieldpwparam5';'texteditfieldpwparam5';'buttonPWCorrEpos';'buttonPWCorrUndo';'tablehklpanel';'texthkltable1';'tablephasehkl';'texthkltable2';'tablephasehkl2';'textelementEtheo';'texteditfieldEtheo';'textmpdEtheo';'popupmenumpdEtheo';'buttonShowEtheoPeaks';'buttonHideEtheoPeaks';'textelementLine';'textelementFluorescence';'textdataFluorescence';'popupmenudataFluorescence';'buttonShowFluorescencePeaks';'buttonHideFluorescencePeaks';'buttonloadDEK1';'buttonloadstressdata1';'textazimuth';'checkboxphi0';'checkboxphi90';'checkboxphi180';'checkboxphi270';'buttonmodifystressdata1';'buttonexportplots1';'buttonexportplots2';'buttonSaveModPsiFile';'buttonSaveModEvalData';'buttonswitchstressdata';'SliderStressData';'Colors2';'axesplotdspacing';'axesplotIB';'axesplotInt';'plotdatadspacingphi0';'plotreglinedspacingphi0';'plotdatadspacingphi90';'plotreglinedspacingphi90';'plotdatadspacingphi180';'plotreglinedspacingphi180';'plotdatadspacingphi270';'plotreglinedspacingphi270';'plotdatadspacingphi0phi180';'plotreglinedspacingphi0phi180';'plotdatadspacingphi90phi270';'plotreglinedspacingphi90phi270';'plotdataIBphi0';'plotdataIBphi90';'plotdataIBphi180';'plotdataIBphi270';'plotdataIntphi0';'plotdataIntphi90';'plotdataIntphi180';'plotdataIntphi270';'plotstresspanel';'SliderPlotStressData';'axesplotstressdata';'plotstressdata';'fitdatapanel';'SliderFitData';'axesplotfitdata';'plotrawdata1';'plotfitdata1';'plotresiualdata1';'modstressXlimbutton';'Xlimfig';'XlimMaxname';'XlimMaxname1';'editXlimMin';'XlimMinname';'XlimMinname1';'editXlimMax';'XlimTickname';'XlimTickname1';'editXlimTick';'AcceptXEditButton';'CancelXEditButton';'modstressYlimbutton';'Ylimfig';'YlimMaxname';'YlimMaxname1';'editYlimMax';'YlimMinname';'YlimMinname1';'editYlimMin';'YlimTickname';'YlimTickname1';'editYlimTick';'AcceptYEditButton';'CancelYEditButton';'loadtaudatabutton';'fighklstressplottable';'selecthklvaluesbutton';'panelhklstressplottable';'buttonhklstressplottable1';'buttonhklstressplottable2';'Selecthkltable';'figDEKtable';'panelDEKtable';'buttonDEKtable1';'buttonDEKtable2';'buttonDEKtable3';'buttonDEKtable4';'loadDEKtable';'figSelectPeaktable';'panelSelectPeaktable';'buttonSelectPeaktable1';'buttonSelectPeaktable2';'SelectPeaktable';'plotwindowfitdata1';'Sliderplotwindowfitdata1';'axesplotfitdata1';'fitdata1plotphi0';'fitdata1plotphi90';'fitdata1plotphi180';'fitdata1plotphi270';'fitdata1ploterrphi0';'fitdata1ploterrphi90';'fitdata1ploterrphi180';'fitdata1ploterrphi270';'TextPlotData1';'TextXData1';'popupmenuXData1';'TextYData1';'checkboxnorm';'popupmenuYData1';'buttonExportFitData1';'buttonClearFitData1';'TextPhiData1';'plotwindowfitdata1checkboxphi0';'plotwindowfitdata1checkboxphi90';'plotwindowfitdata1checkboxphi180';'plotwindowfitdata1checkboxphi270';'plotwindowfitdata2';'Sliderplotwindowfitdata2';'axesplotfitdata2';'fitdata2plotphi0';'fitdata2plotphi90';'fitdata2plotphi180';'fitdata2plotphi270';'fitdata2ploterrphi0';'fitdata2ploterrphi90';'fitdata2ploterrphi180';'fitdata2ploterrphi270';'TextPlotData2';'TextXData2';'popupmenuXData2';'TextYData2';'popupmenuYData2';'buttonExportFitData2';'buttonClearFitData2';'TextPhiData2';'plotwindowfitdata2checkboxphi0';'plotwindowfitdata2checkboxphi90';'plotwindowfitdata2checkboxphi180';'plotwindowfitdata2checkboxphi270';'plotwindowfitdata3';'Sliderplotwindowfitdata3';'axesplotfitdata3';'fitdata3plotphi0';'fitdata3plotphi90';'fitdata3plotphi180';'fitdata3plotphi270';'fitdata3ploterrphi0';'fitdata3ploterrphi90';'fitdata3ploterrphi180';'fitdata3ploterrphi270';'TextPlotData3';'TextXData3';'popupmenuXData3';'TextYData3';'popupmenuYData3';'buttonExportFitData3';'buttonClearFitData3';'TextPhiData3';'plotwindowfitdata3checkboxphi0';'plotwindowfitdata3checkboxphi90';'plotwindowfitdata3checkboxphi180';'plotwindowfitdata3checkboxphi270';'plotwindowfitdata4';'Sliderplotwindowfitdata4';'axesplotfitdata4';'fitdata4plotphi0';'fitdata4plotphi90';'fitdata4plotphi180';'fitdata4plotphi270';'fitdata4ploterrphi0';'fitdata4ploterrphi90';'fitdata4ploterrphi180';'fitdata4ploterrphi270';'TextPlotData4';'TextXData4';'popupmenuXData4';'TextYData4';'popupmenuYData4';'buttonExportFitData4';'buttonClearFitData4';'TextPhiData4';'plotwindowfitdata4checkboxphi0';'plotwindowfitdata4checkboxphi90';'plotwindowfitdata4checkboxphi180';'plotwindowfitdata4checkboxphi270';'uplotoptionspanel';'buttonloaduplotdata1';'tableuplotdspacing';'textsamplethickness';'editsamplethickness';'textuserdzero';'userdzerocheckbox';'textdzerozgradient';'dzerozgradientcheckbox';'textsdzeropoly1';'editdzeropoly1';'textsdzeropoly2';'editdzeropoly2';'textsdzeropoly3';'editdzeropoly3';'textsdzeropoly4';'textsdzeropoly5';'textsin2psirange';'textsin2psirange1';'editsin2psirange1';'textsin2psirange2';'editsin2psirange2';'textfilter1';'filteruplotdatacheckbox';'textfilter2';'textfilter1sigma11';'editfilter1sigma11';'textfilter2sigma11';'textfilter3sigma11';'editfilter2sigma11';'textfilter4sigma11';'textfilter1sigma13';'editfilter1sigma13';'textfilter2sigma13';'textfilter3sigma13';'editfilter2sigma13';'textfilter4sigma13';'textfilter1sigma22';'editfilter1sigma22';'textfilter2sigma22';'textfilter3sigma22';'editfilter2sigma22';'textfilter4sigma22';'textfilter1sigma23';'editfilter1sigma23';'textfilter2sigma23';'textfilter3sigma23';'editfilter2sigma23';'textfilter4sigma23';'uplotplotfitscheckbox';'textplotfits1';'textplotfits11';'textplotfits12';'textplotfits13';'textdegreepoly1';'editdegree1';'dampingcheckbox1';'textdamping1';'textplotfits21';'textplotfits22';'textplotfits23';'textdegreepoly2';'editdegree2';'dampingcheckbox2';'textdamping2';'textplotfits31';'textplotfits32';'textplotfits33';'textdegreepoly3';'editdegree3';'dampingcheckbox3';'textdamping3';'textplotfits41';'textplotfits42';'textplotfits43';'textdegreepoly4';'editdegree4';'dampingcheckbox4';'textdamping4';'ShowCIboundscheckbox';'buttonplotuplotdata';'buttonplotdsin2psi';'exportrecalcdcheckbox';'textexportrecalcd';'buttonclearuplotdata';'buttonexportuplotdata';'uplotplotpanel';'axesuplotdatasigma11';'uplotdatasigma11';'ChangeAxLimcheckbox1';'textXlimmin1';'editXlimmin1';'textXlimmax1';'editXlimmax1';'textXlimtick1';'editXlimtick1';'textYlimmin1';'editYlimmin1';'textYlimmax1';'editYlimmax1';'textYlimtick1';'editYlimtick1';'axesuplotdatasigma13';'uplotdatasigma13';'ChangeAxLimcheckbox2';'textXlimmin2';'editXlimmin2';'textXlimmax2';'editXlimmax2';'textXlimtick2';'editXlimtick2';'textYlimmin2';'editYlimmin2';'textYlimmax2';'editYlimmax2';'textYlimtick2';'editYlimtick2';'axesuplotdatasigma22';'uplotdatasigma22';'ChangeAxLimcheckbox3';'textXlimmin3';'editXlimmin3';'textXlimmax3';'editXlimmax3';'textXlimtick3';'editXlimtick3';'textYlimmin3';'editYlimmin3';'textYlimmax3';'editYlimmax3';'textYlimtick3';'editYlimtick3';'axesuplotdatasigma23';'uplotdatasigma23';'ChangeAxLimcheckbox4';'textXlimmin4';'editXlimmin4';'textXlimmax4';'editXlimmax4';'textXlimtick4';'editXlimtick4';'textYlimmin4';'editYlimmin4';'textYlimmax4';'editYlimmax4';'textYlimtick4';'editYlimtick4';'PhaseAnalysisLoadDataPanel';'LoadMeasDataQAText1';'LoadMeasDataQA';'openbuttonQA1';'okbuttonQA1';'popupmenudiffQA';'popupmenuscanmodeQA';'popupmenuDTCorrQA';'SelectMeasDataQAText1';'SelectMeasDataQAText2';'PopupMenuSelectDetQA';'SelectMeasDataQAText3';'SelectMeasDataQAedit1';'SelectMeasDataQAText4';'SelectMeasDataQAedit2';'SelectPeaksQAText1';'SelectBKGbuttonQA';'SelectPeaksbuttonQA';'FitPeaksbuttonQA';'ClearDatabuttonQA';'tablepeaksQA';'CheckFluorPosQAText1';'CheckFluorPosQAText2';'tableFluorQA';'CheckFluorPeaksbuttonQA';'LoadMeasDataQAText2';'openPeriodicTablebutton';'SelectedElementsQAedit1';'SelectElementsQAText1';'SelectedElementsQAedit2';'SelectElementsQAText2';'SelectedElementsQAedit3';'StartPeakMatchbutton';'SearchandMatchExcludedPeaks';'SearchandMatchExcludedPeaksCheckbox';'PhaseAnalysisPlotDataPanel';'SliderQA';'axesplotMeasDataQA';'plotdataQA';'PhaseAnalysisResultTablePanel';'TabQAResults';'tableresultsSAMQA';'tableresultsSAMQAUserSel';'transferResultsbutton';'plotResultsbutton';'PhaseAnalysisResultToolPanel';'TabQATools';'FilterElementtxt';'FilterElementedit';'Filtercheckbox1';'FilterElementSearchbut';'FilterElementResetDatabut';'FilterNametxt';'FilterNameedit';'FilterNamesearchbut';'FilterNameResetDatabut';'FilterCrystalSystemtxt';'FilterCrystalSystemopoup';'FilterCrystalSystemsearchbut';'CrystalSysResetDatabut';'AddFluorLinesTablePanel';'orderFluorElements';'AddFluorLinestable';'NoiseCorrectionbutton';'NoiseCorrectionbuttonFig';'StartNoiseCorrButton';'ApplyNoiseCorrButton';'CancelNoiseCorrButton';'NoiseCorrOKButton';'NoiseFilter1edit';'NoiseFilter1txt';'NoiseFilter2edit';'NoiseFilter2txt';'checkboxPlotNoiseCorrData';'axesplotNoiseCorrData';'plotdataNoise';'plotdataNoisecorr';'plotdataNoisecorrchannel';'PDFDataBasePanel';'openPeriodicTablePDFDatabase';'SelectedElementsPDFDatabase';'StartSearchButtonPDFDatabase';'CreateMPDFileButton';'tablePDFDatabase';'PDFDataInfoPanel';'tabledhklPDF';'textelementSelectLambda';'popupmenulambda';'textelementSelectTwoTheta';'SelectTwothetaPDFDatabase';'textelementPDFData1';'textelementPDFData2';'textelementPDFData3';'textelementPDFData4';'textelementPDFData5';'textelementPDFData6';'textelementPDFData7';'textelementPDFData8';'textdataelementPDFData1';'textdataelementPDFData2';'textdataelementPDFData3';'textdataelementPDFData4';'textdataelementPDFData5';'textdataelementPDFData6';'textdataelementPDFData7';'textdataelementPDFData8';'PDFPlotPanel';'axesplotPDFData';'axesplotPDFDataEnergy'};
 
 % tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'DiffractometerFileList';'FluorCellArray';'ElementsString';'Colors';'T';'Sample';'Measurement';'Diffractometer';'DataTmp';'P';'creatsamplepanel';...
 % 'textelement1';'editfieldelement1';'textmpd1';'popupmenumpd1';'okbutton1';'loadmeasurementpanel';'selectfilename';'openbutton1';'popupmenudiff';'popupmenuscanmode';'popupmenuDTCorr';'textLoadMeas1';'textLoadMeas2';...
@@ -24801,7 +28069,7 @@ tokeep = {'myfig';'TabGroup';'Tabs';'MPDFileNameList';'CalibFileNameList';'Diffr
 % 'plotpanel';'Slider';'SliderSinglePeakData';'axesplotRawData';'plotdata';'plotEtheo';'plotEtheoAdd1';'plotEtheoAdd2';'plotEtheoAdd3';'plotEtheoAdd4';'plotEtheoAdd5';'plotEtheoSub';'plotFluorAdd1';'axesplotRawDataZoom';...
 % 'plotdataZoom';'plotdataZoomCH';'zoominbutton';'zoomoutbutton';'checkboxtheopeaks1';'checkboxshifttheopeaks1';'editshiftEtheo1';'plusbuttonshiftEtheo1';'minusbuttonshiftEtheo1';'editshiftEtheo2';'plusbuttonshiftEtheo2';...
 % 'minusbuttonshiftEtheo2';'checkboxplotall';'buttonchangeplotmarker';'buttonchangeplotmode';'buttonexchangespectra';'selectmeasurementpanel';'textselectmeas1';'popupmenuselectmeas1';'textselectmeas2';'editfieldselectmeas1';...
-% 'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'textselectmeas7';'textselectmeas8';...
+% 'textselectmeas3';'editfieldselectmeas2';'textselectmeas4';'editfieldselectmeas3';'textselectmeas5';'editfieldselectmeas4';'textselectmeas6';'editfieldselectmeas5';'checkboxselectmeas1';'popupmenuintegratemode';'textselectmeas7';'textselectmeas8';...
 % 'editfieldselectmeas6';'textselectmeas9';'checkboxselectmeas2';'okbuttonselectmeas1';'undobuttonselectmeas1';'backgroundpanel';'textbkg1';'buttonselectbkg1';'buttonselectbkg2';'buttonselectbkg3';'buttonselectbkg7';...
 % 'buttonselectbkg4';'buttonselectbkg5';'buttonselectbkg6';'buttonselectbkg8';'textbkg2';'tablebkgdata';'checkboxBKG';'fittingpanel';'textpeak1';'buttonselectpeak1';'buttonselectpeak2';'buttonselectpeak3';'buttonselectpeak4';...
 % 'checkboxexportfits';'textFitFunc';'popupmenuFitFunc';'checkboxFitBothDetectors';'textpeak2';'textpeak3';'textpeak4';'textpeak5';'tablepeakdata';'fitresultspanel';'tablefitresults';'createpsifilepanel';'checkboxcreatepsi1';...
@@ -24929,6 +28197,8 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.axesplotRawData.YLim = [0, Inf];
         % Set title according to current slider value
         set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(value)).Name])
+        % Psi-Winkel der aktuellen Messung in der Kommandozeile ausgeben
+        fprintf('Psi = %.3f deg (%s)\n', h.Measurement(Slidersteps(value)).SCSAngles.psi, h.Measurement(Slidersteps(value)).Name);
     elseif strcmp(h.Detsel,'Detector 2')
         % In order to analyze the data measured with Det2, the following
         % Slidersteps have to be used
@@ -24964,6 +28234,8 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.axesplotRawData.YLim =[-Inf round(max(h.DataTmp{Slidersteps(value)}(:,2)),-1)];
         % Set title according to current slider value
         set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(Slidersteps(value)).Name])
+        % Psi-Winkel der aktuellen Messung in der Kommandozeile ausgeben
+        fprintf('Psi = %.3f deg (%s)\n', h.Measurement(Slidersteps(value)).SCSAngles.psi, h.Measurement(Slidersteps(value)).Name);
     end
 elseif strcmp(h.Diffsel,'ETA3000')
     assignin('base','hTPeaks1',h.TPeaks)
@@ -25000,6 +28272,8 @@ elseif strcmp(h.Diffsel,'ETA3000')
 %     set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{1,value}(:,2))/max(Y3Limit(:,value))))
     % Set title according to current slider value
     set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(round(value)).Name])
+    % Psi-Winkel der aktuellen Messung in der Kommandozeile ausgeben
+    fprintf('Psi = %.3f deg (%s)\n', h.Measurement(round(value)).SCSAngles.psi, h.Measurement(round(value)).Name);
 else
     % Calculate max. ydata of theoretical line positions of sample
     h.TPeaks = TheoreticalPeakPositions(h.Measurement,h.DataTmp,h.P.Calibration,h.Diffsel);
@@ -25052,6 +28326,8 @@ else
         set(h.plotEtheo,'ydata',Y3Limit(:,value).*(max(h.DataTmp{1,value}(:,2))/max(Y3Limit(:,value))))
         % Set title according to current slider value
         set(h.axesplotRawData.Title,'String',['Measurement Data for ', h.Measurement(round(value)).Name])
+        % Psi-Winkel der aktuellen Messung in der Kommandozeile ausgeben
+        fprintf('Psi = %.3f deg (%s)\n', h.Measurement(round(value)).SCSAngles.psi, h.Measurement(round(value)).Name);
     end
 end
 
@@ -25159,6 +28435,29 @@ if isfield(h, 'plotBKG')
     end
 end
 
+% Show fitted background line (SNIP oder Klick-Routine) according to
+% current slider value
+if isfield(h, 'plotBKGline')
+    if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
+        if strcmp(h.Detsel,'Detector 1')
+            if isfield(h, 'BkgToAcceptDet1')
+                set(h.plotBKGline,'xdata',h.BkgToAcceptDet1{value}(:,1))
+                set(h.plotBKGline,'ydata',h.BkgToAcceptDet1{value}(:,2))
+            end
+        elseif strcmp(h.Detsel,'Detector 2')
+            if isfield(h, 'BkgToAcceptDet2')
+                set(h.plotBKGline,'xdata',h.BkgToAcceptDet2{value}(:,1))
+                set(h.plotBKGline,'ydata',h.BkgToAcceptDet2{value}(:,2))
+            end
+        end
+    else
+        if isfield(h, 'BkgToAccept')
+            set(h.plotBKGline,'xdata',h.BkgToAccept{value}(:,1))
+            set(h.plotBKGline,'ydata',h.BkgToAccept{value}(:,2))
+        end
+    end
+end
+
 % Set Ylim for fitted background data according to current slider value
 if isfield(h, 'DataTmpBackgroundCorrData')
     if round(max(h.DataTmp{value}(:,2)),-1) == 0
@@ -25215,7 +28514,15 @@ if isfield(h, 'FittedPeaks')
             SinglePlot_Tmp{d} = SinglePlot;
         elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
             SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
-                h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3)); 
+                h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3));
+            SinglePlot_Tmp{d} = SinglePlot;
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3),h.FittedPeaks{value}(d, 4),h.FittedPeaks{value}(d, 5));
+            SinglePlot_Tmp{d} = SinglePlot;
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                h.FittedPeaks{value}(d, 1), h.FittedPeaks{value}(d, 2), h.FittedPeaks{value}(d, 3),h.FittedPeaks{value}(d, 4),h.FittedPeaks{value}(d, 5));
             SinglePlot_Tmp{d} = SinglePlot;
         end
             if strcmp(h.Diffsel,'ETA3000')
@@ -25249,9 +28556,19 @@ if isfield(h, 'FittedPeaks')
         set(h.plotfits,'xdata',XPlot)
         set(h.plotfits,'ydata',YPlot)
         ydata_tmp = cell2mat(SinglePlot_Tmp');
-        for k = 1:size(SinglePlot_Tmp,2)
-            set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
-            set(h.plotfitsSinglePeaks(k),'xdata',XPlot)
+        % plotfitsSinglePeaks (Handles der gestrichelten Einzelpeak-Linien)
+        % existiert nur, wenn in dieser Sitzung schon einmal gefittet
+        % wurde. Nach dem Laden eines gespeicherten GUI-Zustands fehlt es
+        % (Grafik-Handles koennen nicht mitgespeichert werden) oder die
+        % Anzahl Peaks passt nicht mehr - dann die Linien neu anlegen,
+        % statt nur die Daten zu aktualisieren.
+        if ~isfield(h,'plotfitsSinglePeaks') || numel(h.plotfitsSinglePeaks) ~= size(SinglePlot_Tmp,2) || ~all(isgraphics(h.plotfitsSinglePeaks))
+            h.plotfitsSinglePeaks = plot(h.axesplotRawData, XPlot, ydata_tmp',':','LineWidth',1.5);
+        else
+            for k = 1:size(SinglePlot_Tmp,2)
+                set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+                set(h.plotfitsSinglePeaks(k),'xdata',XPlot)
+            end
         end
         % Set data of plot residual according to current slider value
         set(h.plotfitresidual,'xdata',XFit)
@@ -25304,16 +28621,29 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
                     SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                         h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3));
                     SinglePlot_Tmp{d} = SinglePlot;
+                elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                    SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                        h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3),h.FittedPeaksDet1{value}(d, 4),h.FittedPeaksDet1{value}(d, 5));
+                    SinglePlot_Tmp{d} = SinglePlot;
+                elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                    SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                        h.FittedPeaksDet1{value}(d, 1), h.FittedPeaksDet1{value}(d, 2), h.FittedPeaksDet1{value}(d, 3),h.FittedPeaksDet1{value}(d, 4),h.FittedPeaksDet1{value}(d, 5));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 end
                     YPlot = YPlot + SinglePlot;
             end
-            % Add plots of fitted peaks and residual to axes according to current 
+            % Add plots of fitted peaks and residual to axes according to current
             % slider value
             set(h.plotfits,'xdata',XPlot)
             set(h.plotfits,'ydata',YPlot)
             ydata_tmp = cell2mat(SinglePlot_Tmp');
-            for k = 1:size(SinglePlot_Tmp,2)
-                set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+            if ~isfield(h,'plotfitsSinglePeaks') || numel(h.plotfitsSinglePeaks) ~= size(SinglePlot_Tmp,2) || ~all(isgraphics(h.plotfitsSinglePeaks))
+                h.plotfitsSinglePeaks = plot(h.axesplotRawData, XPlot, ydata_tmp',':','LineWidth',1.5);
+            else
+                for k = 1:size(SinglePlot_Tmp,2)
+                    set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+                    set(h.plotfitsSinglePeaks(k),'xdata',XPlot)
+                end
             end
             % Set data of plot residual according to current slider value
             set(h.plotfitresidual,'xdata',XFit)
@@ -25332,6 +28662,17 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
                     h.FittedPeaksCalctmpDet1{1,value}(:,4),h.FittedPeaksCalctmpDet1{1,value}(:,5),...
                     h.FittedPeaksCalctmpDet1{1,value}(:,6),h.FittedPeaksCalctmpDet1{1,value}(:,7),...
                     h.FittedPeaksCalctmpDet1{1,value}(:,8)])
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,value}(:,8), h.FittedPeaksCalctmpDet1{1,value}(:,1),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,2),h.FittedPeaksCalctmpDet1{1,value}(:,3),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,6),h.FittedPeaksCalctmpDet1{1,value}(:,7),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,4),h.FittedPeaksCalctmpDet1{1,value}(:,5)])
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet1{1,value}(:,9), h.FittedPeaksCalctmpDet1{1,value}(:,1),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,2),h.FittedPeaksCalctmpDet1{1,value}(:,3),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,7),h.FittedPeaksCalctmpDet1{1,value}(:,8),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,4),h.FittedPeaksCalctmpDet1{1,value}(:,5),...
+                    h.FittedPeaksCalctmpDet1{1,value}(:,6)])
             end
         end
     elseif strcmp(h.Detsel,'Detector 2')
@@ -25362,16 +28703,29 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
                     SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                         h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3));
                     SinglePlot_Tmp{d} = SinglePlot;
+                elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                    SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                        h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3),h.FittedPeaksDet2{value}(d, 4),h.FittedPeaksDet2{value}(d, 5));
+                    SinglePlot_Tmp{d} = SinglePlot;
+                elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                    SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                        h.FittedPeaksDet2{value}(d, 1), h.FittedPeaksDet2{value}(d, 2), h.FittedPeaksDet2{value}(d, 3),h.FittedPeaksDet2{value}(d, 4),h.FittedPeaksDet2{value}(d, 5));
+                    SinglePlot_Tmp{d} = SinglePlot;
                 end
                     YPlot = YPlot + SinglePlot;
             end
-            % Add plots of fitted peaks and residual to axes according to current 
+            % Add plots of fitted peaks and residual to axes according to current
             % slider value
             set(h.plotfits,'xdata',XPlot)
             set(h.plotfits,'ydata',YPlot)
             ydata_tmp = cell2mat(SinglePlot_Tmp');
-            for k = 1:size(SinglePlot_Tmp,2)
-                set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+            if ~isfield(h,'plotfitsSinglePeaks') || numel(h.plotfitsSinglePeaks) ~= size(SinglePlot_Tmp,2) || ~all(isgraphics(h.plotfitsSinglePeaks))
+                h.plotfitsSinglePeaks = plot(h.axesplotRawData, XPlot, ydata_tmp',':','LineWidth',1.5);
+            else
+                for k = 1:size(SinglePlot_Tmp,2)
+                    set(h.plotfitsSinglePeaks(k),'ydata',ydata_tmp(k,:))
+                    set(h.plotfitsSinglePeaks(k),'xdata',XPlot)
+                end
             end
             % Set data of plot residual according to current slider value
             set(h.plotfitresidual,'xdata',XFit)
@@ -25390,6 +28744,17 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
                     h.FittedPeaksCalctmpDet2{1,value}(:,4),h.FittedPeaksCalctmpDet2{1,value}(:,5),...
                     h.FittedPeaksCalctmpDet2{1,value}(:,6),h.FittedPeaksCalctmpDet2{1,value}(:,7),...
                     h.FittedPeaksCalctmpDet2{1,value}(:,8)])
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,value}(:,8), h.FittedPeaksCalctmpDet2{1,value}(:,1),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,2),h.FittedPeaksCalctmpDet2{1,value}(:,3),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,6),h.FittedPeaksCalctmpDet2{1,value}(:,7),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,4),h.FittedPeaksCalctmpDet2{1,value}(:,5)])
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                set(h.tablefitresults,'data',[h.FittedPeaksCalctmpDet2{1,value}(:,9), h.FittedPeaksCalctmpDet2{1,value}(:,1),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,2),h.FittedPeaksCalctmpDet2{1,value}(:,3),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,7),h.FittedPeaksCalctmpDet2{1,value}(:,8),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,4),h.FittedPeaksCalctmpDet2{1,value}(:,5),...
+                    h.FittedPeaksCalctmpDet2{1,value}(:,6)])
             end
         end
     end
@@ -25424,27 +28789,45 @@ if isfield(h, 'PeaksTheoAdd')
 end
 
 if isfield(h, 'FluorPos')
-    % Create array with y values for the fluorescence line plot.
+    % Hoehe (und damit auch die Label-Position) fuer alle aktuell
+    % sichtbaren Fluoreszenz-Slots (1-4) an das gerade angezeigte Spektrum
+    % anpassen -- die X-Positionen (Ka1, Kb1, ...) haengen nicht vom
+    % Spektrum ab und bleiben unveraendert.
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
-    % If LEDDI has been used for the measurement
         if strcmp(h.Detsel,'Detector 1')
             Slidersteps = 2:2:length(h.Measurement);
-            y_tmp = repmat([0 max(h.DataTmp{Slidersteps(value)}(:,2)) nan],1,size(h.FluorPos1,1))';
-            y_tmp(size(h.FluorPos1,1)*size(h.FluorPos1,2),:) = [];
-            % Set plot data for additional theoretical line positions
-            set(h.plotFluorAdd1,'ydata',y_tmp)
+            CurrentFluorHeight = max(h.DataTmp{Slidersteps(value)}(:,2));
         elseif strcmp(h.Detsel,'Detector 2')
             Slidersteps = 1:2:length(h.Measurement);
-            y_tmp = repmat([0 max(h.DataTmp{Slidersteps(value)}(:,2)) nan],1,size(h.FluorPos1,1))';
-            y_tmp(size(h.FluorPos1,1)*size(h.FluorPos1,2),:) = [];
-            % Set plot data for additional theoretical line positions
-            set(h.plotFluorAdd1,'ydata',y_tmp)
+            CurrentFluorHeight = max(h.DataTmp{Slidersteps(value)}(:,2));
         end
     else
-        y_tmp = repmat([0 max(h.DataTmp{value}(:,2)) nan],1,size(h.FluorPos1,1))';
-        y_tmp(size(h.FluorPos1,1)*size(h.FluorPos1,2),:) = [];
-        % Set plot data for additional theoretical line positions
-        set(h.plotFluorAdd1,'ydata',y_tmp)
+        CurrentFluorHeight = max(h.DataTmp{value}(:,2));
+    end
+    FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+    FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+    for k = 1:4
+        if strcmp(get(FluorPlotHandles{k},'Visible'),'on')
+            XDataFluor = get(FluorPlotHandles{k},'XData');
+            % Punktezahl von der aktuellen Linie ableiten statt fest 8
+            % Linien anzunehmen -- sonst Groessenkonflikt, falls die
+            % Linie noch mit einer frueheren Codeversion erzeugt wurde.
+            NumPointsFluor = numel(XDataFluor);
+            PatternIdxFluor = mod(0:NumPointsFluor-1,3);
+            y_tmp = nan(NumPointsFluor,1);
+            y_tmp(PatternIdxFluor==0) = 0;
+            y_tmp(PatternIdxFluor==1) = CurrentFluorHeight;
+            set(FluorPlotHandles{k},'ydata',y_tmp)
+            % Label auf die erste im aktuell sichtbaren Energiebereich
+            % liegende Fluoreszenzlinie setzen (siehe okbuttonselectmeas).
+            InViewFluor = XDataFluor >= h.axesplotRawData.XLim(1) & XDataFluor <= h.axesplotRawData.XLim(2);
+            IdxFluorVisible = find(~isnan(XDataFluor) & InViewFluor,1,'first');
+            if ~isempty(IdxFluorVisible)
+                set(FluorLabelHandles{k},'Position',[XDataFluor(IdxFluorVisible) CurrentFluorHeight/2 0],'Visible','on')
+            else
+                set(FluorLabelHandles{k},'Visible','off')
+            end
+        end
     end
 end
 
@@ -25474,6 +28857,17 @@ if isfield(h, 'FittedPeaks')
         set(h.tablefitresults,'data',[h.FittedPeaksCalctmp{1,value}(:,6), h.FittedPeaksCalctmp{1,value}(:,1),...
             h.FittedPeaksCalctmp{1,value}(:,2),h.FittedPeaksCalctmp{1,value}(:,3),...
             h.FittedPeaksCalctmp{1,value}(:,4),h.FittedPeaksCalctmp{1,value}(:,5)])
+    elseif h.P.PopupValueFitFunc == 6 %AsymPV
+        set(h.tablefitresults,'data',[h.FittedPeaksCalctmp{1,value}(:,8), h.FittedPeaksCalctmp{1,value}(:,1),...
+            h.FittedPeaksCalctmp{1,value}(:,2),h.FittedPeaksCalctmp{1,value}(:,3),...
+            h.FittedPeaksCalctmp{1,value}(:,6),h.FittedPeaksCalctmp{1,value}(:,7),...
+            h.FittedPeaksCalctmp{1,value}(:,4),h.FittedPeaksCalctmp{1,value}(:,5)])
+    elseif h.P.PopupValueFitFunc == 7 %Split-PV
+        set(h.tablefitresults,'data',[h.FittedPeaksCalctmp{1,value}(:,9), h.FittedPeaksCalctmp{1,value}(:,1),...
+            h.FittedPeaksCalctmp{1,value}(:,2),h.FittedPeaksCalctmp{1,value}(:,3),...
+            h.FittedPeaksCalctmp{1,value}(:,7),h.FittedPeaksCalctmp{1,value}(:,8),...
+            h.FittedPeaksCalctmp{1,value}(:,4),h.FittedPeaksCalctmp{1,value}(:,5),...
+            h.FittedPeaksCalctmp{1,value}(:,6)])
     end
 end
 
@@ -25567,7 +28961,14 @@ if isfield(h,'idxhklPeaktable')
     
     % Change label
     label(~h.idxhklPeaktable,:) = [];
-    
+
+    % Farben bleiben an die hkl-Identitaet gebunden (ColorsUsedSorted ist
+    % bereits in der gleichen, Tau-sortierten Reihenfolge wie
+    % idxhklPeaktable), statt die Slider-Position (= Index innerhalb der
+    % gefilterten Liste) direkt in die globale, unsortierte Farbpalette
+    % h.Colors zu indizieren.
+    ColorsUsedSorted_tmp = h.ColorsUsedSorted(h.idxhklPeaktable);
+
     for i = 1:size(fieldnames1,1)
         if isa(sin2psi_tmp.(fieldnames1{i}),'cell')
             sin2psi_tmp.(fieldnames1{i})(~h.idxhklPeaktable) = [];
@@ -25605,25 +29006,25 @@ if isfield(h,'idxhklPeaktable')
     
             set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
             set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
-            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {ColorsUsedSorted_tmp{valueSlider},ColorsUsedSorted_tmp{valueSlider}});
             set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
             set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
-            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi0phi180,'color',ColorsUsedSorted_tmp{valueSlider})
             
             set(h.plotdataIBphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi0,'ydata',ParamsToFit_tmp(h.idxphi0).IntegralWidth{valueSlider})
             set(h.plotdataIntphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi0,'ydata',ParamsToFit_tmp(h.idxphi0).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
             set(h.plotdataIBphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi180,'ydata',ParamsToFit_tmp(h.idxphi180).IntegralWidth{valueSlider})
             set(h.plotdataIntphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi180,'ydata',ParamsToFit_tmp(h.idxphi180).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
             
         elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
             % sigma22 + sigma23
@@ -25634,25 +29035,25 @@ if isfield(h,'idxhklPeaktable')
     
             set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
             set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
-            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {ColorsUsedSorted_tmp{valueSlider},ColorsUsedSorted_tmp{valueSlider}});
             set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
             set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
-            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi90phi270,'color',ColorsUsedSorted_tmp{valueSlider})
 
             set(h.plotdataIBphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi90,'ydata',ParamsToFit_tmp(h.idxphi90).IntegralWidth{valueSlider})
             set(h.plotdataIntphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi90,'ydata',ParamsToFit_tmp(h.idxphi90).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
             set(h.plotdataIBphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi270,'ydata',ParamsToFit_tmp(h.idxphi270).IntegralWidth{valueSlider})
             set(h.plotdataIntphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi270,'ydata',ParamsToFit_tmp(h.idxphi270).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
         elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
             % sigma11 + sigma13 + sigma22 + sigma23
@@ -25663,11 +29064,11 @@ if isfield(h,'idxhklPeaktable')
     
             set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
             set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
-            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {ColorsUsedSorted_tmp{valueSlider},ColorsUsedSorted_tmp{valueSlider}});
             set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
             set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
-            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi0phi180,'color',ColorsUsedSorted_tmp{valueSlider})
 
             dphi90phi270 = (sin2psi_tmp.dphi90{valueSlider}+sin2psi_tmp.dphi270{valueSlider})./2;
             dreglinephi90phi270 = (sin2psi_tmp.reglinephi90(:,1) + sin2psi_tmp.reglinephi270(:,1))./2;
@@ -25676,39 +29077,39 @@ if isfield(h,'idxhklPeaktable')
     
             set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
             set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
-            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {ColorsUsedSorted_tmp{valueSlider},ColorsUsedSorted_tmp{valueSlider}});
             set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
             set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
-            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi90phi270,'color',ColorsUsedSorted_tmp{valueSlider})
 
             set(h.plotdataIBphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi0,'ydata',ParamsToFit_tmp(h.idxphi0).IntegralWidth{valueSlider})
             set(h.plotdataIntphi0,'xdata',sind(ParamsToFit_tmp(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi0,'ydata',ParamsToFit_tmp(h.idxphi0).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
             set(h.plotdataIBphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi180,'ydata',ParamsToFit_tmp(h.idxphi180).IntegralWidth{valueSlider})
             set(h.plotdataIntphi180,'xdata',sind(ParamsToFit_tmp(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi180,'ydata',ParamsToFit_tmp(h.idxphi180).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
             set(h.plotdataIBphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi90,'ydata',ParamsToFit_tmp(h.idxphi90).IntegralWidth{valueSlider})
             set(h.plotdataIntphi90,'xdata',sind(ParamsToFit_tmp(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi90,'ydata',ParamsToFit_tmp(h.idxphi90).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
 
             set(h.plotdataIBphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi270,'ydata',ParamsToFit_tmp(h.idxphi270).IntegralWidth{valueSlider})
             set(h.plotdataIntphi270,'xdata',sind(ParamsToFit_tmp(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi270,'ydata',ParamsToFit_tmp(h.idxphi270).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
         end
 
     elseif strcmp(h.plotdatadspacingphi0.Visible,'on') || strcmp(h.plotdatadspacingphi90.Visible,'on') || strcmp(h.plotdatadspacingphi180.Visible,'on')
@@ -25766,31 +29167,31 @@ if isfield(h,'idxhklPeaktable')
         
         % Set plot properties
         if ~isempty(h.idxphi0)
-            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotreglinedspacingphi0, {'Color'}, {ColorsUsedSorted_tmp{valueSlider}});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi90)
-            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi90, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotreglinedspacingphi90, {'Color'}, {ColorsUsedSorted_tmp{valueSlider}});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi180)
-            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotreglinedspacingphi180, {'Color'}, {ColorsUsedSorted_tmp{valueSlider}});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi270)
-            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi270, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotreglinedspacingphi270, {'Color'}, {ColorsUsedSorted_tmp{valueSlider}});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',ColorsUsedSorted_tmp{valueSlider},'k'});
         end
     end
     % Set plot limits
@@ -25930,25 +29331,25 @@ else
     
             set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
             set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
-            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.ColorsUsedSorted{valueSlider},h.ColorsUsedSorted{valueSlider}});
             set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
             set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
-            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi0phi180,'color',h.ColorsUsedSorted{valueSlider})
             
             set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
             set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
             set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
             set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
             
         elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
             % sigma22 + sigma23
@@ -25959,25 +29360,25 @@ else
     
             set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
             set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
-            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.ColorsUsedSorted{valueSlider},h.ColorsUsedSorted{valueSlider}});
             set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
             set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
-            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi90phi270,'color',h.ColorsUsedSorted{valueSlider})
 
             set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
             set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
             set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
             set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
         elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
             % sigma11 + sigma13 + sigma22 + sigma23
@@ -25988,11 +29389,11 @@ else
     
             set(h.plotdatadspacingphi0phi180,{'xdata','visible'},{xdataphi0phi180,'on'})
             set(h.plotdatadspacingphi0phi180,{'ydata','visible'},{dphi0phi180,'on'})
-            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi0phi180,{'MarkerFaceColor','MarkerEdgeColor'}, {h.ColorsUsedSorted{valueSlider},h.ColorsUsedSorted{valueSlider}});
             set(h.plotdatadspacingphi0phi180,{'YNegativeDelta','YPositiveDelta'},{Deltaphi0phi180,Deltaphi0phi180});
             set(h.plotreglinedspacingphi0phi180,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi0phi180,{'ydata','visible'},{dreglinephi0phi180,'on'})
-            set(h.plotreglinedspacingphi0phi180,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi0phi180,'color',h.ColorsUsedSorted{valueSlider})
 
             dphi90phi270 = (h.sin2psi.dphi90{valueSlider}+h.sin2psi.dphi270{valueSlider})./2;
             dreglinephi90phi270 = (h.sin2psi.reglinephi90(:,1) + h.sin2psi.reglinephi270(:,1))./2;
@@ -26001,39 +29402,39 @@ else
     
             set(h.plotdatadspacingphi90phi270,{'xdata','visible'},{xdataphi90phi270,'on'})
             set(h.plotdatadspacingphi90phi270,{'ydata','visible'},{dphi90phi270,'on'})
-            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.Colors{valueSlider},h.Colors{valueSlider}});
+            set(h.plotdatadspacingphi90phi270,{'MarkerFaceColor','MarkerEdgeColor'}, {h.ColorsUsedSorted{valueSlider},h.ColorsUsedSorted{valueSlider}});
             set(h.plotdatadspacingphi90phi270,{'YNegativeDelta','YPositiveDelta'},{Deltaphi90phi270,Deltaphi90phi270});
             set(h.plotreglinedspacingphi90phi270,{'xdata','visible'},{linspace(0,1,51),'on'})
             set(h.plotreglinedspacingphi90phi270,{'ydata','visible'},{dreglinephi90phi270,'on'})
-            set(h.plotreglinedspacingphi90phi270,'color',h.Colors{valueSlider})
+            set(h.plotreglinedspacingphi90phi270,'color',h.ColorsUsedSorted{valueSlider})
 
             set(h.plotdataIBphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi0,'ydata',h.ParamsToFit(h.idxphi0).IntegralWidth{valueSlider})
             set(h.plotdataIntphi0,'xdata',sind(h.ParamsToFit(h.idxphi0).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi0,'ydata',h.ParamsToFit(h.idxphi0).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
             set(h.plotdataIBphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi180,'ydata',h.ParamsToFit(h.idxphi180).IntegralWidth{valueSlider})
             set(h.plotdataIntphi180,'xdata',sind(h.ParamsToFit(h.idxphi180).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi180,'ydata',h.ParamsToFit(h.idxphi180).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
             set(h.plotdataIBphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi90,'ydata',h.ParamsToFit(h.idxphi90).IntegralWidth{valueSlider})
             set(h.plotdataIntphi90,'xdata',sind(h.ParamsToFit(h.idxphi90).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi90,'ydata',h.ParamsToFit(h.idxphi90).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
 
             set(h.plotdataIBphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIBphi270,'ydata',h.ParamsToFit(h.idxphi270).IntegralWidth{valueSlider})
             set(h.plotdataIntphi270,'xdata',sind(h.ParamsToFit(h.idxphi270).Psi_Winkel{valueSlider}).^2)
             set(h.plotdataIntphi270,'ydata',h.ParamsToFit(h.idxphi270).Intensity_Int{valueSlider})
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
         end
 
     elseif strcmp(h.plotdatadspacingphi0.Visible,'on') || strcmp(h.plotdatadspacingphi90.Visible,'on') || strcmp(h.plotdatadspacingphi180.Visible,'on') || strcmp(h.plotdatadspacingphi270.Visible,'on')
@@ -26091,31 +29492,31 @@ else
         
         % Set plot properties
         if ~isempty(h.idxphi0)
-            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi0, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotreglinedspacingphi0, {'Color'}, {h.ColorsUsedSorted{valueSlider}});
+            set(h.plotdataIBphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi0, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi90)
-            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi90, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotreglinedspacingphi90, {'Color'}, {h.ColorsUsedSorted{valueSlider}});
+            set(h.plotdataIBphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi90, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi180)
-            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi180, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotreglinedspacingphi180, {'Color'}, {h.ColorsUsedSorted{valueSlider}});
+            set(h.plotdataIBphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi180, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
         end
     
         if ~isempty(h.idxphi270)
-            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotreglinedspacingphi270, {'Color'}, {h.Colors{valueSlider}});
-            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
-            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.Colors{valueSlider},'k'});
+            set(h.plotdatadspacingphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotreglinedspacingphi270, {'Color'}, {h.ColorsUsedSorted{valueSlider}});
+            set(h.plotdataIBphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
+            set(h.plotdataIntphi270, {'Color','MarkerFaceColor','MarkerEdgeColor'}, {'k',h.ColorsUsedSorted{valueSlider},'k'});
         end
     end
     % Set plot limits
@@ -26248,6 +29649,15 @@ else
     end
 
 end
+
+% Beim Wechsel des Peaks (dieser Slider) wird der Fit-Plot (Rohspektrum +
+% Fit) nicht automatisch auf den neuen Peak aktualisiert -- das passiert
+% erst, wenn der Nutzer den Fit-Plot-Slider (h.SliderFitData) selbst
+% bewegt. Bis dahin waere die d-sin2psi-Markierung (h.plotdspacingHighlight)
+% ein Ueberbleibsel vom vorherigen Peak und damit irrefuehrend; deshalb
+% hier ausblenden, unabhaengig davon, wie viele Phi-Richtungen zur
+% Auswahl stehen.
+set(h.plotdspacingHighlight, {'XData','YData','Visible'}, {NaN,NaN,'off'});
 
 guidata(hObj, h);
 
@@ -26719,6 +30129,32 @@ end
 
 guidata(hObj, h);
 
+function MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, PhiVal, TargetPsiArray)
+% Findet fuer jeden Eintrag in TargetPsiArray (die tatsaechlich benoetigten
+% psi-Werte einer Phi-Richtung/hkl-Linie, aus h.ParamsToFit(...).Psi_Winkel)
+% den Index der zugehoerigen Rohmessung in PhiWinkelMeas/PsiWinkelMeas,
+% ueber einen direkten Abgleich von Phi- UND Psi-Winkel.
+%
+% Ersetzt die aeltere Logik (PhiIndexMeas als Matrix bzw. Cell-Array,
+% kombiniert mit einer ismember-Maske ueber die Vereinigungsmenge aller
+% gemessenen psi-Werte): diese ging implizit davon aus, dass jede
+% Phi-Richtung dieselbe Anzahl an psi-Werten hat, in derselben sortierten
+% Reihenfolge. Sind die Punktzahlen unterschiedlich -- z.B. weil in
+% "Modify stress data" fuer nur eine Phi-Richtung ein Punkt geloescht
+% wurde -- fuehrte das entweder zu "Unable to perform assignment"
+% (Matrix-Variante) oder zu einer falschen Zuordnung (Cell-Array-Variante,
+% da die Maske weiterhin auf die volle Vereinigungsmenge bezogen war).
+% Der direkte Wertabgleich hier funktioniert unabhaengig von der Punktzahl
+% je Phi-Richtung.
+MeasIndex = nan(size(TargetPsiArray));
+CandidateIdx = find(PhiWinkelMeas == PhiVal);
+for pIdx = 1:numel(TargetPsiArray)
+    MatchIdx = CandidateIdx(PsiWinkelMeas(CandidateIdx) == TargetPsiArray(pIdx));
+    if ~isempty(MatchIdx)
+        MeasIndex(pIdx) = MatchIdx(1);
+    end
+end
+
 function SliderCallbackFitData(hObj, ~)
 h = guidata(hObj);
 % Get slider value
@@ -26771,35 +30207,30 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
             PhiWinkelMeas(k,:) = h.Measurement(Slidersteps(k)).SCSAngles.phi;
             PsiWinkelMeas(k,:) = h.Measurement(Slidersteps(k)).SCSAngles.psi;
         end
-        % Get unique phi and psi angles of measurements
+        % Get unique phi angles of measurements
         NumberPhiAngles = unique(PhiWinkelMeas);
-        NumberPsiAngles = unique(PsiWinkelMeas);
-        % Get indices for each phi angle of the measurements. Those are used to 
-        % find the correct spectra to be plotted.
-        for k = 1:length(NumberPhiAngles)
-            PhiIndexMeas(:,k) = find(PhiWinkelMeas == NumberPhiAngles(k));
-        end
-        % Compare psi angles of current peak hkl with psi angles of measured
-        % spectra and get correct indices of measured spectra.
+        % Roh-Messindex je benoetigtem psi-Wert direkt ueber (phi,psi)
+        % nachschlagen (MatchMeasIndexByPsi) statt ueber eine
+        % Positions-/Matrix-Logik (PhiIndexMeas als Matrix + ismember-Maske
+        % ueber die Vereinigungsmenge aller psi-Werte), die gleiche
+        % Punktzahl je Phi-Richtung voraussetzte und bei ungleicher
+        % Punktzahl (z.B. nach Loeschen eines Punktes in "Modify stress
+        % data" fuer nur eine Phi-Richtung) entweder abstuerzte oder die
+        % Punkte falsch zuordnen konnte.
         if length(ChboxInd) ~= 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(1).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas(idxPsi,1);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, NumberPhiAngles(1), h.ParamsToFit(1).Psi_Winkel{valueSliderStressData});
         else
             if CheckBoxesPhi(1) == 1
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==0)));
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 0, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData});
             elseif CheckBoxesPhi(2) == 1
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==90)));
-            elseif CheckBoxesPhi(3) == 1    
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==180)));
-            elseif CheckBoxesPhi(4) == 1    
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==270)));
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 90, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData});
+            elseif CheckBoxesPhi(3) == 1
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 180, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData});
+            elseif CheckBoxesPhi(4) == 1
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 270, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData});
             end
         end
-        
+
         %Set plot data and properties
         set(h.plotrawdata1,{'xdata','Visible'},{h.DataTmp{Slidersteps(MeasIndex(valueSlider))}(:,1),'on'})
         set(h.plotrawdata1,{'ydata','Visible'},{h.DataTmp{Slidersteps(MeasIndex(valueSlider))}(:,2),'on'})
@@ -26825,6 +30256,12 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
             elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                 SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                 h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 3));
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 4),h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 5));
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 4),h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 5));
             end
 %             SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
 %                 h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet1{MeasIndex(valueSlider)}(d, 4));
@@ -26848,34 +30285,24 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
             PhiWinkelMeas(k,:) = h.Measurement(Slidersteps(k)).SCSAngles.phi;
             PsiWinkelMeas(k,:) = h.Measurement(Slidersteps(k)).SCSAngles.psi;
         end
-        % Get unique phi and psi angles of measurements
+        % Get unique phi angles of measurements
         NumberPhiAngles = unique(PhiWinkelMeas);
-        NumberPsiAngles = unique(PsiWinkelMeas);
 %         assignin('base','PhiWinkelMeas',PhiWinkelMeas)
 %         assignin('base','NumberPhiAngles',NumberPhiAngles)
-        % Get indices for each phi angle of the measurements. Those are used to 
-        % find the correct spectra to be plotted.
-        for k = 1:length(NumberPhiAngles)
-            PhiIndexMeas(:,k) = find(PhiWinkelMeas == NumberPhiAngles(k));
-        end
-        % Compare psi angles of current peak hkl with psi angles of measured
-        % spectra and get correct indices of measured spectra.
+        % Roh-Messindex je benoetigtem psi-Wert direkt ueber (phi,psi)
+        % nachschlagen (MatchMeasIndexByPsi, siehe Detector-1-Zweig oben
+        % fuer die ausfuehrliche Begruendung).
         if length(ChboxInd) ~= 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(1).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas(idxPsi,1);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, NumberPhiAngles(1), h.ParamsToFit(1).Psi_Winkel{valueSliderStressData});
         else
             if CheckBoxesPhi(1) == 1
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==0)));
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 0, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData});
             elseif CheckBoxesPhi(2) == 1
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==90)));
-            elseif CheckBoxesPhi(3) == 1    
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==180)));
-            elseif CheckBoxesPhi(4) == 1    
-                idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData}, 'rows');
-                MeasIndex = PhiIndexMeas(idxPsi,(find(NumberPhiAngles==270)));
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 90, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData});
+            elseif CheckBoxesPhi(3) == 1
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 180, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData});
+            elseif CheckBoxesPhi(4) == 1
+                MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 270, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData});
             end
         end
         %Set plot data and properties
@@ -26903,6 +30330,12 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
             elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
                 SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                 h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 3));
+            elseif h.P.PopupValueFitFunc == 6 %AsymPV
+                SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 4),h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 5));
+            elseif h.P.PopupValueFitFunc == 7 %Split-PV
+                SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 4),h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 5));
             end
 %             SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
 %                 h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 1), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 2), h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 3),h.FittedPeaksDet2{MeasIndex(valueSlider)}(d, 4));
@@ -26928,34 +30361,23 @@ else
     end
 %     assignin('base','PhiWinkelMeas',PhiWinkelMeas)
 %     assignin('base','PsiWinkelMeas',PsiWinkelMeas)
-    % Get unique phi and psi angles of measurements
+    % Get unique phi angles of measurements
     NumberPhiAngles = unique(PhiWinkelMeas);
-    NumberPsiAngles = unique(PsiWinkelMeas);
-    % Get indices for each phi angle of the measurements. Those are used to 
-    % find the correct spectra to be plotted.
-    for k = 1:length(NumberPhiAngles)
-        PhiIndexMeas{k} = find(PhiWinkelMeas == NumberPhiAngles(k));  % besser als Cell array umsetzen!!
-    end
 %     assignin('base','ParamsToFit',h.ParamsToFit)
-    % Compare psi angles of current peak hkl with psi angles of measured
-    % spectra and get correct indices of measured spectra.
+    % Roh-Messindex je benoetigtem psi-Wert direkt ueber (phi,psi)
+    % nachschlagen (MatchMeasIndexByPsi, siehe Detector-1-Zweig im LEDDI-
+    % Fall weiter oben fuer die ausfuehrliche Begruendung).
     if length(ChboxInd) ~= 1
-        idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(1).Psi_Winkel{valueSliderStressData}, 'rows');
-        MeasIndex = PhiIndexMeas{1}(idxPsi);
-%         MeasIndex = PhiIndexMeas(idxPsi,1);
+        MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, NumberPhiAngles(1), h.ParamsToFit(1).Psi_Winkel{valueSliderStressData});
     else
         if CheckBoxesPhi(1) == 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==0)}(idxPsi);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 0, h.ParamsToFit(find(PhiWinkel==0)).Psi_Winkel{valueSliderStressData});
         elseif CheckBoxesPhi(2) == 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==90)}(idxPsi);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 90, h.ParamsToFit(find(PhiWinkel==90)).Psi_Winkel{valueSliderStressData});
         elseif CheckBoxesPhi(3) == 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==180)}(idxPsi);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 180, h.ParamsToFit(find(PhiWinkel==180)).Psi_Winkel{valueSliderStressData});
         elseif CheckBoxesPhi(4) == 1
-            idxPsi = ismember(NumberPsiAngles, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData}, 'rows');
-            MeasIndex = PhiIndexMeas{find(NumberPhiAngles==270)}(idxPsi);
+            MeasIndex = MatchMeasIndexByPsi(PhiWinkelMeas, PsiWinkelMeas, 270, h.ParamsToFit(find(PhiWinkel==270)).Psi_Winkel{valueSliderStressData});
         end
     end
 
@@ -27022,6 +30444,12 @@ else
         elseif h.P.PopupValueFitFunc == 5 %Lorentz-Func
             SinglePlot = Tools.Science.Math.FF_Lorentz(XPlot, ...
                 h.FittedPeaks{MeasIndex(valueSlider)}(d, 1), h.FittedPeaks{MeasIndex(valueSlider)}(d, 2), h.FittedPeaks{MeasIndex(valueSlider)}(d, 3));
+        elseif h.P.PopupValueFitFunc == 6 %AsymPV
+            SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+                h.FittedPeaks{MeasIndex(valueSlider)}(d, 1), h.FittedPeaks{MeasIndex(valueSlider)}(d, 2), h.FittedPeaks{MeasIndex(valueSlider)}(d, 3),h.FittedPeaks{MeasIndex(valueSlider)}(d, 4),h.FittedPeaks{MeasIndex(valueSlider)}(d, 5));
+        elseif h.P.PopupValueFitFunc == 7 %Split-PV
+            SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+                h.FittedPeaks{MeasIndex(valueSlider)}(d, 1), h.FittedPeaks{MeasIndex(valueSlider)}(d, 2), h.FittedPeaks{MeasIndex(valueSlider)}(d, 3),h.FittedPeaks{MeasIndex(valueSlider)}(d, 4),h.FittedPeaks{MeasIndex(valueSlider)}(d, 5));
         end
 %             SinglePlot = Tools.Science.Math.FF_PseudoVoigt(XPlot, ...
 %                 h.FittedPeaks{MeasIndex(valueSlider)}(d, 1), h.FittedPeaks{MeasIndex(valueSlider)}(d, 2), h.FittedPeaks{MeasIndex(valueSlider)}(d, 3),h.FittedPeaks{MeasIndex(valueSlider)}(d, 4));
@@ -27168,7 +30596,55 @@ end
 
 guidata(hObj, h);
 
-% Various callbacks 
+% Den zum aktuell im Fit-Plot gezeigten Peak gehoerigen d-Wert im
+% d-sin2psi-Plot markieren -- nur sinnvoll/eindeutig, wenn genau eine
+% Phi-Richtung ausgewaehlt ist (siehe UpdateDspacingHighlight).
+UpdateDspacingHighlight(hObj);
+
+function UpdateDspacingHighlight(hObj)
+% Markiert im d-sin2psi-Plot (h.plotdspacingHighlight) den d-Wert, der zum
+% aktuell im Fit-Plot (h.axesplotfitdata) gezeigten Rohspektrum gehoert.
+% Wird sowohl von SliderCallbackFitData (Durchscrollen der Rohspektren)
+% als auch von den checkboxphi0/90/180/270-Callbacks aufgerufen (An-/
+% Abwaehlen der Phi-Richtungen), damit die Markierung dort sofort
+% verschwindet bzw. wieder erscheint.
+%
+% Die Markierung ist nur eindeutig, solange genau eine Phi-Richtung
+% ausgewaehlt ist -- bei mehreren (oder keiner) gleichzeitig ausgewaehlten
+% Richtungen zeigt der Fit-Plot ohnehin nur eine davon, waehrend im
+% d-sin2psi-Plot alle gleichzeitig sichtbar sind, sodass eine Markierung
+% dort irrefuehrend waere. In diesem Fall wird sie daher ausgeblendet.
+h = guidata(hObj);
+if ~isfield(h,'ParamsToFit') || ~isfield(h,'plotdspacingHighlight')
+    return
+end
+CheckBoxesPhi = [get(h.checkboxphi0,'Value'),get(h.checkboxphi90,'Value'),get(h.checkboxphi180,'Value'),get(h.checkboxphi270,'Value')];
+ChboxInd = find(CheckBoxesPhi==1);
+if length(ChboxInd) ~= 1
+    set(h.plotdspacingHighlight, {'XData','YData','Visible'}, {NaN,NaN,'off'});
+    guidata(hObj, h);
+    return
+end
+AzimuthValues = [0 90 180 270];
+PhiWinkelFlat = zeros(1,size(h.ParamsToFit,2));
+for k = 1:size(h.ParamsToFit,2)
+    PhiWinkelFlat(k) = h.ParamsToFit(k).Phi_Winkel{1}(1);
+end
+PhiIdxHighlight = find(PhiWinkelFlat == AzimuthValues(ChboxInd));
+valueSliderStressData = get(h.SliderStressData,'Value');
+NumPointsHighlight = numel(h.ParamsToFit(PhiIdxHighlight).Psi_Winkel{valueSliderStressData});
+if NumPointsHighlight == 0
+    set(h.plotdspacingHighlight, {'XData','YData','Visible'}, {NaN,NaN,'off'});
+    guidata(hObj, h);
+    return
+end
+valueSliderFit = min(max(round(get(h.SliderFitData,'Value')),1),NumPointsHighlight);
+psiValHighlight = h.ParamsToFit(PhiIdxHighlight).Psi_Winkel{valueSliderStressData}(valueSliderFit);
+dValHighlight = h.ParamsToFit(PhiIdxHighlight).LatticeSpacing{valueSliderStressData}(valueSliderFit);
+set(h.plotdspacingHighlight, {'XData','YData','Visible'}, {sind(psiValHighlight)^2, dValHighlight, 'on'});
+guidata(hObj, h);
+
+% Various callbacks
 function clearbuttondown(hObj,~)
 set(hObj, 'String','','Enable','on');
 uicontrol(hObj);
@@ -27205,8 +30681,18 @@ h = guidata(hObj);
 h.P.MPDFileName = h.P.PopupLoadMPDEtheo;
 h.P.ElementalFormula = get(h.texteditfieldEtheo,'string');
 
-MPDFileName = h.P.MPDFileName; 
+MPDFileName = h.P.MPDFileName;
 ElementalFormula = h.P.ElementalFormula;
+
+% Aktiven Slot (1-4) merken, damit die gerade eingegebene Phase spaeter
+% beim Umschalten der Slot-Checkbox wiederhergestellt werden kann.
+EtheoSlot = h.ActiveEtheoSlot;
+h.P.EtheoSlot(EtheoSlot).ElementalFormula = ElementalFormula;
+h.P.EtheoSlot(EtheoSlot).MPDFileName = MPDFileName;
+h.P.EtheoSlot(EtheoSlot).MPDValue = get(h.popupmenumpdEtheo,'Value');
+% Zugehoeriges Linienobjekt fuer den aktiven Slot (plotEtheoAdd1..4)
+EtheoPlotHandles = {h.plotEtheoAdd1, h.plotEtheoAdd2, h.plotEtheoAdd3, h.plotEtheoAdd4};
+hEtheoLine = EtheoPlotHandles{EtheoSlot};
 % Create sample object in order to use sample functions
 h.P.Material = Sample.Material();
 h.P.Material.ElementalFormula = ElementalFormula;
@@ -27285,7 +30771,7 @@ if strcmp(h.Diffsel,'ETA3000')
 
     X3Limitka2 = h.PeaksTheoAdd.T.X3ka2((1:(3*length(EtheoLimit_aka2)-1)),:);
     Y3Limitka2 = h.PeaksTheoAdd.T.Y3((1:(3*length(EtheoLimit_aka2)-1)),:).*0.5;
-    set(h.tablephasehkl2,'data',[num2cell(h.PeaksTheoAdd.T.Peaks(aka1,1:5))])
+    EtheoTableData = [num2cell(h.PeaksTheoAdd.T.Peaks(aka1,1:5))];
 else
     a = h.axesplotRawData.XLim(1) < h.PeaksTheoAdd.T.Etheo & h.PeaksTheoAdd.T.Etheo < h.axesplotRawData.XLim(2);
     % a = h.PeaksTheoAdd.T.Etheo < h.PeaksTheoAdd.T.EMax;
@@ -27294,33 +30780,114 @@ else
 %     X1Limit = h.PeaksTheoAdd.T.X1(a,:);
     X3Limit = h.PeaksTheoAdd.T.X3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
     Y3Limit = h.PeaksTheoAdd.T.Y3((1:(3*length(h.EtheoLimitPeaksAdd1)-1)),:);
-    set(h.tablephasehkl2,'data',[num2cell(h.PeaksTheoAdd.T.Peaks(a,:))])
+    EtheoTableData = [num2cell(h.PeaksTheoAdd.T.Peaks(a,:))];
 end
+% Tabellendaten pro Slot merken, damit sie beim Umschalten der
+% Slot-Checkbox (selectEtheoSlot) wiederhergestellt werden koennen.
+h.P.EtheoSlot(EtheoSlot).TableData = EtheoTableData;
+set(h.tablephasehkl2,'data',EtheoTableData)
 
 if strcmp(h.Diffsel,'ETA3000')
     % Set plot data for additional theoretical line positions
-    set(h.plotEtheoAdd1,'xdata',[X3Limitka1(:,1);NaN;X3Limitka2(:,1)])
+    set(hEtheoLine,'xdata',[X3Limitka1(:,1);NaN;X3Limitka2(:,1)])
     % Check selected column for Y3Limit
-    set(h.plotEtheoAdd1,'ydata',[Y3Limitka1(:,1);NaN;Y3Limitka2(:,1)])
-    set(h.plotEtheoAdd1,'visible','on')
+    set(hEtheoLine,'ydata',[Y3Limitka1(:,1);NaN;Y3Limitka2(:,1)])
+    set(hEtheoLine,'visible','on')
 else
     % Set plot data for additional theoretical line positions
-    set(h.plotEtheoAdd1,'xdata',X3Limit(:,1))
+    set(hEtheoLine,'xdata',X3Limit(:,1))
     % Check selected column for Y3Limit
-    set(h.plotEtheoAdd1,'ydata',Y3Limit(:,1))
-    set(h.plotEtheoAdd1,'visible','on')
-    
+    set(hEtheoLine,'ydata',Y3Limit(:,1))
+    set(hEtheoLine,'visible','on')
+
 end
+
+% hkl-Beschriftung pro Peak, analog zu den Fluoreszenz-Elementnamen:
+% mittig auf der jeweiligen Linie platziert, in der Farbe der Linie.
+% Alte Labels dieses Slots zuerst entfernen, da sich die Anzahl der
+% Peaks je nach Phase/Energiebereich aendert.
+if numel(h.EtheoLabelHandles) >= EtheoSlot && ~isempty(h.EtheoLabelHandles{EtheoSlot})
+    OldLabels = h.EtheoLabelHandles{EtheoSlot};
+    delete(OldLabels(ishandle(OldLabels)));
+end
+LineColor = get(hEtheoLine,'Color');
+LineHeight = h.PeaksTheoAdd.T.Peaks_y(1);
+if strcmp(h.Diffsel,'ETA3000')
+    PeaksHKL = h.PeaksTheoAdd.T.Peaks(aka1,1:3);
+    PeaksX = EtheoLimit_aka1;
+else
+    PeaksHKL = h.PeaksTheoAdd.T.Peaks(a,1:3);
+    PeaksX = h.EtheoLimitPeaksAdd1;
+end
+NewLabels = gobjects(size(PeaksHKL,1),1);
+for i = 1:size(PeaksHKL,1)
+    hklStr = regexprep(regexprep(mat2str(PeaksHKL(i,:)),'\[',''),'\]','');
+    NewLabels(i) = text(h.axesplotRawData, PeaksX(i), LineHeight/2, hklStr, ...
+        'Color', LineColor, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', ...
+        'BackgroundColor', 'white', 'Margin', 1, 'Rotation', 90);
+end
+h.EtheoLabelHandles{EtheoSlot} = NewLabels;
 
 guidata(hObj, h);
 
 function buttonhideEtheo(hObj, ~)
 h = guidata(hObj);
 
-set(h.plotEtheoAdd1,'visible','off')
-% Set table data back to zero
+EtheoPlotHandles = {h.plotEtheoAdd1, h.plotEtheoAdd2, h.plotEtheoAdd3, h.plotEtheoAdd4};
+set(EtheoPlotHandles{h.ActiveEtheoSlot},'visible','off')
+% Set table data back to zero, auch im gespeicherten Slot-Zustand, damit
+% beim spaeteren Zurueckschalten auf diesen Slot keine veralteten Daten
+% wieder auftauchen.
 d = zeros(10,5);
+h.P.EtheoSlot(h.ActiveEtheoSlot).TableData = [];
 set(h.tablephasehkl2,'data',d)
+% hkl-Labels dieses Slots entfernen
+OldLabels = h.EtheoLabelHandles{h.ActiveEtheoSlot};
+delete(OldLabels(ishandle(OldLabels)));
+h.EtheoLabelHandles{h.ActiveEtheoSlot} = [];
+
+guidata(hObj, h);
+
+function selectEtheoSlot(hObj,~)
+% Callback fuer die Slot-Auswahl-Checkboxen (1-4) bei "Show peaks from
+% another phase". Genau ein Slot ist immer aktiv (radiobutton-artig);
+% beim Umschalten werden Textfeld und mpd-Dropdown mit den zuletzt fuer
+% diesen Slot verwendeten Werten wiederhergestellt.
+h = guidata(hObj);
+
+EtheoCheckboxes = {h.checkboxEtheoSlot1, h.checkboxEtheoSlot2, h.checkboxEtheoSlot3, h.checkboxEtheoSlot4};
+ClickedSlot = find(cellfun(@(c) isequal(c,hObj), EtheoCheckboxes));
+
+if get(hObj,'Value') == 0
+    % Ein Slot muss immer aktiv bleiben.
+    set(hObj,'Value',1);
+    guidata(hObj, h);
+    return
+end
+
+for k = 1:4
+    if k ~= ClickedSlot
+        set(EtheoCheckboxes{k},'Value',0);
+    end
+end
+h.ActiveEtheoSlot = ClickedSlot;
+
+if isempty(h.P.EtheoSlot(ClickedSlot).ElementalFormula)
+    set(h.texteditfieldEtheo,{'String','Enable'},{'Enter elemental formula','inactive'})
+else
+    set(h.texteditfieldEtheo,{'String','Enable'},{h.P.EtheoSlot(ClickedSlot).ElementalFormula,'on'})
+    set(h.popupmenumpdEtheo,'Value',h.P.EtheoSlot(ClickedSlot).MPDValue)
+    h.P.PopupLoadMPDEtheo = h.P.EtheoSlot(ClickedSlot).MPDFileName;
+end
+
+% hkl/d-Tabelle an den nun aktiven Slot anpassen: zeigt dessen zuletzt
+% angezeigte Peakliste, oder ist leer, wenn der Slot noch nie angezeigt
+% bzw. zuletzt ausgeblendet wurde.
+if isfield(h.P.EtheoSlot(ClickedSlot),'TableData') && ~isempty(h.P.EtheoSlot(ClickedSlot).TableData)
+    set(h.tablephasehkl2,'data',h.P.EtheoSlot(ClickedSlot).TableData)
+else
+    set(h.tablephasehkl2,'data',zeros(10,5))
+end
 
 guidata(hObj, h);
 
@@ -27416,6 +30983,11 @@ end
 
 % Read selected element for which the fluorescence lines should be plotted.
 Element = h.P.PopupLoadElement;
+% Aktiven Slot (1-4) merken, damit das Element spaeter beim Umschalten
+% der Slot-Checkbox wiederhergestellt werden kann.
+FluorSlot = h.ActiveFluorSlot;
+h.P.FluorSlot(FluorSlot).Element = Element;
+h.P.FluorSlot(FluorSlot).PopupValue = get(h.popupmenudataFluorescence,'Value');
 % Load fluorescence data.
 FluorElements = h.FluorCellArray;
 % Find index of the selected element.
@@ -27439,7 +31011,14 @@ EMax = h.P.Material.EnergyMax;
 % Save fluorescence lines into temporary vector.
 k_tmp = [Ka1 Ka2 Kb1 La1 La2 Lb1 Lb2 Lg1];
 h.FluorPos = k_tmp;
-% Check if E(k_tmp) < EMax and save into array.
+% Check if E(k_tmp) < EMax and save into array. k_tmp1 wird zuerst mit
+% NaN vorbelegt, damit eine ausserhalb EMax liegende Linie auch wirklich
+% als NaN (= nicht sichtbar) im Array landet -- ohne diese Vorbelegung
+% blieb hier bei einem vorherigen Aufruf gesetzter oder implizit
+% nullgefuellter Speicher stehen, wodurch die erste ausgeschlossene Linie
+% faelschlich als "erste sichtbare Linie" erkannt wurde (das Label landete
+% dann z.B. bei Energie 0 statt auf der tatsaechlich sichtbaren Linie).
+k_tmp1 = nan(8,3);
 for k = 1:8
     if k_tmp(k) < EMax
         k_tmp1(k,:) = [k_tmp(k) k_tmp(k) nan];
@@ -27480,9 +31059,32 @@ else
 end
 
 % Set plot data for additional theoretical line positions
-set(h.plotFluorAdd1,'xdata',k_tmp2)
-set(h.plotFluorAdd1,'ydata',y_tmp)
-set(h.plotFluorAdd1,'visible','on')
+FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+hFluorLine = FluorPlotHandles{FluorSlot};
+set(hFluorLine,'xdata',k_tmp2)
+set(hFluorLine,'ydata',y_tmp)
+set(hFluorLine,'visible','on')
+
+% Elementname mittig auf der ersten sichtbaren Linie (i.d.R. Ka1)
+% platzieren, damit sich die Linien der einzelnen Slots unterscheiden
+% lassen. Jede Linie besteht aus dem Punktepaar (0, Hoehe) am selben
+% x-Wert -- daher beide Nachbarwerte pruefen, um die tatsaechliche Hoehe
+% (nicht den Fusspunkt bei 0) zu finden.
+FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+hFluorLabel = FluorLabelHandles{FluorSlot};
+% Nur eine Linie, die auch tatsaechlich im aktuell sichtbaren
+% Energiebereich liegt, fuer die Beschriftung verwenden -- sonst haette
+% das Label ggf. eine Linie ausserhalb des aktuellen Anzeigebereichs
+% gewaehlt.
+InViewFluorInit = k_tmp2 >= h.axesplotRawData.XLim(1) & k_tmp2 <= h.axesplotRawData.XLim(2);
+IdxFirstVisible = find(~isnan(k_tmp2) & InViewFluorInit,1,'first');
+if ~isempty(IdxFirstVisible)
+    IdxNeighbor = min(IdxFirstVisible+1,length(y_tmp));
+    LineHeight = max(y_tmp(IdxFirstVisible), y_tmp(IdxNeighbor));
+    set(hFluorLabel,'Position',[k_tmp2(IdxFirstVisible) LineHeight/2 0],'String',Element,'Visible','on')
+else
+    set(hFluorLabel,'Visible','off')
+end
 
 guidata(hObj, h);
 
@@ -27491,7 +31093,10 @@ function buttonhideFluorescence(hObj,~)
 h = guidata(hObj);
 
 % Set plot data for additional theoretical line positions
-set(h.plotFluorAdd1,'visible','off')
+FluorPlotHandles = {h.plotFluorAdd1, h.plotFluorAdd2, h.plotFluorAdd3, h.plotFluorAdd4};
+set(FluorPlotHandles{h.ActiveFluorSlot},'visible','off')
+FluorLabelHandles = {h.textFluorLabel1, h.textFluorLabel2, h.textFluorLabel3, h.textFluorLabel4};
+set(FluorLabelHandles{h.ActiveFluorSlot},'visible','off')
 
 guidata(hObj, h);
 
@@ -27505,6 +31110,37 @@ h.P.PopupLoadElement = str{val};
 
 guidata(hObj,h);
 
+function selectFluorSlot(hObj,~)
+% Callback fuer die Slot-Auswahl-Checkboxen (1-4) bei "Show fluorescence
+% lines". Genau ein Slot ist immer aktiv (radiobutton-artig); beim
+% Umschalten wird das Element-Dropdown mit dem zuletzt fuer diesen Slot
+% verwendeten Element wiederhergestellt.
+h = guidata(hObj);
+
+FluorCheckboxes = {h.checkboxFluorSlot1, h.checkboxFluorSlot2, h.checkboxFluorSlot3, h.checkboxFluorSlot4};
+ClickedSlot = find(cellfun(@(c) isequal(c,hObj), FluorCheckboxes));
+
+if get(hObj,'Value') == 0
+    % Ein Slot muss immer aktiv bleiben.
+    set(hObj,'Value',1);
+    guidata(hObj, h);
+    return
+end
+
+for k = 1:4
+    if k ~= ClickedSlot
+        set(FluorCheckboxes{k},'Value',0);
+    end
+end
+h.ActiveFluorSlot = ClickedSlot;
+
+if ~isempty(h.P.FluorSlot(ClickedSlot).Element)
+    set(h.popupmenudataFluorescence,'Value',h.P.FluorSlot(ClickedSlot).PopupValue)
+    h.P.PopupLoadElement = h.P.FluorSlot(ClickedSlot).Element;
+end
+
+guidata(hObj, h);
+
 % Callbacks for twotheta and energy calibration
 function startcalib(hObj,~)
 % Callback for starting calibration
@@ -27513,14 +31149,14 @@ h = guidata(hObj);
 latticeparam = 10*h.Measurement(1).Sample.Materials.LatticeParameter;
 % Set lattice parameter to edit field
 set(h.texteditfieldcalibangEpos1,'String',num2str(latticeparam));
-% Get hkl, hkl² and EPos values
+% Get hkl, hklï¿½ and EPos values
 hklphasedata = get(h.tablephasehkl,'data');
 
 hklselecttable = get(h.SelectPeaktable,'data');
 % assignin('base','hklphasedata',hklphasedata)
 % assignin('base','hidxSelectPeaktable',h.idxSelectPeaktable)
 
-% % Find scan number of psi = 0°
+% % Find scan number of psi = 0ï¿½
 % for k = 1:length(h.Measurement)
 %     psi(k) = h.Measurement(k).SCSAngles.psi;
 % end
@@ -27569,10 +31205,10 @@ else
     hklphasedata = hklphasedata(h.FitPeaksLogical(:,1),:);
     
 %     assignin('base','hklphasedata',hklphasedata)
-    % Hier wird neu berechnet, welche peaks tatsächlich für die
+    % Hier wird neu berechnet, welche peaks tatsï¿½chlich fï¿½r die
     % Kalibrierung benutzt werden. Muss noch ausgiebig getestet werden.
-    % Probleme gibt es hier eigentlich nur, wenn Dummy Peaks in der Nähe
-    % der tatsächlichen hkl-Reflexe liegen und gefittet werden. So kann es
+    % Probleme gibt es hier eigentlich nur, wenn Dummy Peaks in der Nï¿½he
+    % der tatsï¿½chlichen hkl-Reflexe liegen und gefittet werden. So kann es
     % dazu kommen, dass die hkl Werte falschen Energielagen zugeordnet
     % werden und dann stimmt die Kalibrierung nicht mehr.
     a = cell2mat(hklselecttable(:,1:4));
@@ -27917,12 +31553,17 @@ elseif chkboxcorrEtheo == 1
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
 %             X1Limit = h.TPeaksDet1.T.X1(a,:);
-            X3Limit = h.TPeaksDet1.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-            Y3Limit = h.TPeaksDet1.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+            % Logische statt positionaler Indizierung, damit auch ein
+            % Energiebereich mit Untergrenze (nicht nur EMax) korrekt
+            % beruecksichtigt wird (a muss kein Praefix ab Index 1 sein).
+            aX = repelem(a,3); aX(end) = [];
+            X3Limit = h.TPeaksDet1.T.X3(aX,:);
+            Y3Limit = h.TPeaksDet1.T.Y3(aX,:);
         elseif strcmp(h.Detsel,'Detector 2')
 %             X1Limit = h.TPeaksDet2.T.X1(a,:);
-            X3Limit = h.TPeaksDet2.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-            Y3Limit = h.TPeaksDet2.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+            aX = repelem(a,3); aX(end) = [];
+            X3Limit = h.TPeaksDet2.T.X3(aX,:);
+            Y3Limit = h.TPeaksDet2.T.Y3(aX,:);
         end
         set(h.plotEtheo,'xdata',X3Limit(:,1))
         set(h.plotEtheo,'ydata',Y3Limit(:,1))
@@ -27930,8 +31571,9 @@ elseif chkboxcorrEtheo == 1
         set(h.plotEtheo,'xdata',[X3Limitka1(:,1); nan; X3Limitka2(:,1)])
         set(h.plotEtheo,'ydata',[Y3Limitka1(:,1).*(max(h.DataTmp{1}(:,2))/max(Y3Limitka1(:,1))); nan; 0.5.*(Y3Limitka2(:,1).*(max(h.DataTmp{1}(:,2))/max(Y3Limitka2(:,1))))])
     else
-        X3Limit = h.TPeaks.T.X3((1:(3*find(a, 1, 'last')-1)),:);
-        Y3Limit = h.TPeaks.T.Y3((1:(3*find(a, 1, 'last')-1)),:);
+        aX = repelem(a,3); aX(end) = [];
+        X3Limit = h.TPeaks.T.X3(aX,:);
+        Y3Limit = h.TPeaks.T.Y3(aX,:);
         set(h.plotEtheo,'xdata',X3Limit(:,1))
         set(h.plotEtheo,'ydata',Y3Limit(:,1))
     end
@@ -27990,9 +31632,9 @@ a1 = str2double(get(h.texteditfieldpwparam2,'string'));
 a2 = str2double(get(h.texteditfieldpwparam3,'string'));
 a3 = str2double(get(h.texteditfieldpwparam4,'string'));
 a4 = str2double(get(h.texteditfieldpwparam5,'string'));
-
-% a0 = 0;
-% a1 = -0.02133;
+% 
+% a0 = 0.0018;
+% a1 = 0.01678;
 % a2 = 0;
 % a3 = 0;
 % a4 = 0;
@@ -28123,6 +31765,17 @@ if value == 1
     set(h.plotEtheo,'visible','on')
 else
     set(h.plotEtheo,'visible','off')
+end
+% hkl-Beschriftungen der theoretischen Peaklagen (h.EtheoMainLabelHandles,
+% siehe PrepareFitPeaksPlot/CreatDiffGUI) zusammen mit den Linien selbst
+% ein-/ausblenden.
+if isfield(h,'EtheoMainLabelHandles') && ~isempty(h.EtheoMainLabelHandles)
+    ValidMainLabels = h.EtheoMainLabelHandles(isgraphics(h.EtheoMainLabelHandles));
+    if value == 1
+        set(ValidMainLabels,'Visible','on')
+    else
+        set(ValidMainLabels,'Visible','off')
+    end
 end
 
 guidata(hObj, h);
@@ -28270,6 +31923,7 @@ else
 end
 
 guidata(hObj, h);
+UpdateDspacingHighlight(hObj);
 
 function ClickPhi90Callback(hObj, eventdata)
 h = guidata(hObj);
@@ -28289,6 +31943,7 @@ else
 end
 
 guidata(hObj, h);
+UpdateDspacingHighlight(hObj);
 
 function ClickPhi180Callback(hObj, eventdata)
 h = guidata(hObj);
@@ -28308,6 +31963,7 @@ else
 end
 
 guidata(hObj, h);
+UpdateDspacingHighlight(hObj);
 
 function ClickPhi270Callback(hObj, eventdata)
 h = guidata(hObj);
@@ -28327,6 +31983,7 @@ else
 end
 
 guidata(hObj, h);
+UpdateDspacingHighlight(hObj);
 
 % Callback for changing Y-lim of stress plot
 function modstressYlim(hObj, callbackdata, handles)
@@ -28685,6 +32342,13 @@ end
 % assignin('base','h1dataStressPlotDatatmpsorted',h1data.sin2psi.StressPlotDatatmpsorted)
 StressPlotDatatmpsorted_tmp = h1data.sin2psi.StressPlotDatatmpsorted(handles1.idxhklPeaktable,:);
 % assignin('base','StressPlotDatatmpsorted_tmp',StressPlotDatatmpsorted_tmp)
+% ColorsUsedSorted genauso filtern wie StressPlotDatatmpsorted_tmp: sonst
+% wird unten h1data.ColorsUsedSorted{k} mit dem Index der GEFILTERTEN
+% Liste verwendet, obwohl ColorsUsedSorted selbst noch die VOLLE,
+% ungefilterte Farbliste ist -- dadurch ruecken beim Abwaehlen eines
+% Reflexes alle nachfolgenden Farben eine Position auf, statt dass jeder
+% Reflex seine eigene Farbe behaelt.
+ColorsUsedSorted_tmp = h1data.ColorsUsedSorted(handles1.idxhklPeaktable);
 % Save index variable of selected hkl peaks
 h1data.idxhklPeaktable = handles1.idxhklPeaktable;
 
@@ -28717,25 +32381,25 @@ valueSliderStress = get(h1data.SliderPlotStressData, 'Value');
 % Set stress data for stress plot
 if length(ia{1}) == 1
     for k = 1:size(StressPlotDatatmpsorted_tmp,1)
-        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
+        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
     end
 elseif length(ia{1}) == 2
     for k = 1:size(StressPlotDatatmpsorted_tmp,1)
-        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
+        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
     end
 elseif length(ia{1}) == 3
     for k = 1:size(StressPlotDatatmpsorted_tmp,1)
-        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(3).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,6),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
+        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(3).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,6),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
     end
 elseif length(ia{1}) == 4
     for k = 1:size(StressPlotDatatmpsorted_tmp,1)
-        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(3).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,6),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
-        h1data.ScatterData(4).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,8),200,'Marker','s','MarkerFaceColor',h1data.ColorsUsedSorted{k},'MarkerEdgeColor',h1data.ColorsUsedSorted{k},'LineWidth',1.5);
+        h1data.ScatterData(1).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,2),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(2).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,4),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(3).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,6),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
+        h1data.ScatterData(4).StressesPhi(:,k) = scatter(h1data.axesplotstressdata, StressPlotDatatmpsorted_tmp(k,1),StressPlotDatatmpsorted_tmp(k,8),200,'Marker','s','MarkerFaceColor',ColorsUsedSorted_tmp{k},'MarkerEdgeColor',ColorsUsedSorted_tmp{k},'LineWidth',1.5);
     end
 end
 
@@ -28754,20 +32418,33 @@ end
 
 % Create label for stress plot
 Peaks = h1data.PeaksforLabel(handles1.idxhklPeaktable,:);
-% Read hkl values from array
+% Read hkl values from array. hkllabel wird -- anders als vorher -- vorab
+% mit fester Breite angelegt und bei Bedarf mit einem Leerzeichen
+% aufgefuellt: mat2str(...) liefert bei zweistelligem l (z.B. "1 0 13")
+% einen laengeren String als bei einstelligem l (z.B. "1 0 1"). Ohne
+% feste Breite/Padding fuehrte die direkte Zuweisung in eine char-Matrix
+% bei gemischten l-Laengen zu "indices ... not compatible" Fehlern.
+hkl_l_length = zeros(1,size(Peaks,1));
 for ii = 1:size(Peaks,1)
-	hkllabeltmp(ii,:) = mat2str(Peaks(ii,(1:3)));
+    hkl_l_length(ii) = length(num2str(Peaks(ii,3)));
 end
-% Remove '[' and ']' from character array
-for ii = 1:size(hkllabeltmp,1)
-    hkllabeltmp1(ii,:) = regexprep(hkllabeltmp(ii,:),'[','');
+if any(hkl_l_length > 1)
+    hkllabel = char(zeros(size(Peaks,1),6));
+else
+    hkllabel = char(zeros(size(Peaks,1),5));
 end
-
-for ii = 1:size(hkllabeltmp,1)
-    hkllabeltmp2(ii,:) = regexprep(hkllabeltmp1(ii,:),']','');
+for ii = 1:size(Peaks,1)
+    hkllabeltmp = mat2str(Peaks(ii,(1:3)));
+    % Remove '[' and ']' from character array
+    hkllabeltmp = regexprep(hkllabeltmp,'[','');
+    hkllabeltmp = regexprep(hkllabeltmp,']','');
+    % Bei zweistelligem l ist die Zeile bereits maximal breit; bei
+    % einstelligem l (kuerzerer String) mit einem Leerzeichen auffuellen.
+    if any(hkl_l_length > 1) && length(hkllabeltmp) == 5
+        hkllabeltmp = [hkllabeltmp ' '];
+    end
+    hkllabel(ii,:) = hkllabeltmp;
 end
-% Final output with hkl values
-hkllabel = hkllabeltmp2;
 h1data.LabelForPlot = hkllabel;
 % assignin('base','hkllabelplot',hkllabel)
 
@@ -29597,7 +33274,7 @@ else
     h.UPlot.sin2psi = sin2psitmp;
 end
 
-% Choose sin²psi range
+% Choose sinï¿½psi range
 minsin2psi = str2double(get(h.editsin2psirange1,'String'));
 maxsin2psi = str2double(get(h.editsin2psirange2,'String'));
 
@@ -30422,7 +34099,9 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
     fig.PaperPositionMode = 'auto';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.0725 1.025];
+    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+    % (Dateiname/Material + Leerzeichen-Puffer) nicht oben herausragt.
+    ax.OuterPosition = [0 0 1.0725 0.98];
     ax.TickDir = 'in';
     ax.Box = 'on';
     ax.XGrid = 'on';
@@ -30497,7 +34176,7 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
         legstressdata.Location = 'SouthEast';
     end
     % Set figure title
-    title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+    title({['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '},'Fontsize', 11)
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save data to file
@@ -30600,7 +34279,9 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
     fig.PaperPositionMode = 'auto';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.0725 1.025];
+    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+    % (Dateiname/Material + Leerzeichen-Puffer) nicht oben herausragt.
+    ax.OuterPosition = [0 0 1.0725 0.98];
     ax.TickDir = 'in';
     ax.Box = 'on';
     ax.XGrid = 'on';
@@ -30660,7 +34341,7 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty
         legstressdata.Location = 'SouthEast';
     end
 
-    title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+    title({['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '},'Fontsize', 11)
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
@@ -30749,7 +34430,9 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempt
     fig.PaperPositionMode = 'auto';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.0725 1.025];
+    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+    % (Dateiname/Material + Leerzeichen-Puffer) nicht oben herausragt.
+    ax.OuterPosition = [0 0 1.0725 0.98];
     ax.TickDir = 'in';
     ax.Box = 'on';
     ax.XGrid = 'on';
@@ -30811,7 +34494,7 @@ if ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempt
         legstressdata.Location = 'SouthEast';
     end
 
-    title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+    title({['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '},'Fontsize', 11)
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
@@ -30900,7 +34583,9 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempt
     fig.PaperPositionMode = 'auto';
     fig.PaperPosition = [0 0 18 12];
     ax = gca;
-    ax.OuterPosition = [0 0 1.0725 1.025];
+    % Hoehe etwas reduziert (1.025 -> 0.98), damit der zweizeilige Titel
+    % (Dateiname/Material + Leerzeichen-Puffer) nicht oben herausragt.
+    ax.OuterPosition = [0 0 1.0725 0.98];
     ax.TickDir = 'in';
     ax.Box = 'on';
     ax.XGrid = 'on';
@@ -30962,7 +34647,7 @@ if isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempt
         legstressdata.Location = 'SouthEast';
     end
 
-    title(['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_',' '), ' ',h.Sample.Materials.Name],'Fontsize', 11)
+    title({['UPlot ',strrep(strrep(h.Measurement(1).MeasurementSeries,' ',''),'_','\_'), ' ',strrep(h.Sample.Materials.Name,'_','\_')], ' '},'Fontsize', 11)
     if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         if strcmp(h.Detsel,'Detector 1')
             % Save taudata to file
@@ -31083,9 +34768,9 @@ else
     
     % Plot Results
     if size(indkeeppeaks,1) <= 9
-        figure('Name','d-sin²psi distributions','NumberTitle','off','Menubar','none','Toolbar','none','Units','normalized','Position', [0.25 0.25 0.5 0.6]);
+        figure('Name','d-sinï¿½psi distributions','NumberTitle','off','Menubar','none','Toolbar','none','Units','normalized','Position', [0.25 0.25 0.5 0.6]);
     else
-        figure('Name','d-sin²psi distributions','NumberTitle','off','Menubar','none','Toolbar','none','Units','normalized','Position', [0.1 0.1 0.8 0.8]);
+        figure('Name','d-sinï¿½psi distributions','NumberTitle','off','Menubar','none','Toolbar','none','Units','normalized','Position', [0.1 0.1 0.8 0.8]);
     end
 
     for k = 1:size(indkeeppeaks,1)
@@ -31488,7 +35173,7 @@ else
     % Get parameters for the SpecFileConversionGUI script
     h.P.SpecFileName = get(h.LoadMeasDataQA,'string');
     % Diffraktometer aus Ordner einlesen und hier an SPECFileConversionGUI
-    % übergeben
+    % ï¿½bergeben
     h.P.DiffractometerType = Diffsel;
     h.P.ScanMode = scanmode;
     calib = get(h.popupmenuDTCorrQA,'string');
@@ -31516,6 +35201,10 @@ else
     elseif strcmp(h.Diffsel,'ETA3000')
         for k = 1:length(meas)
             meas(k).Sample.Materials.EnergyMax = 165;
+        end
+    elseif strcmp(h.Diffsel,'P61A')
+        for k = 1:length(meas)
+            meas(k).Sample.Materials.EnergyMax = 200;
         end
     end
     % Set output to variables
@@ -31995,7 +35684,7 @@ if strcmp(h.Diffsel,'LEDDI_KETEK_TWODET')
         h.Measurement = Measurement;
     end
 else
-    [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX,h.P.Calibration);
+    [Measurement,DataTmp,~] = BackgroundReductionGUI(h.Measurement,h.DataTmp,h.PeakRegionsX,h.P.Calibration,h.Diffsel);
     h.DataTmp = DataTmp;
     h.Measurement = Measurement;
 end
@@ -32875,7 +36564,7 @@ ax.YLabel.String = 'Intensity [cts]';
 ax.YLabel.FontSize = 16;
 
 if strcmp(h.Diffsel,'ETA')
-    ax.XLabel.String = '2\theta [°]';
+    ax.XLabel.String = '2\theta [ï¿½]';
 else
     ax.XLabel.String = 'Energy [keV]';
 end
@@ -33703,7 +37392,7 @@ h.plotPDFDataEnergy = plot(h.axesplotPDFDataEnergy,tx2(:),ty2(:));
 h.axesplotPDFDataEnergy.XLim = [0,100];
 h.axesplotPDFDataEnergy.YLim = [0,110];
 
-xlabel(h.axesplotPDFData,'2\theta [°]');
+xlabel(h.axesplotPDFData,'2\theta [ï¿½]');
 ylabel(h.axesplotPDFData,'rel. Intensity');
 xlabel(h.axesplotPDFDataEnergy,'Energy [keV]');
 ylabel(h.axesplotPDFDataEnergy,'rel. Intensity');
@@ -33784,7 +37473,7 @@ h.plotPDFData = plot(h.axesplotPDFData,tx1(:),ty1(:));
 h.axesplotPDFData.XLim = [0,160];
 h.axesplotPDFData.YLim = [0,110];
 
-xlabel(h.axesplotPDFData,'2\theta [°]');
+xlabel(h.axesplotPDFData,'2\theta [ï¿½]');
 ylabel(h.axesplotPDFData,'rel. Intensity');
 
 a = struct2table(h.DataFiltered1);
@@ -35238,13 +38927,13 @@ guidata(hObj, h);
 % h.rc.setPhaseCnt(numberOfPhases);
 % 
 % % Set the X and Y data in the rietveld container
-% % Datenübergabe von Plot Fenster
+% % Datenï¿½bergabe von Plot Fenster
 % h.rc.setDataX(dataX);
 % h.rc.setDataY(dataY);
 %         
 % % Define subfunction used to calculate the spectrum
 % % Define the function used to calculate the energy positions
-% % --> Werte aus PopUps übergeben
+% % --> Werte aus PopUps ï¿½bergeben
 % tmpEPos = rietveld.func.spec.(h.PopUpEPos)();
 % % Define the function used to fit the background
 % tmpBkg = rietveld.func.spec.bkg.(h.PopUpBKG)();
@@ -36091,13 +39780,13 @@ guidata(hObj, h);
 % h.rc.setPhaseCnt(numberOfPhases);
 % 
 % % Set the X and Y data in the rietveld container
-% % Datenübergabe von Plot Fenster
+% % Datenï¿½bergabe von Plot Fenster
 % h.rc.setDataX(dataX);
 % h.rc.setDataY(dataY);
 % 
 % % Define subfunction used to calculate the spectrum
 % % Define the function used to calculate the energy positions
-% % --> Werte aus PopUps übergeben
+% % --> Werte aus PopUps ï¿½bergeben
 % tmpEPos = rietveld.func.spec.(h.PopUpEPos)();
 % % Define the function used to fit the background
 % tmpBkg = rietveld.func.spec.bkg.(h.PopUpBKG)();

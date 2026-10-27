@@ -118,6 +118,14 @@ end
 weights(~validW) = medW;
 weights = max(weights, 1e-12);   % Sicherheitsclamp
 
+% 'weights' enthaelt bis hierhin die FEHLER (Standardabweichungen von eps).
+% lscov und fitlm erwarten Gewichte ~ 1/Varianz (nicht den Fehler selbst):
+% korrigiert am 16.10.2026 (Sicherung: calcStress_Backup_16102026.m).
+% Normierung auf den Median aendert das Ergebnis nicht, nur die Zahlenwerte.
+errW    = weights;                 % Fehler fuer Fehlerbalken in der GUI
+weights = 1 ./ errW.^2;
+weights = weights ./ median(weights);
+
 % --- Gewichteter Fit (Stressfaktormethode) ---
 try
     [result.sigma, result.sigmaerr, result.mse, ~] = ...
@@ -193,7 +201,7 @@ result.epsgammaergfunc_disc = epsgamma_disc;
 result.epssin2psifitdaten = [ ...
     sind(psi).^2, ...
     result.epsfitdata(:,2), ...
-    weights ...
+    errW ...      % Spalte 3 = Fehler (wird in der GUI als Fehlerbalken geplottet)
 ];
 
 try
@@ -204,7 +212,7 @@ try
     result.sin2psifit = fitlm( ...
         result.epssin2psifitdaten(:,1), ...
         result.epssin2psifitdaten(:,2), ...
-        'Weights', result.epssin2psifitdaten(:,3));
+        'Weights', weights);
 
     warning('on', 'stats:LinearModel:RankDefDesignMat');
     warning('on', 'MATLAB:rankDeficientMatrix');

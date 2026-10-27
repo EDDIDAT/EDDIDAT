@@ -1,0 +1,62 @@
+// ============================================================================
+// Sin2PsiZScan.ogs -- Version 2 (defensiv, mit Kontrollpunkten)
+// LabTalk-Skript fuer OriginLab: sin^2(psi)-Spannungsauswertung pro
+// Z-Position, mit den gleichen Formeln wie Sin2PsiZScanEvaluation.m
+// (Bragg-Gleichung, Steigung d vs. sin^2(psi), d0 ueber die psi*-Methode,
+// sigma = Steigung / d0 / halbS2).
+//
+// Diese Version meldet nach jedem Abschnitt per Popup, wie weit die
+// Ausfuehrung gekommen ist -- falls ein Fehler auftritt, bitte melden,
+// WELCHE Meldung zuletzt erschienen ist (das zeigt exakt, wo es
+// hakt), dann kann ich gezielt reparieren.
+//
+// Ausfuehrung: Datei -> Oeffnen (im Origin-Hauptfenster, NICHT im Code
+// Builder), diese .ogs-Datei auswaehlen.
+// ============================================================================
+
+nRows = 41;
+type -b "Schritt 1: Start. nRows = %(nRows)";
+
+// --- Neues Workbook anlegen ---
+newbook name:="Sin2PsiZScan" sheet:=1;
+type -b "Schritt 2: Workbook erstellt.";
+
+// --- Spalten hinzufuegen (Start: 2 Spalten vorhanden, 22 weitere fuer total 24) ---
+loop(ii, 1, 22)
+{
+    wks.addCol();
+}
+type -b "Schritt 3: Spalten hinzugefuegt. Aktuelle Spaltenzahl: %(wks.ncols)";
+
+// --- Kurznamen der Spalten (fuer Formelbezuege) ---
+wks.col1.name$ = "Z";
+wks.col2.name$ = "Psi1";
+wks.col3.name$ = "Psi2";
+wks.col4.name$ = "TTheta";
+wks.col5.name$ = "E1P1";
+wks.col6.name$ = "E2P1";
+wks.col7.name$ = "S1P1";
+wks.col8.name$ = "HS2P1";
+wks.col9.name$ = "E1P2";
+wks.col10.name$ = "E2P2";
+wks.col11.name$ = "S1P2";
+wks.col12.name$ = "HS2P2";
+wks.col13.name$ = "d1P1";
+wks.col14.name$ = "d2P1";
+wks.col15.name$ = "SlopeP1";
+wks.col16.name$ = "PsiStarP1";
+wks.col17.name$ = "D0P1";
+wks.col18.name$ = "SigmaP1";
+wks.col19.name$ = "d1P2";
+wks.col20.name$ = "d2P2";
+wks.col21.name$ = "SlopeP2";
+wks.col22.name$ = "PsiStarP2";
+wks.col23.name$ = "D0P2";
+wks.col24.name$ = "SigmaP2";
+type -b "Schritt 4: Spaltennamen gesetzt.";
+
+// --- Zeilen fuer alle Z-Positionen anlegen ---
+wks.nrows = nRows;
+type -b "Schritt 5: Zeilen angelegt. Aktuelle Zeilenzahl: %(wks.nrows)";
+
+type -b "Schritt 6 (fertig, Eingabe noetig): Bitte jetzt Spalten 1-12 (Z, Psi1, Psi2, TTheta, E1P1, E2P1, S1P1, HS2P1, E1P2, E2P2, S1P2, HS2P2) mit den eigenen Werten fuellen. Danach die Datei 'Sin2PsiZScanCompute.ogs' ausfuehren, um Spalten 13-24 zu berechnen.";

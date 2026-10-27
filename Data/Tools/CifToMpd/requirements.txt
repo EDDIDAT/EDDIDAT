@@ -1,0 +1,4 @@
+gemmi
+numpy
+matplotlib
+pyinstaller

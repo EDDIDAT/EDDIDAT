@@ -55,7 +55,7 @@ end
 % Get index from peak to be kept during further analysis
 indexPeakToKeep = cell(1);
 for k = 1:length(C)
-    if h.P.PopupValueFitFunc == 2 %PV-Func
+    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 6 || h.P.PopupValueFitFunc == 7 %PV-Func %AsymPV %Split-PV
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},PeakCountColumn);
     elseif h.P.PopupValueFitFunc == 3 %TCH-Func
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},PeakCountColumn);
@@ -190,7 +190,7 @@ h.idxphi90 = find(PhiWinkel{1}==90);
 h.idxphi180 = find(PhiWinkel{1}==180);
 h.idxphi270 = find(PhiWinkel{1}==270);
 
-% If Eta or sin²Eta was choosen, check whether eta was changed during
+% If Eta or sinï¿½Eta was choosen, check whether eta was changed during
 % measurement
 if strcmp(XDataStr,'Eta') || strcmp(XDataStr,['sin',char(178)','Eta'])
     % Check if eta was changed during the measurement
@@ -582,7 +582,7 @@ if ~isempty(idxphi0)
         assignin('base','ParamsToFitXData',ParamsToFit(idxphi0).Psi_Winkel)
         func = @(x) sind(x).^2;
         XDataphi0 = cellfun(func,ParamsToFit(idxphi0).Psi_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\psi')
+        xlabel(h.(Axes),'sin^2\psi')
         h.(Axes).XLim = [0 1];
         h.(Axes).XTick = (0:0.1:1);
     elseif strcmp(XDataStr,'Eta')
@@ -594,7 +594,7 @@ if ~isempty(idxphi0)
     elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi0 = cellfun(func,ParamsToFit(idxphi0).Eta_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\eta')
+        xlabel(h.(Axes),'sin^2\eta')
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
@@ -602,7 +602,7 @@ if ~isempty(idxphi0)
         XDataphi0 = tau(idxphi0).temptau;
         taumax = cellfun(@max, XDataphi0);
         XLimtau = ceil(round(taumax(valueSlider),1)/5)*5;
-        xlabel(h.(Axes),'tau [µm]')
+        xlabel(h.(Axes),'tau [\mu m]')
         h.(Axes).XLim = [0 XLimtau];
         h.(Axes).XTick = (0:0.5:XLimtau);
     elseif strcmp(XDataStr,'Energy')
@@ -629,7 +629,7 @@ if ~isempty(idxphi0)
             return
         else
             h.(Axes).XLim = [0 round(max(Tempmax))];
-            xlabel(h.(Axes),'Temperature [°C]')
+            xlabel(h.(Axes),'Temperature [^{\circ}C]')
         end
     elseif strcmp(XDataStr,'Scan number')
         XDataphi0 = ParamsToFit(idxphi0).Scans;
@@ -652,7 +652,7 @@ if ~isempty(idxphi90)
     elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi90 = cellfun(func,ParamsToFit(idxphi90).Psi_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\psi')
+        xlabel(h.(Axes),'sin^2\psi')
         h.(Axes).XLim = [0 1];
         h.(Axes).XTick = (0:0.1:1);
     elseif strcmp(XDataStr,'Eta')
@@ -664,7 +664,7 @@ if ~isempty(idxphi90)
     elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi90 = cellfun(func,ParamsToFit(idxphi90).Eta_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\eta')
+        xlabel(h.(Axes),'sin^2\eta')
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
@@ -672,7 +672,7 @@ if ~isempty(idxphi90)
         XDataphi90 = tau(idxphi90).temptau;
         taumax = cellfun(@max, XDataphi90);
         XLimtau = ceil(round(taumax(valueSlider),1)/5)*5;
-        xlabel(h.(Axes),'tau [µm]')
+        xlabel(h.(Axes),'tau [\mu m]')
         h.(Axes).XLim = [0 XLimtau];
         h.(Axes).XTick = (0:0.5:XLimtau);
     elseif strcmp(XDataStr,'Energy')
@@ -688,7 +688,7 @@ if ~isempty(idxphi90)
             msgbox('Temperature was not changed during the measurement.','Warning Message','warn')
         else
             h.(Axes).XLim = [0 round(max(Tempmax))];
-            xlabel(h.(Axes),'Temperature [°C]')
+            xlabel(h.(Axes),'Temperature [^{\circ}C]')
         end
     elseif strcmp(XDataStr,'Scan number')
         XDataphi90 =  ParamsToFit(idxphi90).Scans;
@@ -711,7 +711,7 @@ if ~isempty(idxphi180)
     elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi180 = cellfun(func,ParamsToFit(idxphi180).Psi_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\psi')
+        xlabel(h.(Axes),'sin^2\psi')
         h.(Axes).XLim = [0 1];
         h.(Axes).XTick = (0:0.1:1);
     elseif strcmp(XDataStr,'Eta')
@@ -723,7 +723,7 @@ if ~isempty(idxphi180)
     elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi180 = cellfun(func,ParamsToFit(idxphi180).Eta_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\eta')
+        xlabel(h.(Axes),'sin^2\eta')
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
@@ -731,7 +731,7 @@ if ~isempty(idxphi180)
         XDataphi180 = tau(idxphi180).temptau;
         taumax = cellfun(@max, XDataphi180);
         XLimtau = ceil(round(taumax(valueSlider),1)/5)*5;
-        xlabel(h.(Axes),'tau [µm]')
+        xlabel(h.(Axes),'tau [\mu m]')
         h.(Axes).XLim = [0 XLimtau];
         h.(Axes).XTick = (0:0.5:XLimtau);
     elseif strcmp(XDataStr,'Energy')
@@ -747,7 +747,7 @@ if ~isempty(idxphi180)
             msgbox('Temperature was not changed during the measurement.','Warning Message','warn')
         else
             h.(Axes).XLim = [0 round(max(Tempmax))];
-            xlabel(h.(Axes),'Temperature [°C]')
+            xlabel(h.(Axes),'Temperature [^{\circ}C]')
         end
     elseif strcmp(XDataStr,'Scan number')
         XDataphi180 = ParamsToFit(idxphi180).Scans;
@@ -770,7 +770,7 @@ if ~isempty(idxphi270)
     elseif strcmp(XDataStr,['sin',char(178)','Psi'])
         func = @(x) sind(x).^2;
         XDataphi270 = cellfun(func,ParamsToFit(idxphi270).Psi_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\psi')
+        xlabel(h.(Axes),'sin^2\psi')
         h.(Axes).XLim = [0 1];
         h.(Axes).XTick = (0:0.1:1);
     elseif strcmp(XDataStr,'Eta')
@@ -782,7 +782,7 @@ if ~isempty(idxphi270)
     elseif strcmp(XDataStr,['sin',char(178)','Eta'])
         func = @(x) sind(x).^2;
         XDataphi270 = cellfun(func,ParamsToFit(idxphi270).Eta_Winkel,'UniformOutput',0);
-        xlabel(h.(Axes),'sin²\eta')
+        xlabel(h.(Axes),'sin^2\eta')
         h.(Axes).XLimMode = 'auto';
         xtickformat(h.(Axes),'auto')
         xticks(h.(Axes),'auto')
@@ -790,7 +790,7 @@ if ~isempty(idxphi270)
         XDataphi270 = tau(idxphi270).temptau;
         taumax = cellfun(@max, XDataphi270);
         XLimtau = ceil(round(taumax(valueSlider),1)/5)*5;
-        xlabel(h.(Axes),'tau [µm]')
+        xlabel(h.(Axes),'tau [\mu m]')
         h.(Axes).XLim = [0 XLimtau];
         h.(Axes).XTick = (0:0.5:XLimtau);
     elseif strcmp(XDataStr,'Energy')
@@ -806,7 +806,7 @@ if ~isempty(idxphi270)
             msgbox('Temperature was not changed during the measurement.','Warning Message','warn')
         else
             h.(Axes).XLim = [0 round(max(Tempmax))];
-            xlabel(h.(Axes),'Temperature [°C]')
+            xlabel(h.(Axes),'Temperature [^{\circ}C]')
         end
     elseif strcmp(XDataStr,'Scan number')
         XDataphi270 =  ParamsToFit(idxphi270).Scans;
@@ -868,9 +868,9 @@ if strcmp(XDataStr,'Eta') || strcmp(XDataStr,['sin',char(178)','Eta'])
     set(h.(PlotPhi0),{'XData','YData','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
     set(h.(PlotErrPhi0),{'XData','YData','YNegativeDelta','YPositiveDelta','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
     
-    % Plot sin²eta data. First, only zeros are plotted. Later the user can
+    % Plot sinï¿½eta data. First, only zeros are plotted. Later the user can
     % choose which peak information he wants to plot as a function of eta
-    % or sin²eta.
+    % or sinï¿½eta.
     hold(h.(Axes),'on')
     for i = 1:length(h.(eta).psiIndex{valueSlider})
         if strcmp(XDataStr,'Eta')
@@ -929,9 +929,9 @@ if strcmp(XDataStr,'Phi')
     set(h.(PlotPhi0),{'XData','YData','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
     set(h.(PlotErrPhi0),{'XData','YData','YNegativeDelta','YPositiveDelta','Visible'},{zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),zeros(size(XDataphi0{valueSlider},1),1),'off'})
 
-    % Plot sin²phi data. First, only zeros are plotted. Later the user can
+    % Plot sinï¿½phi data. First, only zeros are plotted. Later the user can
     % choose which peak information he wants to plot as a function of phi
-    % or sin²phi.
+    % or sinï¿½phi.
     hold(h.(Axes),'on')
     for i = 1:length(h.(phi).psiIndex{valueSlider})
         h.(phi).phiplot{i} = errorbar(h.(Axes),h.(phi).Tablephi{valueSlider,i},h.(phi).Tabledspacing{valueSlider,i}.*0,h.(phi).Tabledspacingdelta{valueSlider,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i});

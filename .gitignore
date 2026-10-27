@@ -52,3 +52,28 @@ ScienceServe_Proposal_*.docx
 *_backup_*
 *_bkp*
 *_DiskStation_*
+*_backup[0-9]*
+*.bak_*
+
+# Python cache
+__pycache__/
+
+# MATLAB Application Compiler build logs/reports (regenerated on every package)
+includedSupportPackages.txt
+mccExcludedFiles.log
+requiredMCRProducts.txt
+unresolvedSymbols.txt
+
+# Large measurement/result/session data -- not meant for version control
+# (Data/Measurements and Data/Results already only track a .gitkeep placeholder;
+# these additions cover sibling data folders with the same intent)
+Data/GUIData/*
+Data/Measurements/*
+Data/Results/*
+Data/Samples/*
+Data/ULD/*
+peak_compare_multi/
+Workspace_Texturauswertung_*.mat
+
+# Compiled/packaged tool output (PyInstaller dist folders, standalone app packages)
+**/dist/*.exe

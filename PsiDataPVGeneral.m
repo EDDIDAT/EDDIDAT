@@ -13,9 +13,9 @@ function [Psidata] = PsiDataPVGeneral(DiffractionLines,SPECFileCheck)
             Psidata.h(k,l) = cellstr(num2str(0,'%.0f'));
             Psidata.k(k,l) = cellstr(num2str(0,'%.0f'));
             Psidata.l(k,l) = cellstr(num2str(0,'%.0f'));
-            Psidata.SampleStagePos1(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(1),'%.2f'));
-            Psidata.SampleStagePos2(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(2),'%.2f'));
-            Psidata.SampleStagePos3(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(3),'%.2f'));
+            Psidata.SampleStagePos1(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(1),'%.4f'));
+            Psidata.SampleStagePos2(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(2),'%.4f'));
+            Psidata.SampleStagePos3(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).SampleStagePos(3),'%.4f'));
 %             Psidata.RingCurrent(k,l) = cellstr(num2str(DiffractionLines{k,1}(l).RingCurrent,'%.2f'));
             if SPECFileCheck == 1
                 if strcmp(DiffractionLines{k}(l).Measurement.Diffractometer.Name,'ETA3000')

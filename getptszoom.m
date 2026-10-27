@@ -315,7 +315,17 @@ end
 
 % Change Y-axes limits
 % Calculate intensity drop correction function
-IntDrop = p(1) - p(2).*p(3).^x;
+% p is a global variable that is never assigned anywhere in this
+% codebase; guard against it being undefined/too short, and against
+% p(3)^x becoming complex (non-integer x with negative p(3)), which
+% otherwise crashes MouseMove when moving the cursor.
+IntDrop = 0;
+if numel(p) >= 3
+    IntDropTmp = p(1) - p(2).*p(3).^x;
+    if isreal(IntDropTmp)
+        IntDrop = IntDropTmp;
+    end
+end
 % Calculate zoom drop level
 xdata = linspace(GETPTS_AX.XLim(1),GETPTS_AX.XLim(2),6);
 
@@ -431,7 +441,17 @@ if callbackdata.VerticalScrollCount > 0
     
     % Change Y-axes limits
     % Calculate intensity drop correction function
-    IntDrop = p(1) - p(2).*p(3).^x;
+    % p is a global variable that is never assigned anywhere in this
+    % codebase; guard against it being undefined/too short, and against
+    % p(3)^x becoming complex (non-integer x with negative p(3)), which
+    % otherwise crashes MouseMove when moving the cursor.
+    IntDrop = 0;
+    if numel(p) >= 3
+        IntDropTmp = p(1) - p(2).*p(3).^x;
+        if isreal(IntDropTmp)
+            IntDrop = IntDropTmp;
+        end
+    end
     % Calculate zoom drop level
     xdata = linspace(GETPTS_AX.XLim(1),GETPTS_AX.XLim(2),6);
     
@@ -578,7 +598,17 @@ elseif callbackdata.VerticalScrollCount < 0
 
     % Change Y-axes limits
     % Calculate intensity drop correction function
-    IntDrop = p(1) - p(2).*p(3).^x;
+    % p is a global variable that is never assigned anywhere in this
+    % codebase; guard against it being undefined/too short, and against
+    % p(3)^x becoming complex (non-integer x with negative p(3)), which
+    % otherwise crashes MouseMove when moving the cursor.
+    IntDrop = 0;
+    if numel(p) >= 3
+        IntDropTmp = p(1) - p(2).*p(3).^x;
+        if isreal(IntDropTmp)
+            IntDrop = IntDropTmp;
+        end
+    end
     % Calculate zoom drop level
     xdata = linspace(GETPTS_AX.XLim(1),GETPTS_AX.XLim(2),6);
     

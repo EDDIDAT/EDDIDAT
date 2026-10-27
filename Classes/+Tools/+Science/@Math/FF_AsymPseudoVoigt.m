@@ -1,0 +1,25 @@
+% Asymmetrische Pseudo-Voigt-Funktion mit den entsprechenden Vorgabe
+% Parametern. Aus Performance Gr�nden wird an dieser Stelle keine
+% Stringenzpr�fung durchgef�hrt. Die Halbwertsbreite ist nicht mehr
+% konstant, sondern variiert �ber eine Sigmoid-Funktion mit x, sodass ein
+% Asymmetriefaktor (p_5) mitgefittet werden kann. F�r p_5 = 0 reduziert
+% sich die Funktion exakt auf FF_PseudoVoigt (symmetrischer Fall). Alle
+% �bergabeparameter k�nnen entweder skalar oder ein Array sein, wobei
+% die Arrays gleich gro� sein m�ssen. Das Ergebnis ist dann ebenfalls ein
+% solches Array oder skalar.
+% Input: x, double|real /
+%        p_n, Parmeter, double|real|finite
+% Output: y, double|real
+function y = FF_AsymPseudoVoigt(x,p_1,p_2,p_3,p_4,p_5)
+
+% p_1 = Intensitaet
+% p_2 = Peakposition
+% p_3 = Peakbreite (Basisbreite, symmetrischer Fall)
+% p_4 = Anteil Gauss/Lorentz
+% p_5 = Asymmetriefaktor (0 = symmetrisch, >0/<0 = Verbreiterung rechts/links)
+
+%% (* Compute *)
+    w = 2.*p_3 ./ (1 + exp(-p_5.*(x-p_2)));
+    y = p_4 .* Tools.Science.Math.FF_Gauss(x,p_1,p_2,w) + ...
+        (1-p_4) .* Tools.Science.Math.FF_Lorentz(x,p_1,p_2,w);
+end

@@ -1,0 +1,73 @@
+// ============================================================================
+// Sin2PsiZScanCompute.ogs -- Version 3 (sin/asin in Radiant, da LabTalk
+// im Skriptfenster KEINE sind()/asind()-Gradfunktionen kennt -- die
+// gibt es nur in der Worksheet-Formelsprache, nicht hier)
+//
+// Spaltenreihenfolge (wie in Sin2PsiZScan.ogs angelegt):
+//  1=Z 2=Psi1 3=Psi2 4=TTheta 5=E1P1 6=E2P1 7=S1P1 8=HS2P1
+//  9=E1P2 10=E2P2 11=S1P2 12=HS2P2
+//  13=d1P1 14=d2P1 15=SlopeP1 16=PsiStarP1 17=D0P1 18=SigmaP1
+//  19=d1P2 20=d2P2 21=SlopeP2 22=PsiStarP2 23=D0P2 24=SigmaP2
+//
+// Ausfuehrung: Skriptfenster -> Datei(Text) -> Laden, dann Strg+A und
+// Enter, WAEHREND das Workbook "Sin2PsiZScan" aktiv ist.
+// ============================================================================
+
+nRows = 41;
+type -b "Schritt 1: Start Berechnung.";
+
+hc2 = 0.6199;
+deg2rad = pi/180;
+rad2deg = 180/pi;
+
+ii = 1;
+loop(ii, 1, nRows)
+{
+    psi1 = col(2)[ii];
+    psi2 = col(3)[ii];
+    ttheta = col(4)[ii];
+
+    // --- Peak 1 ---
+    e1 = col(5)[ii];
+    e2 = col(6)[ii];
+    s1 = col(7)[ii];
+    hs2 = col(8)[ii];
+
+    d1 = hc2 / sin(ttheta/2*deg2rad) / e1;
+    d2 = hc2 / sin(ttheta/2*deg2rad) / e2;
+    slope = (d2 - d1) / ( sin(psi2*deg2rad)^2 - sin(psi1*deg2rad)^2 );
+    psistar = asin( sqrt( -2*s1/hs2 ) ) * rad2deg;
+    slopepsi = (d2 - d1) / (psi2 - psi1);
+    d0 = d1 + slopepsi * (psistar - psi1);
+    sigma = slope / d0 / hs2;
+
+    col(13)[ii] = d1;
+    col(14)[ii] = d2;
+    col(15)[ii] = slope;
+    col(16)[ii] = psistar;
+    col(17)[ii] = d0;
+    col(18)[ii] = sigma;
+
+    // --- Peak 2 ---
+    e1 = col(9)[ii];
+    e2 = col(10)[ii];
+    s1 = col(11)[ii];
+    hs2 = col(12)[ii];
+
+    d1 = hc2 / sin(ttheta/2*deg2rad) / e1;
+    d2 = hc2 / sin(ttheta/2*deg2rad) / e2;
+    slope = (d2 - d1) / ( sin(psi2*deg2rad)^2 - sin(psi1*deg2rad)^2 );
+    psistar = asin( sqrt( -2*s1/hs2 ) ) * rad2deg;
+    slopepsi = (d2 - d1) / (psi2 - psi1);
+    d0 = d1 + slopepsi * (psistar - psi1);
+    sigma = slope / d0 / hs2;
+
+    col(19)[ii] = d1;
+    col(20)[ii] = d2;
+    col(21)[ii] = slope;
+    col(22)[ii] = psistar;
+    col(23)[ii] = d0;
+    col(24)[ii] = sigma;
+}
+
+type -b "Schritt 2: Berechnung fertig. Spalte 18 (SigmaP1) und 24 (SigmaP2) pruefen.";

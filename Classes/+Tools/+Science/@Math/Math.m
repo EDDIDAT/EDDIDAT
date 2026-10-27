@@ -1,7 +1,7 @@
 %% (* MATHEMATIK-KLASSE *)
 %--------------------------------------------------------------------------
-% Diese statische Klasse stellt benötigte mathematische Funktionen und 
-% Konstanten zur Verfügung.
+% Diese statische Klasse stellt benï¿½tigte mathematische Funktionen und 
+% Konstanten zur Verfï¿½gung.
 %--------------------------------------------------------------------------
 classdef Math
     
@@ -9,18 +9,18 @@ classdef Math
     %--> Konstante Eigenschaften
     properties (Constant = true, GetAccess = public)
         
-    %% (* Grad/Bogenmaß *)
-    % Winkel müssen mit ihrer eigenen Einheit multipliziert werden, um
+    %% (* Grad/Bogenmaï¿½ *)
+    % Winkel mï¿½ssen mit ihrer eigenen Einheit multipliziert werden, um
     % diese in die andere Einheit umzurechnen, z. B. 180*Degree = pi oder
     % pi*Radian=180
-        %Angabe von 1° in rad, rad, double
+        %Angabe von 1ï¿½ in rad, rad, double
         Degree = pi / 180;
-        %Angabe von 1rad in °, °, double
+        %Angabe von 1rad in ï¿½, ï¿½, double
         Radian = 180 / pi;
     end
     
 %% (* Methoden *)
-    %--> Öffentliche, statische Methoden
+    %--> ï¿½ffentliche, statische Methoden
     methods (Static = true, Access = public)
         
     %% (* Eindimensionale Mathematische (Fit-)Funktionen *)
@@ -35,6 +35,10 @@ classdef Math
         y = FF_TCH(x,p_1,p_2,p_3,p_4)
         %Pseudo-Voigt-Funktion ETA
         y = FF_PseudoVoigtETA(x,p_1,p_2,p_3,p_4,p_5)
+        %Asymmetrische Pseudo-Voigt-Funktion (Sigmoid-Breite)
+        y = FF_AsymPseudoVoigt(x,p_1,p_2,p_3,p_4,p_5)
+        %Split- (bifurkierte) Pseudo-Voigt-Funktion (zwei Halbwertsbreiten)
+        y = FF_SplitPseudoVoigt(x,p_1,p_2,p_3,p_4,p_5)
     end
     
 %% (* Konstruktor *)

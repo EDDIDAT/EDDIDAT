@@ -1,9 +1,9 @@
 %% (* BEUGUNGSREFLEX-KLASSE *)
 %--------------------------------------------------------------------------
-% Diese Klasse repräsentiert einen ausgewerteten Beugungsreflex, der später
+% Diese Klasse reprï¿½sentiert einen ausgewerteten Beugungsreflex, der spï¿½ter
 % einen Teil eines Auswertungsobjektes darstellt. Dabei wird vor allem das
-% Messobjekt als Referenz übergeben, damit man auf alle wichtigen Daten,
-% die zu dem Peak gehören zugreifen kann.
+% Messobjekt als Referenz ï¿½bergeben, damit man auf alle wichtigen Daten,
+% die zu dem Peak gehï¿½ren zugreifen kann.
 %--------------------------------------------------------------------------
 classdef DiffractionLine < General.MLRObject
 
@@ -12,9 +12,9 @@ classdef DiffractionLine < General.MLRObject
     properties (Access = public)
         
     %% (* Allgemeines und Herkunft des Peaks *)
-        %Zum Peak gehöriges Messobjekt, Measurement|va
+        %Zum Peak gehï¿½riges Messobjekt, Measurement|va
         Measurement = [];
-        %Identifizierungs-Variable für einen Peak [Nummer der Messung,
+        %Identifizierungs-Variable fï¿½r einen Peak [Nummer der Messung,
         %Nummer des Peaks in einem Spektrum], 0 = keine Vorgabe, double|va
         LineNumber = [0 0];
         %HKL-Werte des Reflexes [h k l], bei keiner Vorgabe [0 0 0], 
@@ -24,10 +24,10 @@ classdef DiffractionLine < General.MLRObject
     %% (* Peak-Eigenschaften *)
     % Alle Eigenschaften, die den Peak direkt charakterisieren, Prop_Delta
     % entspricht dem Fehler dieser Eigenschaft
-        %Energieposition mit der maximalen Intensität E_Max, keV, double|va
+        %Energieposition mit der maximalen Intensitï¿½t E_Max, keV, double|va
         Energy_Max = 0;
         Energy_Max_Delta = 0;
-        %Die zugehörige Intensität zum Energiemaximum I_Max, falls der Peak
+        %Die zugehï¿½rige Intensitï¿½t zum Energiemaximum I_Max, falls der Peak
         %"virtuell" ist, so kann man hier 0 angeben, cts, double|va
         Intensity_Max = 0;
         Intensity_Max_Delta = 0;
@@ -35,7 +35,7 @@ classdef DiffractionLine < General.MLRObject
         %Integrale Breite beta, keV, double|va
         IntegralWidth = 0;
         IntegralWidth_Delta = 0;
-        %Breite auf halber Höhe 2omega, keV, double|va
+        %Breite auf halber Hï¿½he 2omega, keV, double|va
         FWHM = 0;
         FWHM_Delta = 0;
         % Gauss und Lorentz-Anteil an der FWHM (nur bie TCH Funktion)
@@ -44,14 +44,21 @@ classdef DiffractionLine < General.MLRObject
         %Gewichtsfaktor (wird benutzt, wenn man Kombinationen von
         %Fitfunktionen verwendet, z. B. Pseudo Voigt), no unit, double|va
         WeightingFactor = 0;
-        %Netzebenenabstand d, lässt man den Wert auf 0, so wird der Wert
+        %Asymmetriefaktor (nur bei asymmetrischer Pseudo-Voigt-Funktion),
+        %no unit, double|va
+        Asymmetry = 0;
+        %Halbwertsbreiten links/rechts vom Maximum (nur bei Split-
+        %Pseudo-Voigt-Funktion), keV, double|va
+        WidthLeft = 0;
+        WidthRight = 0;
+        %Netzebenenabstand d, lï¿½sst man den Wert auf 0, so wird der Wert
         %aus 2theta und der Energie-Position berechnet, nm, double|va
         LatticeSpacing = 0;
         LatticeSpacing_Delta = 0;
 
     end
     
-    %--> Abhängige Eigenschaften
+    %--> Abhï¿½ngige Eigenschaften
     properties (Dependent = true)
         
     %% (* Peak-Eigenschaften *)
@@ -140,6 +147,16 @@ classdef DiffractionLine < General.MLRObject
                 {'real','scalar'});
             obj.WeightingFactor = in;
         end
+        function set.WidthLeft(obj,in)
+            validateattributes(in,{'double'},...
+                {'real','scalar','finite'});
+            obj.WidthLeft = in;
+        end
+        function set.WidthRight(obj,in)
+            validateattributes(in,{'double'},...
+                {'real','scalar','finite'});
+            obj.WidthRight = in;
+        end
         function set.LatticeSpacing(obj,in)
             validateattributes(in,{'double'},...
                 {'real','scalar','nonnegative'});
@@ -223,7 +240,7 @@ classdef DiffractionLine < General.MLRObject
                 else
                     if obj.Energy_Max_Delta == 0
                         % If fitting produces zero error Energy_Max_Delta, set
-                        % it to 0.01 in order to be able to fit the sin²Psi
+                        % it to 0.01 in order to be able to fit the sinï¿½Psi
                         % data
                         rtn = ((0.6199./sind(obj.twotheta ./ 2))./ ...
                         obj.Energy_Max.^2) .* 0.01;
@@ -238,7 +255,7 @@ classdef DiffractionLine < General.MLRObject
         end
     end
     
-    %--> Getter für abhängige Eigenschaften
+    %--> Getter fï¿½r abhï¿½ngige Eigenschaften
     methods
         
     %% (* Peak-Eigenschaften *)
@@ -251,7 +268,7 @@ classdef DiffractionLine < General.MLRObject
     end
     
 %% (* Methoden *)
-    %--> Öffentliche, statische Methoden
+    %--> ï¿½ffentliche, statische Methoden
     methods (Static = true, Access = public)
         %Erzeugen eines Peak-Objektes aus den Fitparametern einer
         %Gauss-Funktion
@@ -262,12 +279,16 @@ classdef DiffractionLine < General.MLRObject
         obj = CreateFromFitParam_PV(FitParam,CI,Measurement_in)
         %TCH Funktion
         obj = CreateFromFitParam_TCH(FitParam,CI,Measurement_in)
+        %Asymmetrische Pseudo-Voigt-Funktion (Sigmoid-Breite)
+        obj = CreateFromFitParam_AsymPV(FitParam,CI,Measurement_in)
+        %Split- (bifurkierte) Pseudo-Voigt-Funktion (zwei Halbwertsbreiten)
+        obj = CreateFromFitParam_SplitPV(FitParam,CI,Measurement_in)
     end
     
 %% (* Sonstige Eigenschaften *)
 
-    %% (* Abkürzungen für Eigenschaften der Messung *)
-    % Diese Eigenschaften werden ledliglich eingeführt, um den Zugriff auf
+    %% (* Abkï¿½rzungen fï¿½r Eigenschaften der Messung *)
+    % Diese Eigenschaften werden ledliglich eingefï¿½hrt, um den Zugriff auf
     % wichtige Eigenschaften der Messung zu erleichtern. Beschreibungen der
     % Eigenschaften befinden sich im Objekt Measurement
     properties (Dependent = true)
@@ -365,7 +386,7 @@ classdef DiffractionLine < General.MLRObject
     
 %% (* Konstruktor *)
     methods (Access = public)
-        % Konstruktionsmöglichkeiten:
+        % Konstruktionsmï¿½glichkeiten:
         % 1) Kein Argument
         % 2) Eingabe von Eigenschaften per InputParser
         function obj = DiffractionLine(varargin)

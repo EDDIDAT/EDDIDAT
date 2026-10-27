@@ -312,227 +312,242 @@ oldpointer = get(fighandle,'Pointer');
 % hc = get(params.Axes,'children');
 hc = get(params.Handle,'children');
 
+% Rein dekorative Objekte (xline/yline-Referenzlinien, Text-Anmerkungen)
+% aus der Kinderliste entfernen, BEVOR die untenstehende, an der
+% Kinderanzahl haengende Fallunterscheidung greift. Diese Fallunterscheidung
+% geht von einer festen Anzahl/Reihenfolge an "echten" Datenobjekten
+% (errorbar/line) aus -- zusaetzliche Referenzlinien/Textfelder in der
+% Achse (z.B. eine feste psi=0-Linie oder ein Spannungswert-Textfeld)
+% wuerden sonst die erwartete Kinderanzahl veraendern und in einen nicht
+% behandelten Fall fallen ("Unrecognized function or variable 'hcignore'").
+% "DspacingHighlightMarker" (h.plotdspacingHighlight im sin2psi-Tab):
+% markiert beim Durchscrollen der Rohspektren (h.SliderFitData) den
+% dazugehoerigen Punkt im d-sin2psi-Plot -- ebenfalls dekorativ, kein
+% echter Datenpunkt.
+IsDecorativeChild = arrayfun(@(x) isa(x,'matlab.graphics.chart.decoration.ConstantLine') || isa(x,'matlab.graphics.primitive.Text') || strcmp(get(x,'Tag'),'DspacingHighlightMarker'), hc);
+hc = hc(~IsDecorativeChild);
+
 assignin('base','hc',hc)
 assignin('base','params',params)
 % if size(hc,1) == 2
-%     hcignore = params.Handle.Children(1);
+%     hcignore = hc(1);
 % else
-%     hcignore(1) = params.Handle.Children(1);
-%     hcignore(2) = params.Handle.Children(2);
+%     hcignore(1) = hc(1);
+%     hcignore(2) = hc(2);
 % end
 
 % Modifiy data
 if size(hc,1) == 2
     % One phi angle
-    hcignore = params.Handle.Children(1);
+    hcignore = hc(1);
 elseif size(hc,1) == 3
-    hcignore(1) = params.Handle.Children(1);
-    hcignore(2) = params.Handle.Children(2);
+    hcignore(1) = hc(1);
+    hcignore(2) = hc(2);
 elseif size(hc,1) == 4
     % Two phi angles
     if params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
     elseif params.CheckBoxesPhi(2) == 1 && params.PhiWinkel(1) == 0 %&& params.PhiWinkel(2) == 90 || params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 0 %&& params.PhiWinkel(2) == 90 || params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 0 %&& params.PhiWinkel(2) == 90 || params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     elseif params.CheckBoxesPhi(2) == 1 && params.PhiWinkel(1) == 90 %&& params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 90 %&& params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 90 %&& params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 180 %&& params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 180 %&& params.PhiWinkel(2) == 180 || params.PhiWinkel(2) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
     end
 elseif size(hc,1) == 5
-    hcignore(1) = params.Handle.Children(1);
-    hcignore(2) = params.Handle.Children(2);
-    hcignore(3) = params.Handle.Children(3);
-    hcignore(4) = params.Handle.Children(4);
+    hcignore(1) = hc(1);
+    hcignore(2) = hc(2);
+    hcignore(3) = hc(3);
+    hcignore(4) = hc(4);
 elseif size(hc,1) == 6
     % Three phi angles
     if params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 180
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
     elseif params.CheckBoxesPhi(2) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 180
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 180
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
     elseif params.CheckBoxesPhi(2) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 90 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(1) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 0 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(2) == 1 && params.PhiWinkel(1) == 90 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
     elseif params.CheckBoxesPhi(3) == 1 && params.PhiWinkel(1) == 90 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     elseif params.CheckBoxesPhi(4) == 1 && params.PhiWinkel(1) == 90 && params.PhiWinkel(2) == 180 && params.PhiWinkel(3) == 270
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
     end
 elseif size(hc,1) == 8
     % Four phi angles
     if params.CheckBoxesPhi(1) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(6);
-        hcignore(7) = params.Handle.Children(7);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(6);
+        hcignore(7) = hc(7);
     elseif params.CheckBoxesPhi(2) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(7);
-        hcignore(7) = params.Handle.Children(8);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(7);
+        hcignore(7) = hc(8);
     elseif params.CheckBoxesPhi(3) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
-        hcignore(6) = params.Handle.Children(7);
-        hcignore(7) = params.Handle.Children(8);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
+        hcignore(6) = hc(7);
+        hcignore(7) = hc(8);
     elseif params.CheckBoxesPhi(4) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(3);
-        hcignore(3) = params.Handle.Children(4);
-        hcignore(4) = params.Handle.Children(5);
-        hcignore(5) = params.Handle.Children(6);
-        hcignore(6) = params.Handle.Children(7);
-        hcignore(7) = params.Handle.Children(8);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(3);
+        hcignore(3) = hc(4);
+        hcignore(4) = hc(5);
+        hcignore(5) = hc(6);
+        hcignore(6) = hc(7);
+        hcignore(7) = hc(8);
     end
 elseif size(hc,1) == 12
     % 
     % Four phi angles
     if params.CheckBoxesPhi(1) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(6);
-        hcignore(7) = params.Handle.Children(7);
-		hcignore(8) = params.Handle.Children(8);
-        hcignore(9) = params.Handle.Children(9);
-        hcignore(10) = params.Handle.Children(10);
-        hcignore(11) = params.Handle.Children(11);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(6);
+        hcignore(7) = hc(7);
+		hcignore(8) = hc(8);
+        hcignore(9) = hc(9);
+        hcignore(10) = hc(10);
+        hcignore(11) = hc(11);
 	elseif params.CheckBoxesPhi(2) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(6);
-        hcignore(7) = params.Handle.Children(7);
-		hcignore(8) = params.Handle.Children(8);
-        hcignore(9) = params.Handle.Children(9);
-        hcignore(10) = params.Handle.Children(11);
-        hcignore(11) = params.Handle.Children(12);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(6);
+        hcignore(7) = hc(7);
+		hcignore(8) = hc(8);
+        hcignore(9) = hc(9);
+        hcignore(10) = hc(11);
+        hcignore(11) = hc(12);
 	elseif params.CheckBoxesPhi(3) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(6);
-        hcignore(7) = params.Handle.Children(7);
-		hcignore(8) = params.Handle.Children(9);
-        hcignore(9) = params.Handle.Children(10);
-        hcignore(10) = params.Handle.Children(11);
-        hcignore(11) = params.Handle.Children(12);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(6);
+        hcignore(7) = hc(7);
+		hcignore(8) = hc(9);
+        hcignore(9) = hc(10);
+        hcignore(10) = hc(11);
+        hcignore(11) = hc(12);
 	elseif params.CheckBoxesPhi(4) == 1
-        hcignore(1) = params.Handle.Children(1);
-        hcignore(2) = params.Handle.Children(2);
-        hcignore(3) = params.Handle.Children(3);
-        hcignore(4) = params.Handle.Children(4);
-        hcignore(5) = params.Handle.Children(5);
-        hcignore(6) = params.Handle.Children(7);
-        hcignore(7) = params.Handle.Children(8);
-		hcignore(8) = params.Handle.Children(9);
-        hcignore(9) = params.Handle.Children(10);
-        hcignore(10) = params.Handle.Children(11);
-        hcignore(11) = params.Handle.Children(12);
+        hcignore(1) = hc(1);
+        hcignore(2) = hc(2);
+        hcignore(3) = hc(3);
+        hcignore(4) = hc(4);
+        hcignore(5) = hc(5);
+        hcignore(6) = hc(7);
+        hcignore(7) = hc(8);
+		hcignore(8) = hc(9);
+        hcignore(9) = hc(10);
+        hcignore(10) = hc(11);
+        hcignore(11) = hc(12);
     end	    
 end
 

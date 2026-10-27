@@ -8,8 +8,8 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         [out, T] = CreateSampleEPostheo(P);
 
 %         if strcmp(Measurement.Anode,'Cu')
-            % T.lambdaka1 = 1.54056;
-            % T.lambdaka2 = 1.54433;
+            T.lambdaka1 = 1.54056;
+            T.lambdaka2 = 1.54433;
             % Gallium
             % T.lambdaka1 = 1.34023;
             % T.lambdaka2 = 1.344037;
@@ -17,8 +17,8 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
             % T.lambdaka1 = 0.512128;
             % T.lambdaka2 = 0.51656;
             % Indium kbeta
-            T.lambdaka1 = 0.454558;
-            T.lambdaka2 = 0.454558;
+            % T.lambdaka1 = 0.454558;
+            % T.lambdaka2 = 0.454558;
 %         elseif strcmp(Measurement.Anode,'Co')
 %             T.lambdaka1 = 1.78897;
 %             T.lambdaka2 = 1.79278;
@@ -47,7 +47,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
 
         % Info from material
         T.dmin = 0.07;
-        % Calculation of maximum hkl²
+        % Calculation of maximum hklï¿½
         if ~isempty(T.a0)
             T.hklquadratmax = (T.a0(1)/T.dmin)^2;
         else
@@ -77,7 +77,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
             T.d = T.h+T.k+T.l;
             i = find(rem(T.d,2) == 0);
             T.p = [T.h(i),T.k(i),T.l(i)];
-            % Use only hkl with hkl² < hkl²max
+            % Use only hkl with hklï¿½ < hklï¿½max
             for i=1:size(T.p,1)
                 if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                     T.y(i,:) = T.p(i,:);
@@ -146,7 +146,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
             i = find(rem(T.d,2) == 0);
             j = find(rem(T.d,2) == 1);
             T.p = [T.h(i),T.k(i),T.l(i);T.h(j),T.k(j),T.l(j)];
-            % Use only hkl with hkl² < hkl²max
+            % Use only hkl with hklï¿½ < hklï¿½max
             for i=1:size(T.p,1)
                 if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                     T.y(i,:) = T.p(i,:);
@@ -317,7 +317,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         T.a0 = T.Material.LatticeParameter;
         % Calculation of minimum d spacing
         T.dmin = (0.6199/sind(T.twotheta/2))/T.EMax;
-        % Calculation of maximum hkl²
+        % Calculation of maximum hklï¿½
         if ~isempty(T.a0)
             T.hklquadratmax = (T.a0(1)/T.dmin)^2;
         else
@@ -338,7 +338,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
             T.d = T.h+T.k+T.l;
             i = find(rem(T.d,2) == 0);
             T.p = [T.h(i),T.k(i),T.l(i)];
-            % Use only hkl with hkl² < hkl²max
+            % Use only hkl with hklï¿½ < hklï¿½max
             for i=1:size(T.p,1)
                 if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                     T.y(i,:) = T.p(i,:);
@@ -381,7 +381,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
             i = find(rem(T.d,2) == 0);
             j = find(rem(T.d,2) == 1);
             T.p = [T.h(i),T.k(i),T.l(i);T.h(j),T.k(j),T.l(j)];
-            % Use only hkl with hkl² < hkl²max
+            % Use only hkl with hklï¿½ < hklï¿½max
             for i=1:size(T.p,1)
                 if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                     T.y(i,:) = T.p(i,:);
@@ -444,11 +444,11 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
                 T.Etheo(i,:) = (0.6199/sind(T.twotheta/2))/T.hkl_sort(i,4);
             end
             a = T.Etheo < T.EMax;
-            T.Peaks = [T.hkl_sort(1:length(a(a==1)),:) T.Etheo(a)];
+            T.Peaks = [T.hkl_sort(a,:) T.Etheo(a)];
         end
-        
+
         % Calculate tau
-        T.absorbcoeff = Sample.Materials.LAC(T.Etheo);
+        T.absorbcoeff = Sample.Materials.LAC(T.Peaks(:,5));
         % Calculate tau for Emax values
         T.tau = (sind(T.twotheta./2).*cosd(0))./(2.*T.absorbcoeff./10000);
         assignin('base','T',T)
@@ -467,7 +467,7 @@ function Peakhandles = CalcPeakPositions(ElementalFormula,MPDFileName,twotheta,E
         
         Peakhandles = T;
         % Show results in command window
-        fprintf(['\nEnergy positions of ',MPDFileName,' for 2theta = ',num2str(twotheta),'°','\n\n'])
+        fprintf(['\nEnergy positions of ',MPDFileName,' for 2theta = ',num2str(twotheta),'ï¿½','\n\n'])
         fprintf('%3s   %9s   %5s\n','hkl','d-spacing','E-Pos');
         fprintf('%d%d%d   %.4f      %.4f\n', [T.Peaks(:,1:5)].')
     end

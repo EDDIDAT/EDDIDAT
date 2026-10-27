@@ -35,6 +35,14 @@ for d = 1:size(FittedPeaksCalc{valueSlider}, 1)
         SinglePlot = Tools.Science.Math.FF_TCH(XPlot, ...
             FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4));
         SinglePlot_tmp{d} = SinglePlot;
+    elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+        SinglePlot = Tools.Science.Math.FF_AsymPseudoVoigt(XPlot, ...
+            FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4), FittedPeaksCalc{valueSlider}(d, 5));
+        SinglePlot_tmp{d} = SinglePlot;
+    elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+        SinglePlot = Tools.Science.Math.FF_SplitPseudoVoigt(XPlot, ...
+            FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3),FittedPeaksCalc{valueSlider}(d, 4), FittedPeaksCalc{valueSlider}(d, 5));
+        SinglePlot_tmp{d} = SinglePlot;
     elseif PopupValueFitFunc == 4 %Gauss
         SinglePlot = Tools.Science.Math.FF_Gauss(XPlot, ...
             FittedPeaksCalc{valueSlider}(d, 1), FittedPeaksCalc{valueSlider}(d, 2), FittedPeaksCalc{valueSlider}(d, 3)); 
@@ -100,7 +108,34 @@ elseif PopupValueFitFunc == 5 %Lorentz
 
     for c = 1:size(FittedPeaksCalc,2)
         FWHMtmp{1,c} = FittedPeaksCalc{1,c}(:,3);
-    end    
+    end
+elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+    % IB/FWHM naeherungsweise wie beim symmetrischen PV auf Basis der
+    % Basisbreite (Spalte 3, entspricht der Breite bei Asymmetrie=0);
+    % die tatsaechliche, x-abhaengige Breite variiert mit dem
+    % Asymmetriefaktor (Spalte 5) und wird hier nicht separat erfasst.
+    for c = 1:size(FittedPeaksCalc,2)
+        IntegralBreadthtmp{1,c} = sqrt(2.*pi) .* FittedPeaksCalc{1,c}(:,4) .* ...
+            FittedPeaksCalc{1,c}(:,3) + pi .* (1 - FittedPeaksCalc{1,c}(:,4)) .* ...
+            FittedPeaksCalc{1,c}(:,3) ./ 2;
+    end
+
+    for c = 1:size(FittedPeaksCalc,2)
+        FWHMtmp{1,c} = 2 .* sqrt(2 .* log(2)) .* FittedPeaksCalc{1,c}(:,4) .* ...
+        FittedPeaksCalc{1,c}(:,3) + (1 - FittedPeaksCalc{1,c}(:,4)) .* FittedPeaksCalc{1,c}(:,3);
+    end
+elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+    % IB/FWHM ueber effektive Breite w_eff = (Breite_links+Breite_rechts)/2
+    for c = 1:size(FittedPeaksCalc,2)
+        wEffSplit{1,c} = (FittedPeaksCalc{1,c}(:,3) + FittedPeaksCalc{1,c}(:,4)) ./ 2;
+        IntegralBreadthtmp{1,c} = sqrt(2.*pi) .* FittedPeaksCalc{1,c}(:,5) .* wEffSplit{1,c} + ...
+            pi .* (1 - FittedPeaksCalc{1,c}(:,5)) .* wEffSplit{1,c} ./ 2;
+    end
+
+    for c = 1:size(FittedPeaksCalc,2)
+        FWHMtmp{1,c} = 2 .* sqrt(2 .* log(2)) .* FittedPeaksCalc{1,c}(:,5) .* wEffSplit{1,c} + ...
+            (1 - FittedPeaksCalc{1,c}(:,5)) .* wEffSplit{1,c};
+    end
 end
 
 
@@ -130,7 +165,21 @@ elseif PopupValueFitFunc == 5 %Lorentz
     for c = 1:size(FittedPeaksCalc,2)
         FittedPeaksCalc{1,c}(:,4) = IntegralBreadthtmp{1,c}(:,1);
         FittedPeaksCalc{1,c}(:,5) = FWHMtmp{1,c}(:,1);
-    end    
+    end
+elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+    % Spalte 5 (Asymmetriefaktor) bleibt unveraendert, IB/FWHM kommen an
+    % Spalte 6/7 dazu.
+    for c = 1:size(FittedPeaksCalc,2)
+        FittedPeaksCalc{1,c}(:,6) = IntegralBreadthtmp{1,c}(:,1);
+        FittedPeaksCalc{1,c}(:,7) = FWHMtmp{1,c}(:,1);
+    end
+elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+    % Spalten 3/4 (Breite links/rechts) und 5 (GL) bleiben unveraendert,
+    % IB/FWHM kommen an Spalte 6/7 dazu.
+    for c = 1:size(FittedPeaksCalc,2)
+        FittedPeaksCalc{1,c}(:,6) = IntegralBreadthtmp{1,c}(:,1);
+        FittedPeaksCalc{1,c}(:,7) = FWHMtmp{1,c}(:,1);
+    end
 end
 
 % Function to calucate fitted peaks
@@ -142,6 +191,10 @@ if PopupValueFitFunc == 2 %PV-Func
     end
 elseif PopupValueFitFunc == 3 %TCH-Func
     fun = @(p,x)Tools.Science.Math.FF_TCH(x,p(1),p(2),p(3),p(4));
+elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+    fun = @(p,x)Tools.Science.Math.FF_AsymPseudoVoigt(x,p(1),p(2),p(3),p(4),p(5));
+elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+    fun = @(p,x)Tools.Science.Math.FF_SplitPseudoVoigt(x,p(1),p(2),p(3),p(4),p(5));
 elseif PopupValueFitFunc == 4 %Gauss
     fun = @(p,x)Tools.Science.Math.FF_Gauss(x,p(1),p(2),p(3));
 elseif PopupValueFitFunc == 5 %Lorentz
@@ -209,6 +262,28 @@ elseif PopupValueFitFunc == 3 %TCH-Func
     % Add integrated intensities to FittedPeaksCalc
     for c = 1:size(FittedPeaksCalc,2)
         FittedPeaksCalc{1,c}(:,8) = IntMax{1,c}(1,:);
+    end
+elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+    % Calculate integrated intensities
+    for c = 1:size(FittedPeaksCalc,2)
+        for ii = 1:length(PeaksCalc{c})
+            IntegratedInt{1,c}(:,ii) = trapz(xDataTmpCalc(ii,:),fun(FittedPeaksCalc{1,c}(ii,:),xDataTmpCalc(ii,:)));
+        end
+    end
+    % Add integrated intensities to FittedPeaksCalc
+    for c = 1:size(FittedPeaksCalc,2)
+        FittedPeaksCalc{1,c}(:,8) = IntegratedInt{1,c}(1,:);
+    end
+elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+    % Calculate integrated intensities
+    for c = 1:size(FittedPeaksCalc,2)
+        for ii = 1:length(PeaksCalc{c})
+            IntegratedInt{1,c}(:,ii) = trapz(xDataTmpCalc(ii,:),fun(FittedPeaksCalc{1,c}(ii,:),xDataTmpCalc(ii,:)));
+        end
+    end
+    % Add integrated intensities to FittedPeaksCalc
+    for c = 1:size(FittedPeaksCalc,2)
+        FittedPeaksCalc{1,c}(:,8) = IntegratedInt{1,c}(1,:);
     end
 elseif PopupValueFitFunc == 4 %Gauss
     % Calculate integrated intensities
@@ -283,6 +358,25 @@ for k = 1:size(FittedPeaksCalc,2)
         FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % IB
         FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % FWHM
         FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.2f')); % Int.Int
+    elseif PopupValueFitFunc == 6 %AsymPV (Sigmoid-Breite)
+        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
+        FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
+        FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
+        FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % ETA
+        FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % Asymmetriefaktor
+        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.4f')); % IB
+        FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.4f')); % FWHM
+        FittedPeaksCalctmp{1,k}(:,8) = cellstr(num2str(FittedPeaksCalc{1,k}(:,8),'%.2f')); % Int.Int
+    elseif PopupValueFitFunc == 7 %Split-PV (bifurkiert)
+        FittedPeaksCalctmp{1,k}(:,1) = cellstr(num2str(FittedPeaksCalc{1,k}(:,1),'%.2f')); % IntMax.
+        FittedPeaksCalctmp{1,k}(:,2) = cellstr(num2str(FittedPeaksCalc{1,k}(:,2),'%.4f')); % EMax
+        FittedPeaksCalctmp{1,k}(:,3) = cellstr(num2str(SE{1,k}(:,2),'%.4f')); % deltaEMax
+        FittedPeaksCalctmp{1,k}(:,4) = cellstr(num2str(FittedPeaksCalc{1,k}(:,3),'%.4f')); % Breite links
+        FittedPeaksCalctmp{1,k}(:,5) = cellstr(num2str(FittedPeaksCalc{1,k}(:,4),'%.4f')); % Breite rechts
+        FittedPeaksCalctmp{1,k}(:,6) = cellstr(num2str(FittedPeaksCalc{1,k}(:,5),'%.4f')); % GL-Anteil
+        FittedPeaksCalctmp{1,k}(:,7) = cellstr(num2str(FittedPeaksCalc{1,k}(:,6),'%.4f')); % IB
+        FittedPeaksCalctmp{1,k}(:,8) = cellstr(num2str(FittedPeaksCalc{1,k}(:,7),'%.4f')); % FWHM
+        FittedPeaksCalctmp{1,k}(:,9) = cellstr(num2str(FittedPeaksCalc{1,k}(:,8),'%.2f')); % Int.Int
     end
 end
 

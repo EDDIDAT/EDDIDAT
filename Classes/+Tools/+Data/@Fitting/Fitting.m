@@ -1,12 +1,12 @@
 %% (* FIT-HELFER-KLASSE *)
 %--------------------------------------------------------------------------
-% Diese statische Klasse stellt dem Benutzer Funktionen zur Verfügung, die
+% Diese statische Klasse stellt dem Benutzer Funktionen zur Verfï¿½gung, die
 % helfen sollen, einen Datensatz, wie ein ED-Spektrum, zu fitten.
 %--------------------------------------------------------------------------
 classdef Fitting
 
 %% (* Methoden *)
-    %--> Öffentliche, statische Methoden
+    %--> ï¿½ffentliche, statische Methoden
     methods (Static = true, Access = public)
         
     %% (* Fit vorbereiten *)
@@ -18,7 +18,10 @@ classdef Fitting
         %Sucht und entfernt den Untergrund aus einem Spektrum
         [X_out,Y_out,Y_Background] = BackgroundReduction(...
             X,Y,ReakRegions,varargin)
-        
+        %Schaetzt den Untergrund automatisch mittels SNIP (Ryan et al.
+        %1988), ohne manuell markierte Peakregionen
+        Y_Background = SNIPBackground(Y,MaxHalfWindow,varargin)
+
     %% (* Fitvorgang *)
     % FP = FitPeak
         %Gauss-Fit
@@ -34,6 +37,35 @@ classdef Fitting
             PeakProps)
         %Pseudo-Voigt-Fit eines mehrfachen Peaks
         [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeak(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,...
+            PeakProps)
+        %Pseudo-Voigt-Fit zweier sich ueberlappender Phasenreflexe
+        %(gekoppelte Breite/GL-Anteil, z.B. Ferrit/Austenit)
+        [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakCoupled(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,...
+            PeakProps)
+        %Pseudo-Voigt-Fit der martensitischen Aufspaltung eines
+        %kubischen {200}-Reflexes in {002} und {200}/{020} (gekoppelte
+        %Breite/GL-Anteil, feste 1:2-Intensitaetskopplung)
+        [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakMartensite(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,...
+            PeakProps)
+        %Wie FP_PseudoVoigt_DoublePeakMartensite, aber mit unabhaengiger
+        %Breite je Teilpeak (nur GL-Anteil gekoppelt)
+        [FitParam, CI, SE] = FP_PseudoVoigt_DoublePeakMartensiteFreeWidth(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,...
+            PeakProps)
+        %Asymmetrischer Pseudo-Voigt-Fit (Sigmoid-Breite) eines einzelnen
+        %Peaks
+        [FitParam, CI, SE] = FP_AsymPseudoVoigt(X,Y,Index_Peaks,RelationGaussLorentz,AsymmetryStart,...
+            PeakProps)
+        %Asymmetrischer Pseudo-Voigt-Fit (Sigmoid-Breite) eines mehrfachen
+        %Peaks
+        [FitParam, CI, SE] = FP_AsymPseudoVoigt_DoublePeak(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,AsymmetryStart,...
+            PeakProps)
+        %Split-Pseudo-Voigt-Fit (zwei Halbwertsbreiten) eines einzelnen
+        %Peaks
+        [FitParam, CI, SE] = FP_SplitPseudoVoigt(X,Y,Index_Peaks,RelationGaussLorentz,...
+            PeakProps)
+        %Split-Pseudo-Voigt-Fit (zwei Halbwertsbreiten) eines mehrfachen
+        %Peaks
+        [FitParam, CI, SE] = FP_SplitPseudoVoigt_DoublePeak(X,Y,Index_Peaks,PeakPosBoundarys,RelationGaussLorentz,...
             PeakProps)
         %TCH-Fit eines einzelnen Peaks
         [FitParam, CI, SE] = FP_TCH(X,Y,Index_Peaks,GammaGauss,GammaLorentz,...
@@ -60,7 +92,7 @@ end
 
 %% ##### TO BE IMPLEMENTED #####
 % - Versuch innere Peaks qualitativ zu finden: Peak-Positionen finden und
-%   fitten, alle Funktionen, bis auf eine Abziehen (Herauslöschen aller 
-%   umliegenden Peaks) ==> Schwer Punkt des übrigen Peaks finden und die
-%   x-Koordinate mit dem Energie-Maximum vergleichen ==> Bei zu großer
+%   fitten, alle Funktionen, bis auf eine Abziehen (Herauslï¿½schen aller 
+%   umliegenden Peaks) ==> Schwer Punkt des ï¿½brigen Peaks finden und die
+%   x-Koordinate mit dem Energie-Maximum vergleichen ==> Bei zu groï¿½er
 %   Abweichung zweiter Peak

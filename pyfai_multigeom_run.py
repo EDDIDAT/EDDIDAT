@@ -467,6 +467,11 @@ def main(job_json_path: str) -> int:
         mg = MultiGeometry(ais, chi_disc=chi_disc)
 
         kwargs = {}
+        # Hinweis: der fruehere Fehler bei Eiger-Daten kam von einer numerischen
+        # Instabilitaet in MultiGeometry.integrate2d() (siehe Workaround weiter
+        # unten bei len(ais)==1), nicht von correctSolidAngle selbst -- daher
+        # hier wieder der physikalisch sinnvolle Default True. Bei echter
+        # Mehr-Geometrie-Nutzung (len(ais) > 1) ist dieser Pfad ungetestet.
         kwargs["correctSolidAngle"] = bool(job.get("correctSolidAngle", True))
         _maybe_add(kwargs, job, "polarization_factor", float)
         _maybe_add(kwargs, job, "dummy",       float)
@@ -509,8 +514,35 @@ def main(job_json_path: str) -> int:
         imgs = [np.asarray(fabio.open(ip).data, dtype=np.float32) for ip in img_paths]
 
         if mode == "2d":
-            res = integrate2d_compat(mg, imgs, npt_rad, npt_azim,
-                                     unit, method, error_model, kwargs)
+            if len(ais) == 1:
+                # Workaround fuer einen numerischen Bug in MultiGeometry.integrate2d():
+                # mit correctSolidAngle=True liefert MultiGeometry (selbst mit nur
+                # EINER Geometrie darin) an manchen Bins astronomisch falsche Werte
+                # (bis zu 1e12+, teils negativ), waehrend die identische Integration
+                # ueber eine einzelne AzimuthalIntegrator-Instanz voellig unauffaellig
+                # bleibt (getestet mit Eiger9M-Daten). Bei nur einer Geometrie also
+                # MultiGeometry ganz umgehen -- das erhaelt die Solid-Angle-Korrektur,
+                # statt sie nur pauschal abzuschalten.
+                single_kwargs = {k: v for k, v in kwargs.items() if k != "mask"}
+                res = ais[0].integrate2d(
+                    imgs[0], npt_rad, npt_azim, unit=unit, method=method,
+                    error_model=error_model, mask=kwargs.get("mask"), **single_kwargs)
+            else:
+                # Derselbe MultiGeometry-Bug tritt auch bei echten
+                # Mehr-Geometrie-Kombinationen auf (verifiziert mit 3
+                # unterschiedlichen Geometrien: bis zu 1e12+ Fehlwerte bei
+                # correctSolidAngle=True). Anders als im Ein-Geometrie-Fall
+                # oben koennen wir MultiGeometry hier nicht umgehen -- es wird
+                # gebraucht, um automatisch einen gemeinsamen 2theta/Azimut-
+                # Bereich ueber mehrere Detektorpositionen zu bestimmen und
+                # deren Lücken gegenseitig zu fuellen. Deshalb hier gezielt
+                # die Solid-Angle-Korrektur deaktivieren, unabhaengig vom
+                # job-Wert (Kompromiss: Intensitaeten bleiben unkorrigiert
+                # bzgl. Pixel-Raumwinkel, Peak-Positionen sind unbetroffen).
+                mg_kwargs = dict(kwargs)
+                mg_kwargs["correctSolidAngle"] = False
+                res = integrate2d_compat(mg, imgs, npt_rad, npt_azim,
+                                         unit, method, error_model, mg_kwargs)
             if isinstance(res, tuple) and len(res) >= 3:
                 I, radial, azim = res[0], res[1], res[2]
                 count = res[3] if len(res) >= 4 else None

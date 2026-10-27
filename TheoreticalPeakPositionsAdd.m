@@ -59,7 +59,7 @@ if strcmp(Diffsel,'ETA3000')
 %     dmin_tmp(dmin_tmp==0) = [];
 %     T.dmin = min(dmin_tmp);
     T.dmin = 0.05;
-    % Calculation of maximum hkl²
+    % Calculation of maximum hklï¿½
     if ~isempty(T.a0)
         T.hklquadratmax = (T.a0(1)/T.dmin)^2;
     else
@@ -76,7 +76,7 @@ if strcmp(Diffsel,'ETA3000')
 %         S.a0 = Measurement.Sample.Substrate.LatticeParameter;
 %         % Calculation of minimum d spacing
 %         S.dmin = (0.6199/sind(T.twotheta/2))/S.EMax;
-%         % Calculation of maximum hkl²
+%         % Calculation of maximum hklï¿½
 %         if ~isempty(S.a0)
 %             S.hklquadratmax = (S.a0(1)/S.dmin)^2;
 %         else
@@ -105,7 +105,7 @@ if strcmp(Diffsel,'ETA3000')
         T.d = T.h+T.k+T.l;
         i = find(rem(T.d,2) == 0);
         T.p = [T.h(i),T.k(i),T.l(i)];
-        % Use only hkl with hkl² < hkl²max
+        % Use only hkl with hklï¿½ < hklï¿½max
         for i=1:size(T.p,1)
             if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                 T.y(i,:) = T.p(i,:);
@@ -170,7 +170,7 @@ if strcmp(Diffsel,'ETA3000')
         i = find(rem(T.d,2) == 0);
         j = find(rem(T.d,2) == 1);
         T.p = [T.h(i),T.k(i),T.l(i);T.h(j),T.k(j),T.l(j)];
-        % Use only hkl with hkl² < hkl²max
+        % Use only hkl with hklï¿½ < hklï¿½max
         for i=1:size(T.p,1)
             if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                 T.y(i,:) = T.p(i,:);
@@ -333,7 +333,7 @@ else
     T.a0 = Material.LatticeParameter;
     % Calculation of minimum d spacing
     T.dmin = (0.6199./sind(T.twotheta./2))./T.EMax;
-    % Calculation of maximum hkl²
+    % Calculation of maximum hklï¿½
     if ~isempty(T.a0)
         T.hklquadratmax = (T.a0(1)./T.dmin).^2;
     else
@@ -346,7 +346,12 @@ else
             T.Peaks_y = zeros(length(Measurement)/2,1);
             for i = 1:length(Measurement)/2
                 DataTmp_tmp = DataTmp(2:2:end);
-                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(1)+0.1):FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(2)-0.1), 2));
+                % XLim auf den tatsaechlichen Datenbereich clampen, damit
+                % FindNearestIndex (interp1) bei einer veralteten/zu
+                % weiten Achsen-Zoomgrenze kein NaN liefert.
+                XLimLow = max(h.axesplotRawData.XLim(1)+0.1, min(DataTmp_tmp{i}(:,1)));
+                XLimHigh = min(h.axesplotRawData.XLim(2)-0.1, max(DataTmp_tmp{i}(:,1)));
+                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(Tools.Data.DataSetOperations.FindNearestIndex(DataTmp_tmp{i}(:,1),XLimLow):Tools.Data.DataSetOperations.FindNearestIndex(DataTmp_tmp{i}(:,1),XLimHigh), 2));
             end
             % Create matrix for the line plot of the peak positions (Y values)
             for i = 1:length(Measurement)/2
@@ -356,7 +361,9 @@ else
             T.Peaks_y = zeros(length(Measurement)/2,1);
             for i = 1:length(Measurement)/2
                 DataTmp_tmp = DataTmp(1:2:end);
-                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(1)+0.1):FindNearestIndex(DataTmp_tmp{i}(:,1),h.axesplotRawData.XLim(2)-0.1), 2));
+                XLimLow = max(h.axesplotRawData.XLim(1)+0.1, min(DataTmp_tmp{i}(:,1)));
+                XLimHigh = min(h.axesplotRawData.XLim(2)-0.1, max(DataTmp_tmp{i}(:,1)));
+                T.Peaks_y(i,:) = max(DataTmp_tmp{i}(Tools.Data.DataSetOperations.FindNearestIndex(DataTmp_tmp{i}(:,1),XLimLow):Tools.Data.DataSetOperations.FindNearestIndex(DataTmp_tmp{i}(:,1),XLimHigh), 2));
             end
             % Create matrix for the line plot of the peak positions (Y values)
             for i = 1:length(Measurement)/2
@@ -383,7 +390,7 @@ else
         T.d = T.h+T.k+T.l;
         i = find(rem(T.d,2) == 0);
         T.p = [T.h(i),T.k(i),T.l(i)];
-        % Use only hkl with hkl² < hkl²max
+        % Use only hkl with hklï¿½ < hklï¿½max
         for i=1:length(T.p)
             if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                 T.y(i,:) = T.p(i,:);
@@ -422,7 +429,7 @@ else
         i = find(rem(T.d,2) == 0);
         j = find(rem(T.d,2) == 1);
         T.p = [T.h(i),T.k(i),T.l(i);T.h(j),T.k(j),T.l(j)];
-        % Use only hkl with hkl² < hkl²max
+        % Use only hkl with hklï¿½ < hklï¿½max
         for i=1:length(T.p)
             if (T.p(i,1)^2 + T.p(i,2)^2 + T.p(i,3)^2) <= T.hklquadratmax
                 T.y(i,:) = T.p(i,:);

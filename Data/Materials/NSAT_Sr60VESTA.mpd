@@ -1,0 +1,38 @@
+Dateiname:  NSAT_Sr60VESTA.mpd
+ 
+Elementliste:
+Al  Ta  O   Sr  Nd  
+ 
+Stoechiometrieliste:
+  2.30    1.00    9.89    2.00    1.30  
+ 
+Ordnungszahlliste:
+  13.    73.    8.    38.    60.  
+ 
+Atomgewichtsliste (in g/mol):
+ 26.98   180.95   16.00   87.62   144.24  
+ 
+Materialdichte (in g/cm^3):
+ 6.777
+ 
+Gittertyp:
+none
+ 
+Gitterparameter (in nm):
+0.76855
+ 
+hkl- und d-Wertliste:
+022   0.271723 
+040   0.192137 
+242   0.156879 
+044   0.135861 
+153   0.129908 
+062   0.121518 
+444   0.110930 
+264   0.102702 
+173   0.100056 
+080   0.096069 
+282   0.090574 
+084   0.085926 
+466   0.081927 
+484   0.078440 

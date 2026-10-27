@@ -1,0 +1,37 @@
+Dateiname:  FAPbBr3.mpd
+ 
+Elementliste:
+Pb    Br    C     N     H   
+ 
+Stoechiometrieliste:
+  1.00    3.00    1.00    2.00    5.00
+ 
+Ordnungszahlliste:
+  82.    35.     6.     7.     1.
+ 
+Atomgewichtsliste (in g/mol):
+207.200  79.900  12.010  14.010   1.008
+ 
+Materialdichte (in g/cm^3):
+  3.790
+ 
+Gittertyp:
+none
+ 
+Gitterparameter (in nm):
+ not specified
+ 
+hkl- und d-Wertliste:
+100     0.696445219533806 
+110     0.606211287689602 
+111     0.428741395119171 
+200     0.350372207820225 
+210     0.293128864964544 
+211     0.303549116958809 
+220     0.271210698423000 
+221     0.414872646006039 
+310     0.254048798598453 
+311     0.247936414396017 
+222     0.214453645861611 
+320     0.202135890849718 
+321     0.179250238030512 

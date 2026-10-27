@@ -4113,11 +4113,12 @@ elseif strcmp(h.plottab.SelectedTab.Title,'Plot intensity data')
             'LabelVerticalAlignment','middle','LabelHorizontalAlignment','left');
     end
 
-    % Nach der Berechnung von maskRow:
-    fprintf('Debug detmask: gamma_raw=%.2f°  chiIdx=%d\n', gamma_raw, chiIdx);
-    fprintf('  azimAll(chiIdx)=%.2f°\n', azimAll(chiIdx));
-    fprintf('  maskRow: %d von %d Kanäle maskiert\n', sum(maskROI < 0.5), numel(maskROI));
-    fprintf('  isMasked Bereiche: %d\n', sum(diff([false, isMasked, false]) == 1));  
+    % Debug-Ausgabe (deaktiviert): gamma_raw, chiIdx, azimAll, maskROI und isMasked
+    % existieren nur im pyFAI-Modus (h.pyfaiOutPerAlpha), nicht im Legacy-TIF-Modus.
+    % fprintf('Debug detmask: gamma_raw=%.2f°  chiIdx=%d\n', gamma_raw, chiIdx);
+    % fprintf('  azimAll(chiIdx)=%.2f°\n', azimAll(chiIdx));
+    % fprintf('  maskRow: %d von %d Kanäle maskiert\n', sum(maskROI < 0.5), numel(maskROI));
+    % fprintf('  isMasked Bereiche: %d\n', sum(diff([false, isMasked, false]) == 1));
 end
 
 % ── Aktuellen γ-Wert anzeigen ─────────────────────────────────────────
@@ -4632,7 +4633,12 @@ for k = 1:size(FitDataMod, 1)
     sigmaerr{k}        = r.sigmaerr;
     sigmapardebye{k}   = r.sigmapardebye;
     deltasigmapardebye{k} = r.deltasigmapardebye;
-    alphaexport{k}     = FitDataMod{k}(1,7);
+    idxAlphaFin        = find(isfinite(FitDataMod{k}(:,7)), 1, 'first');
+    if isempty(idxAlphaFin)
+        alphaexport{k} = NaN;
+    else
+        alphaexport{k} = FitDataMod{k}(idxAlphaFin,7);
+    end
 end
 
 % --- Ergebnisse in h speichern ---
@@ -6997,11 +7003,8 @@ for k = 1:size(h.FitDataMod,1)
     ax.TickDir = 'out';
     ax.YAxis.TickLabelFormat = '%,.4f';
     ax.Box = 'on';
-    ax.XGrid = 'on';
-    ax.YGrid = 'on';
-    ax.GridLineStyle = '-';
-    ax.GridColor = 'k';
-    ax.GridAlpha = 0.3;
+    ax.XGrid = 'off';
+    ax.YGrid = 'off';
     ax.YLabel.String = ['2',char(952),' [°]'];
     ax.YLabel.FontSize = 12;
     ax.XLabel.String = [char(947),' [°]'];
@@ -7019,21 +7022,15 @@ for k = 1:size(h.FitDataMod,1)
         'Color',          [0.094 0.373 0.647], ...
         'MarkerFaceColor',[0.094 0.373 0.647]);
 
-    % XLim dynamisch
-    x_min = min(pv_k(idxFinK,1));
-    x_max = max(pv_k(idxFinK,1));
-    x_margin = max(5, (x_max-x_min)*0.05);
-    xlim([x_min-x_margin, x_max+x_margin]);
+    % XLim fest auf psi-Bereich [-90,90] mit festen 10°-Ticks
+    xlim([-90, 90]);
+    xticks(-90:10:90);
 
-    % Tick-Schrittweite
-    x_range = x_max - x_min;
-    if x_range <= 30
-        xticks(floor(x_min-x_margin):5:ceil(x_max+x_margin));
-    elseif x_range <= 90
-        xticks(floor(x_min-x_margin):10:ceil(x_max+x_margin));
-    else
-        xticks(floor(x_min-x_margin):20:ceil(x_max+x_margin));
-    end
+    % Referenzlinien bei gamma = 0° und y = 0
+    xl = xline(0, '-', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+    xl.HandleVisibility = 'off';
+    yl = yline(0, '-', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+    yl.HandleVisibility = 'off';
 
     % YLim
     y_min   = min(pv_k(idxFinK,2) - abs(pv_k(idxFinK,3)));
@@ -7174,11 +7171,8 @@ for k = 1:size(h.epsfitdataexport,2)
     ax.TickDir = 'out';
     ax.YAxis.TickLabelFormat = '%,.4f';
     ax.Box = 'on';
-    ax.XGrid = 'on';
-    ax.YGrid = 'on';
-    ax.GridLineStyle = '-';
-    ax.GridColor = 'k';
-    ax.GridAlpha = 0.3;
+    ax.XGrid = 'off';
+    ax.YGrid = 'off';
     ax.YLabel.String = [char(949),'(',char(947),')'];
     ax.YLabel.FontSize = 12;
     ax.XLabel.String = [char(947),' [°]'];
@@ -7210,21 +7204,15 @@ for k = 1:size(h.epsfitdataexport,2)
         end
     end
 
-    % XLim dynamisch aus Daten
-    x_min = min(eps_k(idxFinK,1));
-    x_max = max(eps_k(idxFinK,1));
-    x_margin = max(5, (x_max-x_min)*0.05);
-    xlim([x_min-x_margin, x_max+x_margin]);
+    % XLim fest auf psi-Bereich [-90,90] mit festen 10°-Ticks
+    xlim([-90, 90]);
+    xticks(-90:10:90);
 
-    % Tick-Schrittweite anpassen
-    x_range = x_max - x_min;
-    if x_range <= 30
-        xticks(floor(x_min-x_margin):5:ceil(x_max+x_margin));
-    elseif x_range <= 90
-        xticks(floor(x_min-x_margin):10:ceil(x_max+x_margin));
-    else
-        xticks(floor(x_min-x_margin):20:ceil(x_max+x_margin));
-    end
+    % Referenzlinien bei gamma = 0° und y = 0
+    xl = xline(0, '-', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+    xl.HandleVisibility = 'off';
+    yl = yline(0, '-', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+    yl.HandleVisibility = 'off';
 
     % YLim
     y_min   = min(eps_k(idxFinK,2) - abs(eps_k(idxFinK,3)));
@@ -7452,7 +7440,7 @@ xlim([0, x_upper]);
 LegLabeldata = {'Stressfactor-method','sin²psi-method'};
 % Create legend
 l = legend(LegLabeldata);
-l.Location = 'northwest';
+l.Location = 'best';
 
 l.FontSize = 10;
 l.LineWidth = 0.5;
@@ -7548,7 +7536,7 @@ xlim([0, x_upper]);
 LegLabeldata = {'Stressfactor-method','sin²psi-method'};
 % Create legend
 l = legend(LegLabeldata);
-l.Location = 'northwest';
+l.Location = 'best';
 
 l.FontSize = 10;
 l.LineWidth = 0.5;
@@ -8951,6 +8939,7 @@ end
 h.ImageInfo = Info;
 
 % ── 3. Alpha aus Dateinamen parsen ───────────────────────────────────
+h.alpha = zeros(1, total);   % zuruecksetzen (keine Reste aus frueherem Laden)
 for k = 1:total
     tok = regexp(file{k}, '(?<=chi_)([\d.+-]+)(?=-caked\.tif)', 'match');
     if ~isempty(tok)
@@ -8959,6 +8948,9 @@ for k = 1:total
         h.alpha(k) = 0;
     end
 end
+% Legacy: jede TIF-Datei entspricht einer Gruppe -> uniqueAlpha pro Gruppe/Datei
+% (im pyFAI-Pfad wird h.uniqueAlpha in openfilecallback gesetzt)
+h.uniqueAlpha = h.alpha;
 set(h.AlphaEditField, 'String', strjoin(string(h.alpha), ', '));
 
 % ── 4. Gamma-TXT-Datei laden ─────────────────────────────────────────
@@ -9086,7 +9078,6 @@ pyFAI_elems = {'LoadGammaDataButton', 'pythonExeText', 'pythonExeEdit', ...
                'scriptPathText', 'scriptPathEdit', 'PyFAIParamText', ...
                'trackChiRangeMinText', 'trackChiRangeMinEdit', ...
                'trackChiRangeMaxText', 'trackChiRangeMaxEdit', ...
-               'trackChiBinText', 'trackChiBinEdit', ...
                'trackChiAvgBinsText', 'trackChiAvgBinsEdit', ...
                'smoothPointsText', 'smoothPointsEdit', ...
                'baselineModeText', 'baselineModePopup', 'RebinButton'};
@@ -9103,7 +9094,13 @@ if isPyFAI
     set(h.LoadGammaDataButton,'Callback', @opengammafilecallback);
     set(h.LoadGammaDataButton,'String',   'Load PONI Files');
     set(h.AlphaText1, 'String', char(945));  % α
+    set([h.trackChiBinText h.trackChiBinEdit], 'Tooltip', ...
+        'trackChiBin: jeden n-ten chi-Bin verwenden');
 else
+    set([h.trackChiBinText h.trackChiBinEdit], 'Tooltip', ...
+        ['Legacy TIF: Binbreite in Pixelzeilen (chi) des gecakten Bildes. ' ...
+         'Ein Bin mittelt n+1 Zeilen, Schrittweite n Zeilen. ' ...
+         'Vor dem Laden der TIF-Datei einstellen.']);
     set(h.LoadImageButton,    'Callback', @openfilecallback_legacy);
     set(h.LoadGammaDataButton,'Callback', @opengammafilecallback_legacy);
     set(h.LoadGammaDataButton,'String',   'Load Gamma *.txt');

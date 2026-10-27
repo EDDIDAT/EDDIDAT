@@ -18,6 +18,26 @@ else
     FitPeaksLogical = h.FitPeaksLogical;
 end
 
+% Der Asymmetriefaktor existiert nur bei Fits mit der asymmetrischen
+% Pseudo-Voigt-Funktion (FitFunc==6). Andernfalls Warnung ausgeben,
+% Dropdown zuruecksetzen und abbrechen, statt spaeter mit einem
+% unklaren "Unrecognized field name"-Fehler abzustuerzen.
+if strcmp(YDataStr,'Asymmetry') && h.P.PopupValueFitFunc ~= 6
+    PopupmenuYData = join(['popupmenuYData',PlotWindow]);
+    msgbox('Asymmetry is only available when the data was fitted with the asymmetric Pseudo-Voigt function.','Warning Message','warn')
+    set(h.(PopupmenuYData),'Value',1)
+    return
+end
+
+% wL/wR existieren nur bei Fits mit der Split- (bifurkierten)
+% Pseudo-Voigt-Funktion (FitFunc==7).
+if (strcmp(YDataStr,'Width Left') || strcmp(YDataStr,'Width Right') || strcmp(YDataStr,'Width Asymmetry')) && h.P.PopupValueFitFunc ~= 7
+    PopupmenuYData = join(['popupmenuYData',PlotWindow]);
+    msgbox('Width Left/Right/Asymmetry is only available when the data was fitted with the Split Pseudo-Voigt function.','Warning Message','warn')
+    set(h.(PopupmenuYData),'Value',1)
+    return
+end
+
 % assignin('base','DiffractionLinestmp',DiffractionLinestmp)
 % assignin('base','FittedPeakstmp',FittedPeakstmp)
 
@@ -67,7 +87,7 @@ end
 % Get index from peak to be kept during further analysis
 indexPeakToKeep = cell(1);
 for k = 1:length(C)
-    if h.P.PopupValueFitFunc == 2 %PV-Func
+    if h.P.PopupValueFitFunc == 2 || h.P.PopupValueFitFunc == 6 || h.P.PopupValueFitFunc == 7 %PV-Func %AsymPV %Split-PV
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},PeakCountColumn);
     elseif h.P.PopupValueFitFunc == 3 %TCH-Func
         indexPeakToKeep{k} = PsiFileTableDataArray(indexUniquePeak{k},PeakCountColumn);
@@ -133,7 +153,6 @@ for k = 1:length(h.Measurement)
 end
 
 Temperaturetmp = mat2cell(Temperaturetmp',length(Temperaturetmp),1);
-h.TemperatureForPlot = Temperaturetmp;
 
 % % Get Weight Factor
 % for k = 1:size(FittedPeakstmp{1},1)
@@ -145,6 +164,29 @@ for m = 1:size(idxkeepPeaks,1)
     for k = 1:length(indexPeakToKeep{m})
         WeightFactor{m}(k,:) = FittedPeakstmp{indexPeakToKeep{m}(k)}(m,4);
 %         WeightFactor{m}(k,:) = h.FittedPeaks{indexPeakToKeep{m}(k)}(idxkeepPeaks(m),4);
+    end
+end
+
+% Get Asymmetry factor (nur bei AsymPV, Spalte 5 der Fitparameter)
+if h.P.PopupValueFitFunc == 6
+    for m = 1:size(idxkeepPeaks,1)
+        for k = 1:length(indexPeakToKeep{m})
+            Asymmetry{m}(k,:) = FittedPeakstmp{indexPeakToKeep{m}(k)}(m,5);
+        end
+    end
+end
+
+% Get Width Left/Right (nur bei Split-PV, Spalten 3/4 der Fitparameter)
+if h.P.PopupValueFitFunc == 7
+    for m = 1:size(idxkeepPeaks,1)
+        for k = 1:length(indexPeakToKeep{m})
+            WidthLeft{m}(k,:) = FittedPeakstmp{indexPeakToKeep{m}(k)}(m,3);
+            WidthRight{m}(k,:) = FittedPeakstmp{indexPeakToKeep{m}(k)}(m,4);
+        end
+    end
+    % Width Asymmetry = wR - wL
+    for m = 1:size(idxkeepPeaks,1)
+        WidthAsymmetry{m} = WidthRight{m} - WidthLeft{m};
     end
 end
 
@@ -198,6 +240,14 @@ end
 % assignin('base','Params2',Params)
 Params.Temperature = repmat(Temperaturetmp,1,size(idxkeepPeaks,1));
 Params.WeightFactor = WeightFactor;
+if h.P.PopupValueFitFunc == 6
+    Params.Asymmetry = Asymmetry;
+end
+if h.P.PopupValueFitFunc == 7
+    Params.WidthLeft = WidthLeft;
+    Params.WidthRight = WidthRight;
+    Params.WidthAsymmetry = WidthAsymmetry;
+end
 
 % If measured under more than one phi angle, rearrange data
 for k = 1:size(Params.Phi_Winkel,2)
@@ -234,6 +284,14 @@ elseif length(ia{1}) == 2
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):ia{k}(j+1)-1);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):ia{k}(j+1)-1);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
             elseif j == 2
                 % Read in Emax
                 ParamsToFit(j).Energy_Max{k} = Params.Energy_Max{k}(ia{k}(j):end);
@@ -257,6 +315,14 @@ elseif length(ia{1}) == 2
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):end);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):end);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):end);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):end);
+                end
             end
         end
     end
@@ -287,6 +353,14 @@ elseif length(ia{1}) == 3
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):ia{k}(j+1)-1);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):ia{k}(j+1)-1);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
             elseif j == 3
                 % Read in Emax
                 ParamsToFit(j).Energy_Max{k} = Params.Energy_Max{k}(ia{k}(j):end);
@@ -310,6 +384,14 @@ elseif length(ia{1}) == 3
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):end);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):end);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):end);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):end);
+                end
             end
         end
     end
@@ -340,6 +422,14 @@ elseif length(ia{1}) == 4
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):ia{k}(j+1)-1);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):ia{k}(j+1)-1);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):ia{k}(j+1)-1);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):ia{k}(j+1)-1);
+                end
             elseif j == 4
                 % Read in Emax
                 ParamsToFit(j).Energy_Max{k} = Params.Energy_Max{k}(ia{k}(j):end);
@@ -363,6 +453,14 @@ elseif length(ia{1}) == 4
                 ParamsToFit(j).Temperature{k} = Params.Temperature{k}(ia{k}(j):end);
                 % Read in Weight Factor
                 ParamsToFit(j).WeightFactor{k} = Params.WeightFactor{k}(ia{k}(j):end);
+                if h.P.PopupValueFitFunc == 6
+                    ParamsToFit(j).Asymmetry{k} = Params.Asymmetry{k}(ia{k}(j):end);
+                end
+                if h.P.PopupValueFitFunc == 7
+                    ParamsToFit(j).WidthLeft{k} = Params.WidthLeft{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthRight{k} = Params.WidthRight{k}(ia{k}(j):end);
+                    ParamsToFit(j).WidthAsymmetry{k} = Params.WidthAsymmetry{k}(ia{k}(j):end);
+                end
             end
         end
     end
@@ -563,6 +661,30 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(Axes).YLim = [0 1];
             yticks(h.(Axes),'auto')
             h.(Axes).YAxis.TickLabelFormat = ' %.1f ';
+        elseif strcmp(YDataStr,'Asymmetry')
+            YDataphi0 = ParamsToFit(idxphi0).Asymmetry;
+            ylabel(h.(Axes),'Asymmetry')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Left')
+            YDataphi0 = ParamsToFit(idxphi0).WidthLeft;
+            ylabel(h.(Axes),'wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Right')
+            YDataphi0 = ParamsToFit(idxphi0).WidthRight;
+            ylabel(h.(Axes),'wR [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Asymmetry')
+            YDataphi0 = ParamsToFit(idxphi0).WidthAsymmetry;
+            ylabel(h.(Axes),'wR - wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
         elseif strcmp(YDataStr,'Form Factor')
             for k = 1:length(ParamsToFit(idxphi0).FWHM)
                 YDataphi0{k} = ParamsToFit(idxphi0).FWHM{k}./ParamsToFit(idxphi0).IntegralWidth{k};
@@ -713,6 +835,30 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(Axes).YLim = [0 1];
             yticks(h.(Axes),'auto')
             h.(Axes).YAxis.TickLabelFormat = ' %.1f ';
+        elseif strcmp(YDataStr,'Asymmetry')
+            YDataphi90 = ParamsToFit(idxphi90).Asymmetry;
+            ylabel(h.(Axes),'Asymmetry')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Left')
+            YDataphi90 = ParamsToFit(idxphi90).WidthLeft;
+            ylabel(h.(Axes),'wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Right')
+            YDataphi90 = ParamsToFit(idxphi90).WidthRight;
+            ylabel(h.(Axes),'wR [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Asymmetry')
+            YDataphi90 = ParamsToFit(idxphi90).WidthAsymmetry;
+            ylabel(h.(Axes),'wR - wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
         elseif strcmp(YDataStr,'Form Factor')
             for k = 1:length(ParamsToFit(idxphi90).FWHM)
                 YDataphi90{k} = ParamsToFit(idxphi90).FWHM{k}./ParamsToFit(idxphi90).IntegralWidth{k};
@@ -862,6 +1008,30 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(Axes).YLim = [0 1];
             yticks(h.(Axes),'auto')
             h.(Axes).YAxis.TickLabelFormat = ' %.1f ';
+        elseif strcmp(YDataStr,'Asymmetry')
+            YDataphi180 = ParamsToFit(idxphi180).Asymmetry;
+            ylabel(h.(Axes),'Asymmetry')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Left')
+            YDataphi180 = ParamsToFit(idxphi180).WidthLeft;
+            ylabel(h.(Axes),'wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Right')
+            YDataphi180 = ParamsToFit(idxphi180).WidthRight;
+            ylabel(h.(Axes),'wR [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Asymmetry')
+            YDataphi180 = ParamsToFit(idxphi180).WidthAsymmetry;
+            ylabel(h.(Axes),'wR - wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
         elseif strcmp(YDataStr,'Form Factor')
             for k = 1:length(ParamsToFit(idxphi180).FWHM)
                 YDataphi180{k} = ParamsToFit(idxphi180).FWHM{k}./ParamsToFit(idxphi180).IntegralWidth{k};
@@ -1012,6 +1182,30 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(Axes).YLim = [0 1];
             yticks(h.(Axes),'auto')
             h.(Axes).YAxis.TickLabelFormat = ' %.1f ';
+        elseif strcmp(YDataStr,'Asymmetry')
+            YDataphi270 = ParamsToFit(idxphi270).Asymmetry;
+            ylabel(h.(Axes),'Asymmetry')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Left')
+            YDataphi270 = ParamsToFit(idxphi270).WidthLeft;
+            ylabel(h.(Axes),'wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Right')
+            YDataphi270 = ParamsToFit(idxphi270).WidthRight;
+            ylabel(h.(Axes),'wR [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
+        elseif strcmp(YDataStr,'Width Asymmetry')
+            YDataphi270 = ParamsToFit(idxphi270).WidthAsymmetry;
+            ylabel(h.(Axes),'wR - wL [keV]')
+            yticks(h.(Axes),'auto')
+            h.(Axes).YLimMode = 'auto';
+            ytickformat(h.(Axes),'auto')
         elseif strcmp(YDataStr,'Form Factor')
             for k = 1:length(ParamsToFit(idxphi270).FWHM)
                 YDataphi270{k} = ParamsToFit(idxphi270).FWHM{k}./ParamsToFit(idxphi270).IntegralWidth{k};
@@ -1084,7 +1278,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°'};
+        h.(LegLabelData) = {'\phi = 0^{\circ}'};
     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi90)];
@@ -1092,7 +1286,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi90)];
         end
 
-        h.(LegLabelData) = {'\phi = 90°'};
+        h.(LegLabelData) = {'\phi = 90^{\circ}'};
     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi180)];
@@ -1100,7 +1294,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi180)];
         end
 
-        h.(LegLabelData) = {'\phi = 180°'};
+        h.(LegLabelData) = {'\phi = 180^{\circ}'};
     elseif isempty(h.idxphi0) && isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi270)];
@@ -1108,7 +1302,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi270)];
         end
 
-        h.(LegLabelData) = {'\phi = 270°'};     
+        h.(LegLabelData) = {'\phi = 270^{\circ}'};     
     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi0) h.(PlotErrPhi90)];
@@ -1116,7 +1310,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0) h.(PlotPhi90)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°','\phi = 90°'};
+        h.(LegLabelData) = {'\phi = 0^{\circ}','\phi = 90^{\circ}'};
     elseif ~isempty(h.idxphi0) && isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
 
         if strcmp(YDataStr,'d-spacing')
@@ -1125,7 +1319,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0) h.(PlotPhi180)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°','\phi = 180°'};
+        h.(LegLabelData) = {'\phi = 0^{\circ}','\phi = 180^{\circ}'};
     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi90) h.(PlotErrPhi270)];
@@ -1133,7 +1327,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi90) h.(PlotPhi270)];
         end
 
-        h.(LegLabelData) = {'\phi = 90°','\phi = 270°'};
+        h.(LegLabelData) = {'\phi = 90^{\circ}','\phi = 270^{\circ}'};
     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi0) h.(PlotErrPhi90) h.(PlotErrPhi180)];
@@ -1141,7 +1335,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0) h.(PlotPhi90) h.(PlotPhi180)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°','\phi = 90°','\phi = 180°'};
+        h.(LegLabelData) = {'\phi = 0^{\circ}','\phi = 90^{\circ}','\phi = 180^{\circ}'};
     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && isempty(h.idxphi180) && ~isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi0) h.(PlotErrPhi90) h.(PlotErrPhi270)];
@@ -1149,7 +1343,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0) h.(PlotPhi90) h.(PlotPhi270)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°','\phi = 90°','\phi = 270°'};
+        h.(LegLabelData) = {'\phi = 0^{\circ}','\phi = 90^{\circ}','\phi = 270^{\circ}'};
     elseif isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi90) h.(PlotErrPhi180) h.(PlotErrPhi270)];
@@ -1157,7 +1351,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi90) h.(PlotPhi180) h.(PlotPhi270)];
         end
 
-        h.(LegLabelData) = {'\phi = 90°','\phi = 180°','\phi = 270°'};
+        h.(LegLabelData) = {'\phi = 90^{\circ}','\phi = 180^{\circ}','\phi = 270^{\circ}'};
     elseif ~isempty(h.idxphi0) && ~isempty(h.idxphi90) && ~isempty(h.idxphi180) && ~isempty(h.idxphi270)
         if strcmp(YDataStr,'d-spacing')
             h.(LegData) = [h.(PlotErrPhi0) h.(PlotErrPhi90) h.(PlotErrPhi180) h.(PlotErrPhi270)];
@@ -1165,7 +1359,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             h.(LegData) = [h.(PlotPhi0) h.(PlotPhi90) h.(PlotPhi180) h.(PlotPhi270)];
         end
 
-        h.(LegLabelData) = {'\phi = 0°','\phi = 90°','\phi = 180°','\phi = 270°'};    
+        h.(LegLabelData) = {'\phi = 0^{\circ}','\phi = 90^{\circ}','\phi = 180^{\circ}','\phi = 270^{\circ}'};    
     end
 
     % Legend for plot of d-spacings

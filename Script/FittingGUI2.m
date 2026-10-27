@@ -1,4 +1,4 @@
-function [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(Measurement,DataTmp,PeakRegions,Peaks,Peakslb,Peaksub,FitFunc,Diffractometer)
+function [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(Measurement,DataTmp,PeakRegions,Peaks,Peakslb,Peaksub,FitFunc,Diffractometer,CoupleOverlapPeaks,MartensiteSplit,MartensiteFreeWidth)
 %% (* Fitting the data *)
 %% ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % For fitting the data information about background and peak positions is
@@ -6,7 +6,36 @@ function [Measurement,DataTmp,FittedPeaks,CI,SE] = FittingGUI2(Measurement,DataT
 % positions are imported from the ULD file. If no ULD file exists, the peak
 % positions have to be defined in the plot window.
 
-% Use PeakRegions from variable bkg (defined manually or loaded from the 
+% CoupleOverlapPeaks (optional, default false): Falls FitFunc == 2 (PV)
+% und eine Region genau 2 sich ueberlappende Peaks enthaelt (z.B. Ferrit/
+% Austenit-Reflexe, die zu einem Maximum verschmelzen), wird bei true
+% FP_PseudoVoigt_DoublePeakCoupled (gemeinsame Breite/GL-Anteil, nur 6
+% freie Parameter) statt der normalen FP_PseudoVoigt_DoublePeak-Funktion
+% verwendet. Das Ergebnis hat weiterhin das gewohnte 8-Spalten-Format,
+% PopupValueFitFunc/FitFunc bleibt unveraendert 2, sodass nachgelagerter
+% Code (PrepareFitPeaksPlot, Tabellen-/Export-Funktionen) nichts von der
+% Kopplung wissen muss.
+% MartensiteSplit (optional, default false): Wie CoupleOverlapPeaks,
+% aber zusaetzlich mit fester 1:2-Intensitaetskopplung (Multiplizitaet)
+% fuer die martensitische Aufspaltung eines kubischen {200}-Reflexes in
+% {002} und {200}/{020} (FP_PseudoVoigt_DoublePeakMartensite, 5 freie
+% Parameter). Schliesst sich mit CoupleOverlapPeaks gegenseitig aus.
+if nargin < 9
+    CoupleOverlapPeaks = false;
+end
+if nargin < 10
+    MartensiteSplit = false;
+end
+% MartensiteFreeWidth (optional, default false): Nur wirksam, wenn
+% MartensiteSplit true ist. Fittet die Breite von {002} und {200}/{020}
+% unabhaengig voneinander (statt gemeinsam) - FP_PseudoVoigt_
+% DoublePeakMartensiteFreeWidth (6 freie Parameter) statt
+% FP_PseudoVoigt_DoublePeakMartensite (5 freie Parameter).
+if nargin < 11
+    MartensiteFreeWidth = false;
+end
+
+% Use PeakRegions from variable bkg (defined manually or loaded from the
 % ULD file).
 R.PeakRegions = PeakRegions;
 % assignin('base','PeakRegions',PeakRegions)
@@ -111,6 +140,12 @@ for c = 1:length(Measurement)
                 if FitFunc == 2 %(PV-Func)
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, 0.25);
+                elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, 0.25, 0);
+                elseif FitFunc == 7 %Split-PV (bifurkiert)
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, 0.25);
                 elseif FitFunc == 3 %TCH
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_TCH(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, 0.05, 0.05);
@@ -152,10 +187,46 @@ for c = 1:length(Measurement)
                 end
                 cnt = cnt+1;
             else
-                if FitFunc == 2 %(PV-Func)
+                if FitFunc == 2 && CoupleOverlapPeaks %(PV-Func, gekoppelt fuer ueberlappende Phasenreflexe)
+                    % Interne Parameterreihenfolge: [I1,pos1,I2,pos2,Breite,GL]
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeakCoupled(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 2 && MartensiteSplit && MartensiteFreeWidth %(PV-Func, martensitische {200}-Aufspaltung, unabhaengige Breite je Teilpeak)
+                    % Interne Parameterreihenfolge: [I_002,pos_002,pos_200020,Breite_002,Breite_200020,GL]
+                    % Index_PeaksInRegion(1) = {002}, Index_PeaksInRegion(2) = {200}/{020}
+                    % Untere Grenze fuer I_002 bewusst 0 statt -Inf, siehe Kommentar unten.
+                    PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0.1, 0.1, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1.5, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeakMartensiteFreeWidth(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 2 && MartensiteSplit %(PV-Func, martensitische {200}-Aufspaltung in {002}/{200,020})
+                    % Interne Parameterreihenfolge: [I_002,pos_002,pos_200020,Breite,GL]
+                    % Index_PeaksInRegion(1) = {002}, Index_PeaksInRegion(2) = {200}/{020}
+                    % Untere Grenze fuer I_002 bewusst 0 statt -Inf (wie
+                    % sonst in diesem Programm ueblich): da I_200020 =
+                    % 2*I_002 direkt daraus abgeleitet wird, wuerde ein
+                    % negatives I_002 sonst BEIDE Peakintensitaeten
+                    % gleichzeitig negativ werden lassen.
+                    PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0.1, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeakMartensite(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 2 %(PV-Func)
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
                                        Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 1.5, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1];
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 1.5, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1, 20];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+                elseif FitFunc == 7 %Split-PV (bifurkiert)
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 1.5, 1.5, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 1.5, 1.5, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
                 elseif FitFunc == 3 %TCH
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0;...
@@ -183,6 +254,16 @@ for c = 1:length(Measurement)
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0;...
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1];
                 [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+            elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -20;...
+                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, 20];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+            elseif FitFunc == 7 %Split-PV (bifurkiert)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0;...
+                               Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, 1];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
                     X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
             elseif FitFunc == 3 %TCH
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0;...
@@ -234,6 +315,16 @@ for c = 1:length(Measurement)
                                        Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1];
                     [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
                         X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+                elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -20;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, 20];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+                elseif FitFunc == 7 %Split-PV (bifurkiert)
+                    PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, 0;...
+                                       Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, 1];
+                    [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
+                        X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
                 elseif FitFunc == 3 %TCH
                     PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0;...
                                        Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100];
@@ -260,6 +351,16 @@ for c = 1:length(Measurement)
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1];
                 [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
                     X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+            elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -20;...
+                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, 20];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+            elseif FitFunc == 7 %Split-PV (bifurkiert)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, 0;...
+                               Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 100, 1];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
             elseif FitFunc == 3 %TCH
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0;...
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 100];
@@ -285,6 +386,16 @@ for c = 1:length(Measurement)
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 1];
                 [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
                     X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+            elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, 0, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20, 0, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -20, 0, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -20, 0, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -20, 0, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, -20;...
+                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 1, 20];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+            elseif FitFunc == 7 %Split-PV (bifurkiert)
+                PeakPosBoundarys = [0, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, 0, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, 0, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0, 0, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, 0, 0, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, 0, 0, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, 0;...
+                               Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 100, 1];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
             elseif FitFunc == 3 %TCH
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0;...
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 100, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 100];
@@ -309,6 +420,16 @@ for c = 1:length(Measurement)
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, -Inf, R.Index_Peaks{c}(cnt+7)-R.lb{c}(cnt+7), 0, 0;...
                                    Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 1, Inf, R.Index_Peaks{c}(cnt+7)+R.ub{c}(cnt+7), 100, 1];
                 [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_PseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
+            elseif FitFunc == 6 %AsymPV (Sigmoid-Breite)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, -20, -Inf, R.Index_Peaks{c}(cnt+7)-R.lb{c}(cnt+7), 0, 0, -20;...
+                                   Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 1, 20, Inf, R.Index_Peaks{c}(cnt+7)+R.ub{c}(cnt+7), 100, 1, 20];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_AsymPseudoVoigt_DoublePeak(...
+                    X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25, 0);
+            elseif FitFunc == 7 %Split-PV (bifurkiert)
+                PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, 0, -Inf, R.Index_Peaks{c}(cnt+7)-R.lb{c}(cnt+7), 0, 0, 0;...
+                               Inf, R.Index_Peaks{c}(cnt+1)+R.ub{c}(cnt+1), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+2)+R.ub{c}(cnt+2), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+3)+R.ub{c}(cnt+3), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+4)+R.ub{c}(cnt+4), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+5)+R.ub{c}(cnt+5), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+6)+R.ub{c}(cnt+6), 100, 100, 1, Inf, R.Index_Peaks{c}(cnt+7)+R.ub{c}(cnt+7), 100, 100, 1];
+                [FittedPeaks{c}{i_c}, CI{c}{i_c}, SE{c}{i_c}] = Tools.Data.Fitting.FP_SplitPseudoVoigt_DoublePeak(...
                     X(a:b), Y(a:b), Index_PeaksInRegion, PeakPosBoundarys, 0.25);
             elseif FitFunc == 3 %TCH
                 PeakPosBoundarys = [-Inf, R.Index_Peaks{c}(cnt+1)-R.lb{c}(cnt+1), 0, 0, -Inf, R.Index_Peaks{c}(cnt+2)-R.lb{c}(cnt+2), 0, 0, -Inf, R.Index_Peaks{c}(cnt+3)-R.lb{c}(cnt+3), 0, 0, -Inf, R.Index_Peaks{c}(cnt+4)-R.lb{c}(cnt+4), 0, 0, -Inf, R.Index_Peaks{c}(cnt+5)-R.lb{c}(cnt+5), 0, 0, -Inf, R.Index_Peaks{c}(cnt+6)-R.lb{c}(cnt+6), 0, 0, -Inf, R.Index_Peaks{c}(cnt+7)-R.lb{c}(cnt+7), 0, 0;...
@@ -351,6 +472,16 @@ for c = 1:length(Measurement)
             CI{c} = reshape(cell2mat(CI{c}),3,[])';
             SE{c} = reshape(cell2mat(SE{c}),3,[])';
         end
+    elseif FitFunc == 6
+        % AsymPV: 5 Parameter pro Peak [I,pos,Breite,GL,Asymmetrie]
+        FittedPeaks{c} = reshape(cell2mat(FittedPeaks{c}),5,[])';
+        CI{c} = reshape(cell2mat(CI{c}),5,[])';
+        SE{c} = reshape(cell2mat(SE{c}),5,[])';
+    elseif FitFunc == 7
+        % Split-PV: 5 Parameter pro Peak [I,pos,Breite_links,Breite_rechts,GL]
+        FittedPeaks{c} = reshape(cell2mat(FittedPeaks{c}),5,[])';
+        CI{c} = reshape(cell2mat(CI{c}),5,[])';
+        SE{c} = reshape(cell2mat(SE{c}),5,[])';
     end
     
     disp([Measurement(c).Name, ' was successfully fitted']);

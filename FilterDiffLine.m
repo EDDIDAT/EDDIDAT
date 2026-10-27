@@ -10,7 +10,11 @@ for c = 1:length(Measurement)
     elseif PopupValueFitFunc == 4 %Gauss-Func
         DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_Gauss(FittedPeaks{c}, SE{c}, Measurement(c));
     elseif PopupValueFitFunc == 5 %Lorentz-Func
-        DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_Lorentz(FittedPeaks{c}, SE{c}, Measurement(c));    
+        DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_Lorentz(FittedPeaks{c}, SE{c}, Measurement(c));
+    elseif PopupValueFitFunc == 6 %AsymPV
+        DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_AsymPV(FittedPeaks{c}, SE{c}, Measurement(c));
+    elseif PopupValueFitFunc == 7 %Split-PV
+        DiffractionLines{c} = SpectraAnalysis.DiffractionLine.CreateFromFitParam_SplitPV(FittedPeaks{c}, SE{c}, Measurement(c));
     end
     assignin('base','DiffractionLinesBeforeFilterDiffLine',DiffractionLines)
     % Apply filter

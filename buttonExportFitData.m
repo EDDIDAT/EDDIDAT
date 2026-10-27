@@ -32,7 +32,7 @@ Path = fullfile(h.PathName,Folder);
 if exist(Path,'dir') ~= 7
     mkdir(Path);
 end
-assignin('base','hplot',h)
+
 if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
     %% Create Plots
     Marker = {'s','o','d','p'};
@@ -73,7 +73,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
         % Set x-axes properties
         if strcmp(XDataStr,'Psi')
-            xlabel(ax,'\psi [°]')
+            xlabel(ax,'\psi [^{\circ}]')
             Psimin = unique(cellfun(@min,DataExport{1}.X));
             Psimax = unique(cellfun(@max,DataExport{1}.X));
             if Psimin >= 0 && max(Psimax) <= 90
@@ -88,20 +88,20 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                 end
                 
             end
-        elseif strcmp(XDataStr,'sin²Psi')
-            xlabel(ax,'sin²\psi')
+        elseif strcmp(XDataStr,['sin',char(178),'Psi'])
+            xlabel(ax,['sin',char(178),'\psi'])
             ax.XLim = [0 1];
             ax.XTick = (0:0.1:1);
         elseif strcmp(XDataStr,'Eta')
-            xlabel(ax,'\eta [°]')
+            xlabel(ax,'\eta [^{\circ}]')
             ax.XLim = [0 90];
             ax.XTick = (0:10:90);      
-        elseif strcmp(XDataStr,'sin²Eta')
-            xlabel(ax,'sin²\eta')
+        elseif strcmp(XDataStr,['sin',char(178),'Eta'])
+            xlabel(ax,['sin',char(178),'\eta'])
             ax.XLim = [0 1];
             ax.XTick = (0:0.1:1);
         elseif strcmp(XDataStr,'tau')
-            xlabel(ax,'\tau [µm]')
+            xlabel(ax,['\tau [',char(181),'m]'])
             XLimtau = ceil(round(h.TauMaxAxesLimits{1}(k),1)/5)*5;
             ax.XLim = [0 XLimtau];
             if XLimtau <= 5
@@ -121,7 +121,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             xtickformat(ax,'auto')
             xticks(ax,'auto')
         elseif strcmp(XDataStr,'Temperature')
-            xlabel(ax,'Temperature [°C]')
+            xlabel(ax,'Temperature [^{\circ}C]')
             Tempmax = cellfun(@max, h.TemperatureForPlot);
             ax.XLim = [0 round(max(Tempmax))];
             ax.XTick = (0:100:round(max(Tempmax)));
@@ -226,6 +226,26 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
             ax.YLim = [0 1];
             yticks(ax,'auto')
             ax.YAxis.TickLabelFormat = ' %.1f ';
+        elseif strcmp(YDataStr,'Asymmetry')
+            ylabel(ax,'Asymmetry')
+            ax.YLimMode = 'auto';
+            yticks(ax,'auto')
+            ytickformat(ax,'auto')
+        elseif strcmp(YDataStr,'Width Left')
+            ylabel(ax,'wL [keV]')
+            ax.YLimMode = 'auto';
+            yticks(ax,'auto')
+            ytickformat(ax,'auto')
+        elseif strcmp(YDataStr,'Width Right')
+            ylabel(ax,'wR [keV]')
+            ax.YLimMode = 'auto';
+            yticks(ax,'auto')
+            ytickformat(ax,'auto')
+        elseif strcmp(YDataStr,'Width Asymmetry')
+            ylabel(ax,'wR - wL [keV]')
+            ax.YLimMode = 'auto';
+            yticks(ax,'auto')
+            ytickformat(ax,'auto')
         elseif strcmp(YDataStr,'Form Factor')
             ylabel(ax,'Form factor FWHM/IB')
             ax.YLim = [0.6 1];
@@ -433,7 +453,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
         fid = fopen([[Path,'\'],FileName,'_Line_',num2str(k),'_',d,'.txt'],'w');
 
-        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),'°)    '],[YColName,'_error','   '],'\n']);
+        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),char(176),')    '],[YColName,'_error','   '],'\n']);
             
             % In case measurements where performed under four different phi angles
             for m = 1:size(Datahkltmp{k}{1},1)
@@ -450,7 +470,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                     Datahkltmp{k}{1}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
-                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM')
+                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM') || strcmp(YDataStr,'Asymmetry') || strcmp(YDataStr,'Width Left') || strcmp(YDataStr,'Width Right') || strcmp(YDataStr,'Width Asymmetry')
                     str = sprintf('%.4f    %.4f\n',...
                     Datahkltmp{k}{1}(m,1),...
                     Datahkltmp{k}{1}(m,2));
@@ -479,8 +499,8 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
         fid = fopen([[Path,'\'],FileName,'_Line_',num2str(k),'_',d,'.txt'],'w');
 
-        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),'°)    '],'\n']);
+        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(Datahkltmp{k}{1},1)
@@ -502,7 +522,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                     Datahkltmp{k}{2}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
-                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM')
+                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM') || strcmp(YDataStr,'Asymmetry') || strcmp(YDataStr,'Width Left') || strcmp(YDataStr,'Width Right') || strcmp(YDataStr,'Width Asymmetry')
                     str = sprintf('%.4f    %.4f    %.4f    %.4f\n',...
                     Datahkltmp{k}{1}(m,1),...
                     Datahkltmp{k}{1}(m,2),...
@@ -537,9 +557,9 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
         fid = fopen([[Path,'\'],FileName,'_Line_',num2str(k),'_',d,'.txt'],'w');
 
-        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(3)),'°)    '],'\n']);
+        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(3)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(Datahkltmp{k}{1},1)
@@ -566,7 +586,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                     Datahkltmp{k}{3}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
-                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM')
+                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM') || strcmp(YDataStr,'Asymmetry') || strcmp(YDataStr,'Width Left') || strcmp(YDataStr,'Width Right') || strcmp(YDataStr,'Width Asymmetry')
                     str = sprintf('%.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
                     Datahkltmp{k}{1}(m,1),...
                     Datahkltmp{k}{1}(m,2),...
@@ -607,10 +627,10 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
 
         fid = fopen([[Path,'\'],FileName,'_Line_',num2str(k),'_',d,'.txt'],'w');
 
-        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(3)),'°)    '],...
-            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(4)),'°)    '],'\n']);
+        fprintf(fid, [[XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(1)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(2)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(3)),char(176),')    '],...
+            [XDataStr,'   '],[YColName,'(phi=',num2str(h.PhiWinkelForPlot{1}(4)),char(176),')    '],'\n']);
 
             % In case measurements where performed under four different phi angles
             for m = 1:size(Datahkltmp{k}{1},1)
@@ -642,7 +662,7 @@ if ~isfield(h,['eta', PlotWindow]) && ~isfield(h,['phi', PlotWindow])
                     Datahkltmp{k}{4}(m,2));
                     str = regexprep(str, 'NaN', '  --  ');
                     fprintf(fid, '%s', str);
-                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM')
+                elseif strcmp(YDataStr,'Integral Breadth')|| strcmp(YDataStr,'FWHM') || strcmp(YDataStr,'Asymmetry') || strcmp(YDataStr,'Width Left') || strcmp(YDataStr,'Width Right') || strcmp(YDataStr,'Width Asymmetry')
                     str = sprintf('%.4f    %.4f     %.4f    %.4f    %.4f    %.4f    %.4f    %.4f\n',...
                     Datahkltmp{k}{1}(m,1),...
                     Datahkltmp{k}{1}(m,2),...
@@ -719,24 +739,24 @@ else
             for i = 1:length(h.(eta).psiIndex{k})
                 if strcmp(XDataStr,'Eta') && strcmp(YDataStr,'d-spacing')
                     etaplot{i} = errorbar(ax,h.(eta).TableEta{k,i},h.(eta).Tabledspacing{k,i}.*10,h.(eta).Tabledspacingdelta{k,i}.*10,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'d-spacing')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'d-spacing')
                     etaplot{i} = errorbar(ax,sind(h.(eta).TableEta{k,i}).^2,h.(eta).Tabledspacing{k,i}.*10,h.(eta).Tabledspacingdelta{k,i}.*10,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
                 elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Integral Breadth')
                     etaplot{i} = errorbar(ax,h.(eta).TableEta{k,i},h.(eta).TableIB{k,i},h.(eta).TableIB{k,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Integral Breadth')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Integral Breadth')
                     etaplot{i} = errorbar(ax,sind(h.(eta).TableEta{k,i}).^2,h.(eta).TableIB{k,i},h.(eta).TableIB{k,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
                 elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Int. Intensity')
                     etaplot{i} = errorbar(ax,h.(eta).TableEta{k,i},h.(eta).TableIntensity_Int{k,i},h.(eta).TableIntensity_Int{k,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Int. Intensity')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Int. Intensity')
                     etaplot{i} = errorbar(ax,sind(h.(eta).TableEta{k,i}).^2,h.(eta).TableIntensity_Int{k,i},h.(eta).TableIntensity_Int{k,i}.*0,'s','LineStyle','--','Color','k','MarkerSize',12,'MarkerEdgeColor','k','MarkerFaceColor',h.Colors{i},'Clipping','off');
                 end
             end
 
             % Set x-axes properties
             if strcmp(XDataStr,'Eta')
-                xlabel(ax,'\eta [°]')
-            elseif strcmp(XDataStr,'sin²Eta')
-                xlabel(ax,'sin²\eta')
+                xlabel(ax,'\eta [^{\circ}]')
+            elseif strcmp(XDataStr,['sin',char(178),'Eta'])
+                xlabel(ax,['sin',char(178),'\eta'])
             end
 
             ax.XLimMode = 'auto';
@@ -867,15 +887,15 @@ else
             for l = 1:size(h.(eta).TableEta,2)
                 if strcmp(XDataStr,'Eta') && strcmp(YDataStr,'d-spacing')
                     Datahkl{k}{l} = [h.(eta).TableEta{k,l}(:) h.(eta).Tabledspacing{k,l}(:).*10 h.(eta).Tabledspacingdelta{k,l}(:).*10];
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'d-spacing')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'d-spacing')
                     Datahkl{k}{l} = [sind(h.(eta).TableEta{k,l}(:)).^2 h.(eta).Tabledspacing{k,l}(:).*10 h.(eta).Tabledspacingdelta{k,l}(:).*10];
                 elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Integral Breadth')
                     Datahkl{k}{l} = [h.(eta).TableEta{k,l}(:) h.(eta).TableIB{k,l}(:)];
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Integral Breadth')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Integral Breadth')
                     Datahkl{k}{l} = [sind(h.(eta).TableEta{k,l}(:)).^2 h.(eta).TableIB{k,l}(:)];
                 elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Int. Intensity')
                     Datahkl{k}{l} = [h.(eta).TableEta{k,l}(:) h.(eta).TableIntensity_Int{k,l}(:)];
-                elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Int. Intensity')
+                elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Int. Intensity')
                     Datahkl{k}{l} = [sind(h.(eta).TableEta{k,l}(:)).^2 h.(eta).TableIntensity_Int{k,l}(:)];
                 end
             end
@@ -894,7 +914,7 @@ else
         PsiHeadertmp = h.(eta).psiIndex{1};
 
         for i=1:length(PsiHeadertmp)
-            PsiHeader{i} = ['psi = ',num2str(PsiHeadertmp(i)),'°'];
+            PsiHeader{i} = ['psi = ',num2str(PsiHeadertmp(i)),char(176)];
         end
 
         for k = 1:size(h.(eta).psiIndex,2)
@@ -906,24 +926,24 @@ else
                 fmt1 = repmat(['eta','  ','d-spacing','  ','d-spacing_error','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.4f  %.6f  %.6e  ',1,size(DataExport{k},2)/3);
-            elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'d-spacing')
-                fmt1 = repmat(['sin²eta','  ','d-spacing','  ','d-spacing_error','  '],1,size(DataExport{k},2)/3);
+            elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'d-spacing')
+                fmt1 = repmat(['sin',char(178),'eta','  ','d-spacing','  ','d-spacing_error','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.5f  %.6f  %.6e  ',1,size(DataExport{k},2)/3);
             elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Integral Breadth')
                 fmt1 = repmat(['eta','  ','IntegralBreadth','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.4f  %.4f  ',1,size(DataExport{k},2)/3);
-            elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Integral Breadth')
-                fmt1 = repmat(['sin²eta','  ','IntegralBreadth','  '],1,size(DataExport{k},2)/3);
+            elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Integral Breadth')
+                fmt1 = repmat(['sin',char(178),'eta','  ','IntegralBreadth','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.4f  %.4f  ',1,size(DataExport{k},2)/3);
             elseif strcmp(XDataStr,'Eta') && strcmp(YDataStr,'Int. Intensity')
                 fmt1 = repmat(['eta','  ','Int.Intensity','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.4f  %d  ',1,size(DataExport{k},2)/3);
-            elseif strcmp(XDataStr,'sin²Eta') && strcmp(YDataStr,'Int. Intensity')
-                fmt1 = repmat(['sin²eta','  ','Int.Intensity','  '],1,size(DataExport{k},2)/3);
+            elseif strcmp(XDataStr,['sin',char(178),'Eta']) && strcmp(YDataStr,'Int. Intensity')
+                fmt1 = repmat(['sin',char(178),'eta','  ','Int.Intensity','  '],1,size(DataExport{k},2)/3);
                 % Create formatspec for export data
                 fmt2 = repmat('%.4f  %d  ',1,size(DataExport{k},2)/3);
             end    
@@ -981,7 +1001,7 @@ else
             end
 
             % Set x-axes properties
-            xlabel(ax,'\phi [°]')
+            xlabel(ax,'\phi [^{\circ}]')
 
             ax.XLimMode = 'auto';
             xtickformat(ax,'auto')
@@ -1136,7 +1156,7 @@ else
         PsiHeadertmp = h.(phi).psiIndex{1};
 
         for i=1:length(PsiHeadertmp)
-            PsiHeader{i} = ['psi = ',num2str(PsiHeadertmp(i)),'°'];
+            PsiHeader{i} = ['psi = ',num2str(PsiHeadertmp(i)),char(176)];
         end
 
         for k = 1:size(h.(phi).psiIndex,2)
